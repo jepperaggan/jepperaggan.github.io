@@ -14,182 +14,630 @@
 <link rel="icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --felt:#1E4A38; --felt-deep:#163829; --card:#FBF8F2; --ink:#1B1B1B;
-  --muted:#6B6A64; --red:#B8242B; --line:#E4DED2; --field:#F2EEE5; --lead:#E9F1EA;
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
+  --felt:#1E4A38; --felt-deep:#163829;
+  --bg:#FBF8F2; --ink:#1B1B1B; --muted:#77756E; --hair:rgba(27,27,27,.10);
+  --field:#F0ECE3; --field-focus:#FFFFFF; --red:#B8242B; --accent:#1E6B4A;
+  --now:#EEF4EF; --lead-bg:#E3EFE6; --mat:rgba(251,248,242,.72); --mat-edge:rgba(255,255,255,.6);
+  --scrim:rgba(0,0,0,.38); --sheet:#FBF8F2;
+  --gold:#C9A24A; --gold-ink:#8A6414; --gold-bg:#F5E9C8;
+  --lead-w:92px; --gut:12px;
+  color-scheme:light dark;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --felt:#10261D; --felt-deep:#0A1A13; --card:#1D211F; --ink:#EEEBE3;
-    --muted:#9A988F; --red:#E0595F; --line:#323834; --field:#272C29; --lead:#22362B;
+    --felt:#10261D; --felt-deep:#0A1A13;
+    --bg:#1A1D1B; --ink:#EEEBE3; --muted:#9A988F; --hair:rgba(255,255,255,.10);
+    --field:#262A27; --field-focus:#2F3430; --red:#E5636A; --accent:#6FC197;
+    --now:#202A24; --lead-bg:#24392D; --mat:rgba(26,29,27,.72); --mat-edge:rgba(255,255,255,.08);
+    --scrim:rgba(0,0,0,.55); --sheet:#1F2320;
+    --gold:#D9B65E; --gold-ink:#E7C66B; --gold-bg:#3A3220;
   }
 }
 :root[data-theme="dark"]{
-  --felt:#10261D; --felt-deep:#0A1A13; --card:#1D211F; --ink:#EEEBE3;
-  --muted:#9A988F; --red:#E0595F; --line:#323834; --field:#272C29; --lead:#22362B;
+  --felt:#10261D; --felt-deep:#0A1A13;
+  --bg:#1A1D1B; --ink:#EEEBE3; --muted:#9A988F; --hair:rgba(255,255,255,.10);
+  --field:#262A27; --field-focus:#2F3430; --red:#E5636A; --accent:#6FC197;
+  --now:#202A24; --lead-bg:#24392D; --mat:rgba(26,29,27,.72); --mat-edge:rgba(255,255,255,.08);
+  --scrim:rgba(0,0,0,.55); --sheet:#1F2320;
+    --gold:#D9B65E; --gold-ink:#E7C66B; --gold-bg:#3A3220;
 }
-*,*::before,*::after{box-sizing:inherit}
-html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
 body{
-  margin:0;min-height:100%;
-  background:radial-gradient(120% 80% at 50% 0%, var(--felt) 0%, var(--felt-deep) 100%);
+  margin:0;min-height:100vh;color:var(--ink);
+  background:radial-gradient(120% 60% at 50% 0%, var(--felt) 0%, var(--felt-deep) 100%) fixed;
   background-color:var(--felt-deep);
-  font-family:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
-  color:var(--ink);
-  padding:20px 14px 32px;
+  font:100%/1.45 "Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-tap-highlight-color:transparent;
 }
-.sheet{
-  max-width:560px;margin:0 auto;background:var(--card);
-  border-radius:14px;padding:22px 16px 18px;
+button{font:inherit;color:inherit;border:none;background:none;padding:0;cursor:pointer;touch-action:manipulation}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{
+  max-width:620px;margin:0 auto;
+  padding:calc(env(safe-area-inset-top,0px) + 10px) calc(env(safe-area-inset-right,0px) + 16px) 12px calc(env(safe-area-inset-left,0px) + 16px);
+  display:flex;justify-content:flex-end;
+}
+.title{
+  margin:0;text-align:center;font-family:"DM Serif Display",Georgia,serif;font-weight:400;
+  font-size:clamp(2.25rem,10vw,2.75rem);line-height:1.05;letter-spacing:-.01em
+}
+.sub{margin:4px 0 0;text-align:center;font-size:.9375rem;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.head{position:relative;padding:22px 16px 10px}
+.head::before,.legend-wrap::after{font-family:"DM Serif Display",Georgia,serif;font-size:1.5rem;line-height:1;position:absolute}
+.head::before{content:"♥";color:var(--red);top:18px;left:18px}
+.legend-wrap{position:relative;padding-bottom:34px}
+.legend-wrap::after{content:"♠";color:var(--ink);right:6px;bottom:0}
+.top-actions{display:flex;gap:8px;flex:none}
+.panel{display:flex;flex-direction:column;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.panel[hidden]{display:none}
+.rules{padding:0 2px 8px;font-size:1rem;line-height:1.5}
+.rules h3{margin:18px 0 4px;font-size:.8125rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.rules h3:first-child{margin-top:6px}
+.rules p{margin:0}
+.rules ol{margin:0;padding-left:1.3em}
+.rules li{margin:2px 0}
+.defs p{display:flex;gap:10px;align-items:baseline;margin:4px 0}
+.big{font-size:1.25rem;width:1.4em;flex:none;text-align:center;font-variant-emoji:text}
+.s{color:var(--red)}
+.rtab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.9375rem}
+.rtab th{font-size:.75rem;font-weight:700;color:var(--muted);text-align:left;padding:4px 6px 6px 0}
+.rtab td{padding:7px 6px 7px 0;border-top:1px solid var(--hair)}
+.rtab td:nth-child(n+3),.rtab th:nth-child(n+3){text-align:center}
+.rtab .sym{font-size:1rem}
+.pill{
+  flex:none;min-height:44px;padding:0 16px;border-radius:999px;font-weight:600;font-size:.9375rem;
+  background:rgba(255,255,255,.12);color:#F4EFE3;
+  transition:transform 100ms ease-out,background-color 100ms ease-out;
+}
+.pill:active{transform:scale(.96);background:rgba(255,255,255,.2)}
+
+.paper{
+  background:var(--bg);border-radius:18px 18px 0 0;min-height:calc(100vh - 60px);
+  margin:0 calc(env(safe-area-inset-right,0px) + 8px) 0 calc(env(safe-area-inset-left,0px) + 8px);
   box-shadow:0 18px 40px rgba(0,0,0,.35);
-  position:relative;
+  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 110px);
 }
-.sheet::before,.sheet::after{
-  font-family:"DM Serif Display",Georgia,serif;font-size:22px;line-height:1;position:absolute;color:var(--red)
+@media (min-width:640px){ .paper{max-width:620px;margin:0 auto} }
+.wrap{max-width:640px;margin:0 auto;padding:0 calc(env(safe-area-inset-right,0px) + var(--gut)) 0 calc(env(safe-area-inset-left,0px) + var(--gut))}
+.grid{display:grid;grid-template-columns:var(--lead-w) repeat(var(--n),minmax(0,1fr));column-gap:6px;align-items:center}
+
+.names{
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:5;
+  background:var(--mat);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);
 }
-.sheet::before{content:"♥";top:14px;left:16px}
-.sheet::after{content:"♠";bottom:14px;right:16px;color:var(--ink)}
-h1{
-  font-family:"DM Serif Display",Georgia,serif;font-weight:400;
-  font-size:clamp(28px,8vw,36px);line-height:1.05;margin:4px 0 4px;text-align:center
+/* Felt strip under the iPhone status bar so content never scrolls behind the clock */
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--felt-deep);z-index:15}
+.names .grid{padding:14px 0 10px}
+.names .lbl{font-size:.75rem;font-weight:600;color:var(--muted);letter-spacing:.02em;text-transform:uppercase;padding-left:4px}
+.name{
+  min-height:44px;line-height:44px;border-radius:10px;text-align:center;
+  font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:1.1875rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px;
+  transition:transform 100ms ease-out,background-color 100ms ease-out;
 }
-.sub{text-align:center;color:var(--muted);font-size:14px;margin:0 0 18px}
-.wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-th,td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--line)}
-thead th{font-size:13px;font-weight:600;color:var(--muted);padding-bottom:10px}
-thead th.p{font-family:"DM Serif Display",Georgia,serif;font-size:19px;font-weight:400;color:var(--ink)}
-td.r{font-weight:800;font-size:15px;width:2.2em}
-td.k{text-align:left}
-.krav{font-size:20px;letter-spacing:2px;line-height:1;white-space:nowrap}
-.krav .s{color:var(--red)}
-.krav .t{color:var(--ink)}
-.desc{display:block;font-size:12px;color:var(--muted);margin-top:3px}
-td.c{font-weight:800;font-size:17px}
-td.c small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
-input{
-  width:100%;min-width:3.6em;max-width:5.5em;
-  font:600 18px/1 "Manrope",system-ui,sans-serif;text-align:center;color:var(--ink);
-  background:var(--field);border:1.5px solid transparent;border-radius:8px;padding:10px 4px;
-  -moz-appearance:textfield;
+.name:active{transform:scale(.96);background:var(--field)}
+.name.empty{color:var(--muted)}
+
+.row{padding:8px 0;border-top:1px solid var(--hair)}
+.row.now{background:var(--now);border-radius:14px;border-top-color:transparent;margin:0 -6px;padding:8px 6px}
+.row.now + .row{border-top-color:transparent}
+.lead{display:flex;align-items:center;gap:8px;min-width:0}
+.num{
+  width:22px;height:22px;border-radius:999px;flex:none;display:grid;place-items:center;
+  font-size:.75rem;font-weight:800;background:var(--field);color:var(--muted);font-variant-numeric:tabular-nums
 }
-input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-input:focus{outline:none;border-color:var(--felt)}
-:root[data-theme="dark"] input:focus{border-color:#5FA57E}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) input:focus{border-color:#5FA57E}}
-tfoot td{border-bottom:none;padding-top:14px}
-tfoot .lbl{text-align:left;font-weight:800;font-size:15px}
+.row.now .num{background:var(--accent);color:var(--bg)}
+.row.past .num{background:transparent;color:var(--accent)}
+.req{line-height:1.15;min-width:0}
+.sym{font-size:1.0625rem;letter-spacing:1px;white-space:nowrap;font-variant-emoji:text}
+.sym .s{color:var(--red)}
+.cards{display:block;font-size:.75rem;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+input.score{
+  width:100%;height:48px;border-radius:12px;border:1.5px solid transparent;
+  background:var(--field);color:var(--ink);text-align:center;
+  font-family:inherit;font-size:1.125rem;font-weight:700;font-variant-numeric:tabular-nums;
+  -webkit-appearance:none;appearance:none;padding:0;
+  transition:background-color 120ms ease-out,border-color 120ms ease-out;
+}
+input.score:focus{outline:none;background:var(--field-focus);border-color:var(--accent)}
+input.score::placeholder{color:transparent}
+input.score.rwin{color:var(--gold-ink);box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--gold) 55%, transparent)}
+input.score.rwin::placeholder{color:var(--gold-ink);opacity:.7}
+
+.legend{margin:18px 4px 0;font-size:.8125rem;color:var(--muted)}
+.legend .s{color:var(--red)}
+
+.totals{
+  position:fixed;bottom:0;z-index:10;
+  left:calc(env(safe-area-inset-left,0px) + 8px);right:calc(env(safe-area-inset-right,0px) + 8px);
+  margin:0 auto;max-width:620px;
+  background:var(--mat);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);
+  border-top:1px solid var(--mat-edge);
+  box-shadow:0 -8px 24px rgba(0,0,0,.06);
+  padding:10px 0 calc(env(safe-area-inset-bottom,0px) + 10px);
+}
+.totals .lbl{font-weight:800;font-size:.9375rem;padding-left:4px}
 .tot{
-  font-family:"DM Serif Display",Georgia,serif;font-size:28px;line-height:1;
-  border-radius:10px;padding:8px 4px
+  text-align:center;border-radius:12px;padding:6px 0 5px;
+  font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:1.75rem;line-height:1.05;font-variant-numeric:tabular-nums;
+  transition:background-color 200ms ease-out;
 }
-.tot.lead{background:var(--lead)}
-.tot small{display:block;font-family:"Manrope",system-ui,sans-serif;font-size:11px;color:var(--muted);margin-top:4px;min-height:1em}
-.foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:12px;flex-wrap:wrap}
-.note{font-size:12px;color:var(--muted);margin:0}
-button{
-  font:600 14px "Manrope",system-ui,sans-serif;color:var(--red);background:none;
-  border:1.5px solid var(--line);border-radius:999px;padding:9px 16px;cursor:pointer
+.tot small{display:block;font-family:"Manrope",system-ui,sans-serif;font-size:.6875rem;font-weight:700;letter-spacing:.02em;color:var(--accent);min-height:1.1em;line-height:1.1}
+.tot.lead-player{background:var(--lead-bg)}
+
+.scrim{position:fixed;inset:0;background:var(--scrim);opacity:0;pointer-events:none;z-index:20}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:21;max-width:640px;margin:0 auto;
+  background:var(--sheet);border-radius:22px 22px 0 0;
+  box-shadow:0 -10px 40px rgba(0,0,0,.25);
+  padding:0 16px calc(env(safe-area-inset-bottom,0px) + 16px);
+  transform:translateY(110%);visibility:hidden;will-change:transform;
+  max-height:88vh;display:flex;flex-direction:column;
 }
-button:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.sheet::after{content:"";position:absolute;left:0;right:0;top:100%;height:120px;background:var(--sheet)}
+.grab{padding:8px 0 4px;touch-action:none;cursor:grab}
+.grab::before{content:"";display:block;width:38px;height:5px;border-radius:99px;background:var(--hair);margin:0 auto 10px}
+.sheet-head{display:flex;align-items:center;justify-content:space-between}
+.sheet-head h2{margin:0;font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:1.75rem}
+.done{min-height:44px;padding:0 4px 0 16px;font-weight:700;color:var(--accent);font-size:1.0625rem}
+.done:active{opacity:.6}
+.sheet-sub{margin:2px 0 14px;font-size:.875rem;color:var(--muted)}
+.plist{list-style:none;margin:0;padding:0;overflow-y:auto}
+.prow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.dot{width:28px;height:28px;border-radius:999px;flex:none;display:grid;place-items:center;font-size:.8125rem;font-weight:800;background:var(--field);color:var(--muted);font-variant-numeric:tabular-nums}
+.pin{
+  flex:1;min-width:0;height:50px;border-radius:12px;border:1.5px solid transparent;background:var(--field);
+  color:var(--ink);padding:0 14px;font-family:inherit;font-size:1.0625rem;font-weight:600;-webkit-appearance:none
+}
+.pin:focus{outline:none;border-color:var(--accent);background:var(--field-focus)}
+.rm{
+  width:44px;height:44px;border-radius:999px;flex:none;display:grid;place-items:center;color:var(--red);
+  font-size:1.5rem;font-weight:700;line-height:1;transition:transform 100ms ease-out,background-color 100ms ease-out
+}
+.rm:active{transform:scale(.92);background:var(--field)}
+.rm:disabled{opacity:.25;cursor:default}
+.add{
+  width:100%;min-height:50px;border-radius:12px;margin-top:4px;flex:none;
+  border:1.5px dashed var(--hair);color:var(--accent);font-weight:700;font-size:1rem;
+  transition:transform 100ms ease-out,background-color 100ms ease-out
+}
+.add:active{transform:scale(.98);background:var(--field)}
+.add:disabled{color:var(--muted);opacity:.6;cursor:default;transform:none}
+.danger{
+  width:100%;min-height:50px;border-radius:12px;margin-top:18px;background:var(--field);flex:none;
+  color:var(--red);font-weight:700;font-size:1rem;transition:transform 100ms ease-out
+}
+.danger:active{transform:scale(.98)}
+
+/* Winner */
+.name.winner{color:var(--gold-ink)}
+.tot.winner{background:var(--gold-bg);color:var(--gold-ink);box-shadow:inset 0 0 0 1.5px var(--gold)}
+.tot.winner small{color:var(--gold-ink)}
+#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:41;display:none}
+.win{
+  position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:24px;
+  background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity 260ms ease-out
+}
+.win.show{opacity:1;pointer-events:auto}
+.win-card{
+  width:100%;max-width:340px;text-align:center;background:var(--sheet);border-radius:24px;padding:22px 20px 18px;
+  box-shadow:0 0 0 2px var(--gold),0 24px 60px rgba(0,0,0,.4);
+  transform:scale(.9);filter:blur(6px);transition:transform 420ms cubic-bezier(.2,.9,.25,1.15),filter 300ms ease-out
+}
+.win.show .win-card{transform:scale(1);filter:blur(0)}
+.win-suits{margin:0 0 6px;font-size:1.25rem;letter-spacing:.3em;color:var(--ink)}
+.win-suits .s{color:var(--red)}
+.win-kicker{margin:0;font-size:.8125rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.win-name{
+  margin:4px 0 2px;font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:clamp(2.25rem,11vw,3rem);line-height:1.05;
+  background:linear-gradient(180deg,#E9CC74 0%,#C9A24A 45%,#9C7420 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  overflow-wrap:anywhere
+}
+.win-score{margin:0 0 18px;font-family:"DM Serif Display",Georgia,serif;font-size:1.5rem;color:var(--gold-ink)}
+.win-actions{display:grid;gap:8px}
+.win-btn{min-height:50px;border-radius:14px;font-weight:700;font-size:1rem;background:var(--field);transition:transform 100ms ease-out}
+.win-btn.primary{background:var(--gold);color:#1B1B1B}
+.win-btn:active{transform:scale(.97)}
+@media (prefers-reduced-motion: reduce){ .win-card{transform:none;filter:none;transition:none} }
+.toast{
+  position:fixed;left:50%;z-index:30;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 96px);
+  transform:translate(-50%,12px) scale(.96);opacity:0;pointer-events:none;
+  display:flex;align-items:center;gap:14px;
+  background:rgba(27,27,27,.86);color:#F4EFE3;
+  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+  border-radius:999px;padding:6px 6px 6px 18px;font-weight:600;font-size:.9375rem;white-space:nowrap;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
+  transition:opacity 220ms ease-out,transform 320ms cubic-bezier(.2,.9,.3,1);
+}
+.toast.show{opacity:1;transform:translate(-50%,0) scale(1);pointer-events:auto}
+.toast button{min-height:40px;padding:0 16px;border-radius:999px;background:rgba(255,255,255,.14);font-weight:700;color:#9FE0BC}
+.toast button:active{background:rgba(255,255,255,.24)}
+
+/* Many players: slimmer round column so names get the room */
+.many{--lead-w:60px}
+.many .num{display:none}
+.many .names .grid .name{font-size:.9375rem}
+.many .tot{font-size:1.375rem}
+@media (max-width:380px){ :root{--lead-w:80px;--gut:10px} .sym{font-size:.9375rem} }
+@media (prefers-reduced-motion: reduce){
+  .pill,.name,.rm,.add,.danger{transition:none}
+  .pill:active,.name:active,.rm:active,.add:active,.danger:active{transform:none}
+  .toast{transition:opacity 200ms ease;transform:translate(-50%,0)}
+}
+@media (prefers-reduced-transparency: reduce){
+  .names,.totals{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .toast{background:#1B1B1B;-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+@media (prefers-contrast: more){
+  :root{--hair:rgba(127,127,127,.6)}
+  input.score,.pin{border-color:var(--hair)}
+}
 </style>
 </head>
 <body>
-<main class="sheet">
-  <h1>Mollie mot Jeppe</h1>
-  <p class="sub">Skriv inn poengene hver sitter igjen med etter runden.</p>
-  <div class="wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Runde</th>
-          <th style="text-align:left">Krav</th>
-          <th>Kort</th>
-          <th class="p">Mollie</th>
-          <th class="p">Jeppe</th>
-        </tr>
-      </thead>
-      <tbody id="rows"></tbody>
-      <tfoot>
-        <tr>
-          <td class="lbl" colspan="3">Sum</td>
-          <td><div class="tot" id="tot-m">0<small></small></div></td>
-          <td><div class="tot" id="tot-j">0<small></small></div></td>
-        </tr>
-      </tfoot>
-    </table>
+<header class="top">
+  <div class="top-actions">
+    <button class="pill" id="openRules" type="button">Regler</button>
+    <button class="pill" id="openPlayers" type="button">Spillere</button>
   </div>
-  <div class="foot">
-    <p class="note">✱ stjerne (3 like) &nbsp; ▬ stripe (4 på rad i samme sort)</p>
-    <button id="reset" type="button">Nytt spill</button>
+</header>
+
+<main class="paper">
+  <div class="head">
+    <h1 class="title">Rummy</h1>
+    <p class="sub" id="status"></p>
+  </div>
+  <div class="names">
+    <div class="wrap"><div class="grid" id="names"></div></div>
+  </div>
+  <div class="wrap">
+    <div id="rows"></div>
+    <div class="legend-wrap"><p class="legend"><span class="s">✱</span> stjerne: tre like &nbsp;·&nbsp; ▬ stripe: fire på rad i samme sort. Lavest sum vinner.</p></div>
   </div>
 </main>
-<script>
-const rounds = [
-  {s:2,t:0,cards:8},
-  {s:1,t:1,cards:9},
-  {s:0,t:2,cards:10},
-  {s:3,t:0,cards:10},
-  {s:2,t:1,cards:10},
-  {s:1,t:2,cards:10}
-];
-const KEY = "rummy-mollie-jeppe";
-let data = {m:Array(6).fill(""), j:Array(6).fill("")};
-try{ const raw = localStorage.getItem(KEY); if(raw){ const d = JSON.parse(raw); if(d && d.m && d.j) data = d; } }catch(e){}
 
-function word(n, one, many){ return n === 1 ? one : many; }
-function desc(r){
-  const parts = [];
-  if(r.s) parts.push(r.s + " " + word(r.s,"stjerne","stjerner"));
-  if(r.t) parts.push(r.t + " " + word(r.t,"stripe","striper"));
-  return parts.join(" og ");
+<footer class="totals">
+  <div class="wrap"><div class="grid" id="totals"></div></div>
+</footer>
+
+<div class="scrim" id="scrim"></div>
+<section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="grab" id="grab">
+    <div class="sheet-head">
+      <h2 id="sheetTitle">Spillere</h2>
+      <button class="done" id="done" type="button">Ferdig</button>
+    </div>
+  </div>
+  <div class="panel" id="pPlayers">
+    <p class="sheet-sub">2 til 6 spillere. Trykk på et navn for å endre det.</p>
+    <ul class="plist" id="plist"></ul>
+    <button class="add" id="addPlayer" type="button">+ Legg til spiller</button>
+    <button class="danger" id="newGame" type="button">Nytt spill</button>
+  </div>
+  <div class="panel rules" id="pRules" hidden>
+    <h3>Målet</h3>
+    <p>Bli kvitt kortene dine. Etter seks runder vinner den med <b>lavest</b> sum.</p>
+    <h3>Utstyr</h3>
+    <p>To kortstokker. Alle toere og jokere er jokere og kan brukes som hva som helst. Med to stokker blir det åtte toere og fire jokere.</p>
+    <h3>Byggeklossene</h3>
+    <div class="defs">
+      <p><span class="s big">✱︎</span><span><b>Stjerne:</b> tre kort med samme tall, for eksempel tre åttere.</span></p>
+      <p><span class="big">▬</span><span><b>Stripe:</b> fire kort på rad i samme sort, for eksempel 5, 6, 7 og 8 i hjerter.</span></p>
+    </div>
+    <h3>Rundene</h3>
+    <table class="rtab">
+      <thead><tr><th>Runde</th><th>Krav</th><th>2 spillere</th><th>3 til 6</th></tr></thead>
+      <tbody id="rulesRounds"></tbody>
+    </table>
+    <h3>Slik går en tur</h3>
+    <ol>
+      <li>Trekk ett kort.</li>
+      <li>Har du kravet for runden, kan du legge det ut.</li>
+      <li>Når du har lagt ut, kan du legge kort på alle utlagte bunker, også motstandernes.</li>
+      <li>Avslutt med å kaste ett kort.</li>
+    </ol>
+    <h3>Gå ut</h3>
+    <p>Runden er over når noen har kvittet seg med alle kortene. Siste runde (<span class="s">✱︎</span>▬▬) krever elleve kort, så der trekker du og går ut uten å kaste.</p>
+    <h3>Poeng</h3>
+    <p>Alle andre teller kortene de sitter igjen med og skriver summen inn i runden sin. Den som gikk ut, får 0 og kan la ruten stå tom. Når alle rundene er ført, kåres vinneren.</p>
+  </div>
+</section>
+
+<canvas id="confetti" aria-hidden="true"></canvas>
+<div class="win" id="win" role="dialog" aria-modal="true" aria-labelledby="winName">
+  <div class="win-card">
+    <p class="win-suits"><span class="s">♥</span> ♠ <span class="s">♦</span> ♣</p>
+    <p class="win-kicker" id="winKicker">Vinneren er</p>
+    <h2 class="win-name" id="winName"></h2>
+    <p class="win-score" id="winScore"></p>
+    <div class="win-actions">
+      <button class="win-btn primary" id="winNew" type="button">Nytt spill</button>
+      <button class="win-btn" id="winClose" type="button">Se tabellen</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toastMsg"></span><button id="toastUndo" type="button">Angre</button></div>
+
+<script>
+(() => {
+const ROUNDS = [
+  {s:2,t:0,cards:8},{s:1,t:1,cards:9},{s:0,t:2,cards:10},
+  {s:3,t:0,cards:10},{s:2,t:1,cards:10},{s:1,t:2,cards:10}
+];
+const MIN = 2, MAX = 6, KEY = "rummy-v2";
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const blank = () => ({id:uid(), name:"", sc:Array(ROUNDS.length).fill("")});
+
+let st = null;
+try { const r = localStorage.getItem(KEY); if (r) { const d = JSON.parse(r); if (d && Array.isArray(d.players) && d.players.length >= MIN) st = d; } } catch(e) {}
+const firstRun = !st;
+if (!st) st = {players:[blank(), blank()]};
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e) {} };
+const label = (p, i) => p.name.trim() || ("Spiller " + (i + 1));
+const clone = o => JSON.parse(JSON.stringify(o));
+
+/* ---------- Score sheet ---------- */
+const sym = r => '<span class="s">' + "✱︎".repeat(r.s) + '</span>' + "▬".repeat(r.t);
+// Two players: 8, 9, then 10 cards. Three or more: 10 cards every round.
+const cardsFor = r => st.players.length >= 3 ? 10 : r.cards;
+$("rulesRounds").innerHTML = ROUNDS.map((r,i) =>
+  '<tr><td>' + (i+1) + '</td><td><span class="sym">' + sym(r) + '</span></td><td>' + r.cards + '</td><td>10</td></tr>').join("");
+// A blank counts as 0. A round is done when everyone except at most one player
+// (the one who went out) has a number in it.
+const roundDone = i => st.players.filter(p => p.sc[i] !== "").length >= Math.max(1, st.players.length - 1);
+function currentRound(){
+  for (let i = 0; i < ROUNDS.length; i++) if (!roundDone(i)) return i;
+  return -1;
 }
-const tbody = document.getElementById("rows");
-rounds.forEach((r,i)=>{
-  const tr = document.createElement("tr");
-  const sym = '<span class="s">' + "✱".repeat(r.s) + '</span><span class="t">' + "▬".repeat(r.t) + '</span>';
-  tr.innerHTML =
-    '<td class="r">'+(i+1)+'</td>'+
-    '<td class="k"><span class="krav">'+sym+'</span><span class="desc">'+desc(r)+'</span></td>'+
-    '<td class="c">'+r.cards+'<small>kort</small></td>'+
-    '<td><input inputmode="numeric" pattern="[0-9]*" aria-label="Mollie runde '+(i+1)+'" data-p="m" data-i="'+i+'"></td>'+
-    '<td><input inputmode="numeric" pattern="[0-9]*" aria-label="Jeppe runde '+(i+1)+'" data-p="j" data-i="'+i+'"></td>';
-  tbody.appendChild(tr);
-});
-const inputs = [...document.querySelectorAll("input")];
-inputs.forEach(inp=>{
-  inp.value = data[inp.dataset.p][inp.dataset.i] || "";
-  inp.addEventListener("input",()=>{
-    inp.value = inp.value.replace(/[^0-9]/g,"");
-    data[inp.dataset.p][inp.dataset.i] = inp.value;
-    save(); total();
+function renderAll(){
+  document.documentElement.style.setProperty("--n", st.players.length);
+  document.body.classList.toggle("many", st.players.length >= 5);
+  $("names").innerHTML = '<div class="lbl">Runde</div>' + st.players.map((p,i) =>
+    '<button type="button" class="name' + (p.name.trim() ? '' : ' empty') + '" data-open>' + esc(label(p,i)) + '</button>').join("");
+  $("rows").innerHTML = ROUNDS.map((r,ri) =>
+    '<div class="row grid">' +
+      '<div class="lead"><span class="num">' + (ri+1) + '</span><span class="req"><span class="sym">' + sym(r) + '</span><span class="cards">' + cardsFor(r) + ' kort</span></span></div>' +
+      st.players.map((p,pi) =>
+        '<input class="score" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="0" ' +
+        'aria-label="' + esc(label(p,pi)) + ', runde ' + (ri+1) + '" data-p="' + pi + '" data-r="' + ri + '" value="' + esc(p.sc[ri]) + '">').join("") +
+    '</div>').join("");
+  $("totals").innerHTML = '<div class="lbl">Sum</div>' + st.players.map(() => '<div class="tot">0<small></small></div>').join("");
+  refresh();
+}
+function refresh(){
+  const val = v => parseInt(v,10) || 0;
+  const sums = st.players.map(p => p.sc.reduce((a,v) => a + val(v), 0));
+  const done = ROUNDS.map((_,i) => roundDone(i));
+  const fair = st.players.map(p => p.sc.reduce((a,v,i) => a + (done[i] ? val(v) : 0), 0));
+  const cur = currentRound(), finished = cur === -1;
+  const best = Math.min(...fair);
+  const top = fair.map((f,i) => f === best ? i : -1).filter(i => i >= 0);
+  const showLead = !finished && done.some(Boolean) && top.length < fair.length;
+  [...$("totals").querySelectorAll(".tot")].forEach((el,i) => {
+    const isTop = top.includes(i);
+    el.firstChild.nodeValue = sums[i];
+    el.classList.toggle("lead-player", showLead && isTop);
+    el.classList.toggle("winner", finished && isTop);
+    el.querySelector("small").textContent = finished && isTop ? "vinner" : (showLead && isTop ? "leder" : "");
   });
-});
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){} }
-function sum(a){ return a.reduce((s,v)=>s+(parseInt(v,10)||0),0); }
-function total(){
-  const m = sum(data.m), j = sum(data.j);
-  const tm = document.getElementById("tot-m"), tj = document.getElementById("tot-j");
-  const any = data.m.concat(data.j).some(v=>v!=="");
-  tm.firstChild.nodeValue = m; tj.firstChild.nodeValue = j;
-  tm.classList.toggle("lead", any && m<j);
-  tj.classList.toggle("lead", any && j<m);
-  tm.querySelector("small").textContent = any && m<j ? "lavest" : "";
-  tj.querySelector("small").textContent = any && j<m ? "lavest" : "";
+  [...$("names").querySelectorAll(".name")].forEach((el,i) => el.classList.toggle("winner", finished && top.includes(i)));
+  [...$("rows").children].forEach((row,i) => {
+    row.classList.toggle("now", i === cur);
+    row.classList.toggle("past", finished || i < cur);
+    // Round winner: lowest score in a finished round (blank = 0)
+    const vals = st.players.map(p => val(p.sc[i])), lo = Math.min(...vals);
+    const clear = done[i] && vals.some(v => v !== lo);
+    row.querySelectorAll("input.score").forEach((inp,pi) => inp.classList.toggle("rwin", clear && vals[pi] === lo));
+  });
+  if (finished) {
+    $("status").textContent = (top.length > 1 ? "Delt seier: " : "Vinner: ") + top.map(i => label(st.players[i], i)).join(" og ");
+  } else {
+    $("status").textContent = "Runde " + (cur+1) + " av " + ROUNDS.length + " · " + cardsFor(ROUNDS[cur]) + " kort hver";
+  }
+  // Celebrate once per finished game. Short pause so it doesn't fire mid-typing.
+  clearTimeout(celebrateTimer);
+  if (finished && !st.celebrated) {
+    celebrateTimer = setTimeout(() => {
+      if (currentRound() !== -1 || st.celebrated) return;
+      st.celebrated = true; save();
+      celebrate(top.map(i => label(st.players[i], i)), best);
+    }, 900);
+  } else if (!finished && st.celebrated) { st.celebrated = false; save(); }
 }
-document.getElementById("reset").addEventListener("click",()=>{
-  if(!confirm("Slette alle poeng og starte nytt spill?")) return;
-  data = {m:Array(6).fill(""), j:Array(6).fill("")};
-  inputs.forEach(i=>i.value="");
-  save(); total();
+let celebrateTimer = null;
+
+/* ---------- Winner overlay + confetti ---------- */
+function celebrate(names, score){
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  $("winKicker").textContent = names.length > 1 ? "Delt seier" : "Vinneren er";
+  $("winName").textContent = names.join(" og ");
+  $("winScore").textContent = score + " poeng";
+  $("win").classList.add("show");
+  if (!reduced) confetti();
+}
+function hideWin(){ $("win").classList.remove("show"); }
+$("winClose").addEventListener("click", hideWin);
+$("winNew").addEventListener("click", () => { hideWin(); newGame(); });
+$("win").addEventListener("click", e => { if (e.target === $("win")) hideWin(); });
+
+function confetti(){
+  const cv = $("confetti"), ctx = cv.getContext("2d"), dpr = Math.min(2, devicePixelRatio || 1);
+  const W = innerWidth, Ht = innerHeight;
+  cv.width = W * dpr; cv.height = Ht * dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  cv.style.display = "block";
+  const colors = ["#C9A24A","#E7C66B","#B8242B","#1E6B4A","#FBF8F2","#F2D27A"];
+  const parts = [];
+  const burst = (x, dir) => { for (let i = 0; i < 90; i++) {
+    const a = (-Math.PI/2) + dir * (Math.random() * 0.9 + 0.15), sp = 520 + Math.random() * 520;
+    parts.push({x, y: Ht * 0.78, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: Math.random() * Math.PI,
+      vr: (Math.random() - .5) * 14, w: 6 + Math.random() * 6, h: 9 + Math.random() * 8,
+      c: colors[(Math.random() * colors.length) | 0], wob: Math.random() * 10 });
+  }};
+  burst(0, 1); burst(W, -1);
+  let last = performance.now(); const t0 = last;
+  const step = now => {
+    const dt = Math.min(0.033, (now - last) / 1000); last = now;
+    ctx.clearRect(0, 0, W, Ht);
+    let alive = 0;
+    for (const p of parts) {
+      p.vy += 900 * dt; p.vx *= Math.pow(0.35, dt); p.vy *= Math.pow(0.55, dt);
+      p.x += (p.vx + Math.sin((now/1000) * 6 + p.wob) * 40) * dt; p.y += p.vy * dt; p.r += p.vr * dt;
+      if (p.y < Ht + 30) alive++;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      ctx.scale(1, Math.abs(Math.cos(p.r * 1.7)) * 0.8 + 0.2);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h); ctx.restore();
+    }
+    if (alive && now - t0 < 6000) requestAnimationFrame(step);
+    else { ctx.clearRect(0, 0, W, Ht); cv.style.display = "none"; }
+  };
+  requestAnimationFrame(step);
+}
+$("rows").addEventListener("input", e => {
+  const t = e.target; if (!t.classList.contains("score")) return;
+  const clean = t.value.replace(/[^0-9]/g, "").slice(0,3);
+  if (clean !== t.value) t.value = clean;
+  st.players[+t.dataset.p].sc[+t.dataset.r] = clean;
+  save(); refresh();
 });
-total();
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
+$("rows").addEventListener("focusin", e => { if (e.target.classList.contains("score")) e.target.select(); });
+$("names").addEventListener("click", e => { if (e.target.closest("[data-open]")) openSheet(); });
+$("openPlayers").addEventListener("click", () => openSheet());
+$("openRules").addEventListener("click", () => openSheet("rules"));
+
+/* ---------- Toast with undo (instead of confirm dialogs) ---------- */
+let toastTimer = null, undoFn = null;
+function toast(msg, undo){
+  $("toastMsg").textContent = msg; undoFn = undo;
+  $("toast").classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, 5000);
+}
+function hideToast(){ $("toast").classList.remove("show"); undoFn = null; }
+$("toastUndo").addEventListener("click", () => { if (undoFn) undoFn(); hideToast(); });
+
+/* ---------- Player sheet ---------- */
+function renderPlayers(focusLast){
+  $("plist").innerHTML = st.players.map((p,i) =>
+    '<li class="prow"><span class="dot">' + (i+1) + '</span>' +
+    '<input class="pin" type="text" enterkeyhint="next" autocomplete="off" autocapitalize="words" maxlength="20" placeholder="Spiller ' + (i+1) + '" value="' + esc(p.name) + '" data-i="' + i + '" aria-label="Navn på spiller ' + (i+1) + '">' +
+    '<button class="rm" type="button" data-rm="' + i + '" aria-label="Fjern ' + esc(label(p,i)) + '"' + (st.players.length <= MIN ? ' disabled' : '') + '>−</button></li>').join("");
+  $("addPlayer").disabled = st.players.length >= MAX;
+  $("addPlayer").textContent = st.players.length >= MAX ? "Maks 6 spillere" : "+ Legg til spiller";
+  if (focusLast) { const ins = $("plist").querySelectorAll(".pin"); ins[ins.length-1].focus(); }
+}
+$("plist").addEventListener("input", e => {
+  if (!e.target.classList.contains("pin")) return;
+  st.players[+e.target.dataset.i].name = e.target.value;
+  save(); renderAll();
+});
+$("plist").addEventListener("keydown", e => {
+  if (e.key !== "Enter" || !e.target.classList.contains("pin")) return;
+  e.preventDefault();
+  const ins = [...$("plist").querySelectorAll(".pin")], i = ins.indexOf(e.target);
+  if (ins[i+1]) ins[i+1].focus(); else e.target.blur();
+});
+$("plist").addEventListener("click", e => {
+  const b = e.target.closest("[data-rm]"); if (!b || b.disabled) return;
+  const i = +b.dataset.rm, before = clone(st), name = label(st.players[i], i);
+  st.players.splice(i, 1); save(); renderPlayers(); renderAll();
+  toast(name + " fjernet", () => { st = before; save(); renderPlayers(); renderAll(); });
+});
+$("addPlayer").addEventListener("click", () => {
+  if (st.players.length >= MAX) return;
+  st.players.push(blank()); save(); renderPlayers(true); renderAll();
+});
+function newGame(){
+  const before = clone(st);
+  st.players.forEach(p => p.sc = Array(ROUNDS.length).fill(""));
+  st.celebrated = false;
+  save(); renderAll();
+  toast("Nytt spill startet", () => { st = before; save(); renderAll(); });
+}
+$("newGame").addEventListener("click", () => { closeSheet(); newGame(); });
+$("done").addEventListener("click", () => closeSheet());
+$("scrim").addEventListener("click", () => closeSheet());
+document.addEventListener("keydown", e => { if (e.key === "Escape" && sheetOpen) closeSheet(); });
+
+/* ---------- Spring-driven, interruptible sheet ---------- */
+const sheet = $("sheet"), scrim = $("scrim");
+let y = 0, H = 1, anim = 0, sheetOpen = false, visible = false;
+function setY(v){
+  y = v;
+  sheet.style.transform = "translateY(" + v + "px)";
+  scrim.style.opacity = Math.max(0, Math.min(1, 1 - v / H));
+}
+// Apple's damping/response model; critically damped by default. Always starts from the live value y.
+function spring(to, v0, {damping = 1, response = 0.35} = {}, done){
+  cancelAnimationFrame(anim); anim = 0;
+  if (reduced) { setY(to); if (done) done(); return; }
+  const k = Math.pow(2 * Math.PI / response, 2), c = 4 * Math.PI * damping / response;
+  let v = v0, last = performance.now();
+  const step = now => {
+    let dt = Math.min(0.032, (now - last) / 1000); last = now;
+    while (dt > 0) { const h = Math.min(dt, 1/240); v += (-k * (y - to) - c * v) * h; setY(y + v * h); dt -= h; }
+    if (Math.abs(v) < 2 && Math.abs(y - to) < 0.5) { setY(to); anim = 0; if (done) done(); return; }
+    anim = requestAnimationFrame(step);
+  };
+  anim = requestAnimationFrame(step);
+}
+function openSheet(mode = "players"){
+  const rules = mode === "rules";
+  $("pRules").hidden = !rules; $("pPlayers").hidden = rules;
+  $("sheetTitle").textContent = rules ? "Regler" : "Spillere";
+  if (rules) $("pRules").scrollTop = 0; else renderPlayers();
+  if (!visible) { sheet.style.visibility = "visible"; visible = true; H = sheet.offsetHeight || 1; setY(H); }
+  else H = sheet.offsetHeight || 1;
+  sheetOpen = true; scrim.style.pointerEvents = "auto";
+  spring(0, 0);
+}
+function closeSheet(v0 = 0){
+  if (document.activeElement && sheet.contains(document.activeElement)) document.activeElement.blur();
+  sheetOpen = false; scrim.style.pointerEvents = "none";
+  spring(H, v0, {}, () => { if (!sheetOpen) { sheet.style.visibility = "hidden"; visible = false; } });
+}
+// Drag to dismiss: 1:1 tracking from grab offset, rubber-band upward, momentum projection on release
+const project = (vel, d = 0.998) => (vel / 1000) * d / (1 - d);
+const rubber = (over, dim, c = 0.55) => (over * dim * c) / (dim + c * Math.abs(over));
+let drag = null;
+const grab = $("grab");
+grab.addEventListener("pointerdown", e => {
+  if (e.target.closest("button")) return;
+  cancelAnimationFrame(anim); anim = 0;
+  grab.setPointerCapture(e.pointerId);
+  drag = {start: e.clientY, from: y, hist: [{y: e.clientY, t: e.timeStamp}]};
+});
+grab.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const raw = drag.from + (e.clientY - drag.start);
+  setY(raw < 0 ? -rubber(-raw, H) : raw);
+  drag.hist.push({y: e.clientY, t: e.timeStamp});
+  if (drag.hist.length > 6) drag.hist.shift();
+});
+function endDrag(){
+  if (!drag) return;
+  const h = drag.hist, a = h[0], b = h[h.length - 1];
+  const vel = b.t > a.t ? (b.y - a.y) / ((b.t - a.t) / 1000) : 0;
+  drag = null;
+  if (y + project(vel) > H * 0.5) closeSheet(vel);
+  else spring(0, vel, {damping: 0.8, response: 0.3});
+}
+grab.addEventListener("pointerup", endDrag);
+grab.addEventListener("pointercancel", endDrag);
+addEventListener("resize", () => { if (visible) H = sheet.offsetHeight || 1; });
+
+renderAll();
+if (firstRun) setTimeout(openSheet, 250);
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
 </script>
 </body>
 </html>
