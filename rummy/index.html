@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rummy</title>
+<meta name="theme-color" content="#163829">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rummy">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --felt:#1E4A38; --felt-deep:#163829; --card:#FBF8F2; --ink:#1B1B1B;
+  --muted:#6B6A64; --red:#B8242B; --line:#E4DED2; --field:#F2EEE5; --lead:#E9F1EA;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --felt:#10261D; --felt-deep:#0A1A13; --card:#1D211F; --ink:#EEEBE3;
+    --muted:#9A988F; --red:#E0595F; --line:#323834; --field:#272C29; --lead:#22362B;
+  }
+}
+:root[data-theme="dark"]{
+  --felt:#10261D; --felt-deep:#0A1A13; --card:#1D211F; --ink:#EEEBE3;
+  --muted:#9A988F; --red:#E0595F; --line:#323834; --field:#272C29; --lead:#22362B;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;min-height:100%;
+  background:radial-gradient(120% 80% at 50% 0%, var(--felt) 0%, var(--felt-deep) 100%);
+  background-color:var(--felt-deep);
+  font-family:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color:var(--ink);
+  padding:20px 14px 32px;
+}
+.sheet{
+  max-width:560px;margin:0 auto;background:var(--card);
+  border-radius:14px;padding:22px 16px 18px;
+  box-shadow:0 18px 40px rgba(0,0,0,.35);
+  position:relative;
+}
+.sheet::before,.sheet::after{
+  font-family:"DM Serif Display",Georgia,serif;font-size:22px;line-height:1;position:absolute;color:var(--red)
+}
+.sheet::before{content:"♥";top:14px;left:16px}
+.sheet::after{content:"♠";bottom:14px;right:16px;color:var(--ink)}
+h1{
+  font-family:"DM Serif Display",Georgia,serif;font-weight:400;
+  font-size:clamp(28px,8vw,36px);line-height:1.05;margin:4px 0 4px;text-align:center
+}
+.sub{text-align:center;color:var(--muted);font-size:14px;margin:0 0 18px}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--line)}
+thead th{font-size:13px;font-weight:600;color:var(--muted);padding-bottom:10px}
+thead th.p{font-family:"DM Serif Display",Georgia,serif;font-size:19px;font-weight:400;color:var(--ink)}
+td.r{font-weight:800;font-size:15px;width:2.2em}
+td.k{text-align:left}
+.krav{font-size:20px;letter-spacing:2px;line-height:1;white-space:nowrap}
+.krav .s{color:var(--red)}
+.krav .t{color:var(--ink)}
+.desc{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+td.c{font-weight:800;font-size:17px}
+td.c small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+input{
+  width:100%;min-width:3.6em;max-width:5.5em;
+  font:600 18px/1 "Manrope",system-ui,sans-serif;text-align:center;color:var(--ink);
+  background:var(--field);border:1.5px solid transparent;border-radius:8px;padding:10px 4px;
+  -moz-appearance:textfield;
+}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input:focus{outline:none;border-color:var(--felt)}
+:root[data-theme="dark"] input:focus{border-color:#5FA57E}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) input:focus{border-color:#5FA57E}}
+tfoot td{border-bottom:none;padding-top:14px}
+tfoot .lbl{text-align:left;font-weight:800;font-size:15px}
+.tot{
+  font-family:"DM Serif Display",Georgia,serif;font-size:28px;line-height:1;
+  border-radius:10px;padding:8px 4px
+}
+.tot.lead{background:var(--lead)}
+.tot small{display:block;font-family:"Manrope",system-ui,sans-serif;font-size:11px;color:var(--muted);margin-top:4px;min-height:1em}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:12px;flex-wrap:wrap}
+.note{font-size:12px;color:var(--muted);margin:0}
+button{
+  font:600 14px "Manrope",system-ui,sans-serif;color:var(--red);background:none;
+  border:1.5px solid var(--line);border-radius:999px;padding:9px 16px;cursor:pointer
+}
+button:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+</style>
+</head>
+<body>
+<main class="sheet">
+  <h1>Mollie mot Jeppe</h1>
+  <p class="sub">Skriv inn poengene hver sitter igjen med etter runden.</p>
+  <div class="wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Runde</th>
+          <th style="text-align:left">Krav</th>
+          <th>Kort</th>
+          <th class="p">Mollie</th>
+          <th class="p">Jeppe</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+      <tfoot>
+        <tr>
+          <td class="lbl" colspan="3">Sum</td>
+          <td><div class="tot" id="tot-m">0<small></small></div></td>
+          <td><div class="tot" id="tot-j">0<small></small></div></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div class="foot">
+    <p class="note">✱ stjerne (3 like) &nbsp; ▬ stripe (4 på rad i samme sort)</p>
+    <button id="reset" type="button">Nytt spill</button>
+  </div>
+</main>
+<script>
+const rounds = [
+  {s:2,t:0,cards:8},
+  {s:1,t:1,cards:9},
+  {s:0,t:2,cards:10},
+  {s:3,t:0,cards:10},
+  {s:2,t:1,cards:10},
+  {s:1,t:2,cards:10}
+];
+const KEY = "rummy-mollie-jeppe";
+let data = {m:Array(6).fill(""), j:Array(6).fill("")};
+try{ const raw = localStorage.getItem(KEY); if(raw){ const d = JSON.parse(raw); if(d && d.m && d.j) data = d; } }catch(e){}
+
+function word(n, one, many){ return n === 1 ? one : many; }
+function desc(r){
+  const parts = [];
+  if(r.s) parts.push(r.s + " " + word(r.s,"stjerne","stjerner"));
+  if(r.t) parts.push(r.t + " " + word(r.t,"stripe","striper"));
+  return parts.join(" og ");
+}
+const tbody = document.getElementById("rows");
+rounds.forEach((r,i)=>{
+  const tr = document.createElement("tr");
+  const sym = '<span class="s">' + "✱".repeat(r.s) + '</span><span class="t">' + "▬".repeat(r.t) + '</span>';
+  tr.innerHTML =
+    '<td class="r">'+(i+1)+'</td>'+
+    '<td class="k"><span class="krav">'+sym+'</span><span class="desc">'+desc(r)+'</span></td>'+
+    '<td class="c">'+r.cards+'<small>kort</small></td>'+
+    '<td><input inputmode="numeric" pattern="[0-9]*" aria-label="Mollie runde '+(i+1)+'" data-p="m" data-i="'+i+'"></td>'+
+    '<td><input inputmode="numeric" pattern="[0-9]*" aria-label="Jeppe runde '+(i+1)+'" data-p="j" data-i="'+i+'"></td>';
+  tbody.appendChild(tr);
+});
+const inputs = [...document.querySelectorAll("input")];
+inputs.forEach(inp=>{
+  inp.value = data[inp.dataset.p][inp.dataset.i] || "";
+  inp.addEventListener("input",()=>{
+    inp.value = inp.value.replace(/[^0-9]/g,"");
+    data[inp.dataset.p][inp.dataset.i] = inp.value;
+    save(); total();
+  });
+});
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){} }
+function sum(a){ return a.reduce((s,v)=>s+(parseInt(v,10)||0),0); }
+function total(){
+  const m = sum(data.m), j = sum(data.j);
+  const tm = document.getElementById("tot-m"), tj = document.getElementById("tot-j");
+  const any = data.m.concat(data.j).some(v=>v!=="");
+  tm.firstChild.nodeValue = m; tj.firstChild.nodeValue = j;
+  tm.classList.toggle("lead", any && m<j);
+  tj.classList.toggle("lead", any && j<m);
+  tm.querySelector("small").textContent = any && m<j ? "lavest" : "";
+  tj.querySelector("small").textContent = any && j<m ? "lavest" : "";
+}
+document.getElementById("reset").addEventListener("click",()=>{
+  if(!confirm("Slette alle poeng og starte nytt spill?")) return;
+  data = {m:Array(6).fill(""), j:Array(6).fill("")};
+  inputs.forEach(i=>i.value="");
+  save(); total();
+});
+total();
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
+</script>
+</body>
+</html>
