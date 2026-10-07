@@ -864,6 +864,71 @@ name er vinens navn slik det står på etiketten, uten produsenten hvis den stå
 
 /* ================= Profile ================= */
 const splitList = s => String(s || "").split(/\s*(?:,|\/|&|\+|\bog\b)\s*/i).map(x => x.trim()).filter(Boolean);
+/* ---- Favorittdruens opprinnelsesland, vist som en tynn flaggstripe ---- */
+const GRAPE_ORIGIN = (() => {
+  const m = {
+    italia: "nebbiolo, sangiovese, brunello, barbera, dolcetto, pigato, vermentino, nero d'avola, aglianico, montepulciano, corvina, corvinone, rondinella, garganega, glera, prosecco, trebbiano, nerello mascalese, nerello cappuccio, frappato, lagrein, teroldego, fiano, greco, greco di tufo, falanghina, arneis, cortese, verdicchio, sagrantino, negroamaro, lambrusco, grillo, catarratto, carricante, friulano, ribolla gialla, refosco, schiava, gaglioppo, canaiolo, cannonau, grignolino, freisa, ruchè, timorasso, pecorino, passerina, primitivo, traminer, gewürztraminer",
+    frankrike: "cabernet sauvignon, merlot, pinot noir, spätburgunder, pinot nero, chardonnay, sauvignon blanc, syrah, shiraz, chenin blanc, gamay, cabernet franc, malbec, côt, carménère, viognier, marsanne, roussanne, sémillon, melon de bourgogne, melon, muscadet, cinsault, cinsaut, petit verdot, tannat, pinot meunier, meunier, pinot blanc, pinot bianco, pinot gris, pinot grigio, aligoté, petit manseng, gros manseng, colombard, ugni blanc, folle blanche, picpoul, durif, petite sirah, mondeuse, savagnin, poulsard, trousseau, jacquère, négrette",
+    spania: "tempranillo, tinta roriz, tinto fino, garnacha, grenache, garnatxa, grenache blanc, garnacha blanca, monastrell, mourvèdre, mataró, albariño, verdejo, godello, mencía, macabeo, viura, xarel·lo, xarel-lo, xarello, parellada, cariñena, carignan, mazuelo, graciano, palomino, pedro ximénez, bobal, hondarrabi zuri, prieto picudo",
+    portugal: "touriga nacional, touriga franca, tinta barroca, tinto cão, baga, alvarinho, arinto, loureiro, encruzado, castelão, trincadeira, alfrocheiro, fernão pires, avesso",
+    tyskland: "riesling, müller-thurgau, rivaner, dornfelder, scheurebe, kerner, trollinger",
+    "østerrike": "grüner veltliner, blaufränkisch, kékfrankos, lemberger, zweigelt, st. laurent, sankt laurent, sylvaner, silvaner, rotgipfler, zierfandler",
+    hellas: "assyrtiko, xinomavro, agiorgitiko, moschofilero, malagousia, muscat, moscato, moscatel, savatiano, mavrodaphne",
+    ungarn: "furmint, hárslevelű, kadarka, juhfark",
+    georgia: "saperavi, rkatsiteli, mtsvane, kisi",
+    kroatia: "plavac mali, zinfandel, crljenak, pošip",
+    "sør-afrika": "pinotage",
+    sveits: "chasselas, petite arvine, cornalin, humagne",
+    argentina: "torrontés",
+  };
+  const out = {};
+  for (const [land, list] of Object.entries(m)) for (const n of list.split(",")) out[normTxt(n)] = land;
+  return out;
+})();
+const FLAGS = {
+  italia: [["#009246", 1], ["#F4F5F0", 1], ["#CE2B37", 1]],
+  frankrike: [["#002395", 1], ["#F4F5F0", 1], ["#ED2939", 1]],
+  spania: [["#AA151B", 1], ["#F1BF00", 2], ["#AA151B", 1]],
+  portugal: [["#046A38", 2], ["#DA291C", 3]],
+  tyskland: [["#1A1A1A", 1], ["#DD0000", 1], ["#FFCE00", 1]],
+  "østerrike": [["#C8102E", 1], ["#F4F5F0", 1], ["#C8102E", 1]],
+  hellas: [["#0D5EAF", 1], ["#F4F5F0", 1], ["#0D5EAF", 1], ["#F4F5F0", 1], ["#0D5EAF", 1]],
+  ungarn: [["#CE2939", 1], ["#F4F5F0", 1], ["#477050", 1]],
+  georgia: [["#F4F5F0", 1], ["#E8112D", 1], ["#F4F5F0", 1]],
+  kroatia: [["#FF0000", 1], ["#F4F5F0", 1], ["#171796", 1]],
+  "sør-afrika": [["#007A4D", 2], ["#FFB612", 1], ["#DE3831", 2], ["#002395", 2]],
+  sveits: [["#DA291C", 1], ["#F4F5F0", 1], ["#DA291C", 1]],
+  argentina: [["#74ACDF", 1], ["#F4F5F0", 1], ["#74ACDF", 1]],
+  usa: [["#B22234", 1], ["#F4F5F0", 1], ["#3C3B6E", 1]],
+  chile: [["#0039A6", 1], ["#F4F5F0", 1], ["#D52B1E", 1]],
+  australia: [["#012169", 3], ["#F4F5F0", 1], ["#E4002B", 1]],
+  "new zealand": [["#012169", 3], ["#F4F5F0", 1], ["#C8102E", 1]],
+  slovenia: [["#F4F5F0", 1], ["#0000FF", 1], ["#FF0000", 1]],
+  libanon: [["#ED1C24", 1], ["#F4F5F0", 2], ["#00A651", .6], ["#F4F5F0", 2], ["#ED1C24", 1]],
+  israel: [["#F4F5F0", 1], ["#0038B8", 1], ["#F4F5F0", 1]],
+  romania: [["#002B7F", 1], ["#FCD116", 1], ["#CE1126", 1]],
+  moldova: [["#0046AE", 1], ["#FFD200", 1], ["#CC092F", 1]],
+  bulgaria: [["#F4F5F0", 1], ["#00966E", 1], ["#D62612", 1]],
+  canada: [["#D80621", 1], ["#F4F5F0", 2], ["#D80621", 1]],
+  uruguay: [["#F4F5F0", 1], ["#0038A8", 1], ["#F4F5F0", 1], ["#0038A8", 1]],
+  armenia: [["#D90012", 1], ["#0033A0", 1], ["#F2A800", 1]],
+  england: [["#F4F5F0", 1], ["#CE1124", 1], ["#F4F5F0", 1]],
+  storbritannia: [["#012169", 2], ["#F4F5F0", 1], ["#C8102E", 1], ["#F4F5F0", 1], ["#012169", 2]],
+  tyrkia: [["#E30A17", 1], ["#F4F5F0", 1], ["#E30A17", 1]],
+};
+const COUNTRY_ALIAS = { "frankrike": "frankrike", "france": "frankrike", "italy": "italia", "spain": "spania", "germany": "tyskland", "austria": "østerrike", "greece": "hellas", "hungary": "ungarn", "croatia": "kroatia", "south africa": "sør-afrika", "sor-afrika": "sør-afrika", "sør afrika": "sør-afrika", "switzerland": "sveits", "usa": "usa", "united states": "usa", "california": "usa", "oregon": "usa", "new zealand": "new zealand", "ny zealand": "new zealand", "new-zealand": "new zealand", "lebanon": "libanon", "uk": "storbritannia", "england": "england", "turkey": "tyrkia" };
+const countryKey = c => { const n = String(c || "").trim().toLowerCase(); return FLAGS[n] ? n : COUNTRY_ALIAS[n] || null; };
+function grapeCountry(grape) {
+  const g = normTxt(grape);
+  if (GRAPE_ORIGIN[g]) return GRAPE_ORIGIN[g];
+  // Reserve: landet flest av vinene dine med denne druen kommer fra
+  const n = {};
+  for (const w of state.wines) if (grapeKeys(w).some(k => normTxt(k) === g)) { const c = countryKey(String(w.region || "").split(",").pop()); if (c) n[c] = (n[c] || 0) + 1; }
+  return Object.entries(n).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+}
+const flagStripe = land => { const f = FLAGS[land]; if (!f) return ""; const label = land === "usa" ? "USA" : cap(land);
+  return `<span class="fstripe" role="img" aria-label="${esc(label)}" title="${esc(label)}">${f.map(([c, w]) => `<i style="flex:${w};background:${c}"${c === "#F4F5F0" ? ' class="w"' : ""}></i>`).join("")}</span>`; };
+
 function groupScores(getKeys) {
   const W = rated(), g = {}, m = avg(W.map(w => w.rating));
   for (const w of W) for (const k of getKeys(w)) { const key = cap(k); (g[key] ??= { n: 0, s: 0 }); g[key].n++; g[key].s += w.rating; }
@@ -945,7 +1010,7 @@ function renderProfile() {
     html += `<div class="stats">
         <div><span class="v">${W.length}</span><span class="k">${W.length === 1 ? "vin" : "viner"}</span></div>
         <div><span class="v">${fmt1(avg(W.map(w => w.rating)))}</span><span class="k">i snitt</span></div>
-        <div><span class="v word">${esc(fav ? fav.k : "–")}</span><span class="k">favorittdrue</span></div></div>
+        <div>${fav ? `<span class="fav"><span class="v word">${esc(fav.k)}</span>${flagStripe(grapeCountry(fav.k))}</span>` : `<span class="v word">–</span>`}<span class="k">favorittdrue</span></div></div>
       <section class="panel">
         <div style="display:flex;justify-content:space-between;align-items:baseline"><h2 class="eyebrow">Smaksavtrykk</h2>
           <span class="legend"><span><i style="background:var(--accent)"></i>Det du liker</span><span><i style="background:var(--faint)"></i>Alt</span></span></div>
