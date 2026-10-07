@@ -82,7 +82,7 @@ function toast(msg, action) {
 }
 
 /* ================= Tabs + compact top bar ================= */
-const TITLES = { logg: "Logg", profil: "Profil", rad: "Råd", kjeller: "Kjeller" };
+const TITLES = { logg: "Logg", profil: "Din smaksprofil", rad: "Råd", kjeller: "Vinkjeller" };
 function setTab(name) {
   state.tab = name;
   $$(".tabbar .tab[data-tab]").forEach(b => b.setAttribute("aria-current", b.dataset.tab === name ? "page" : "false"));
@@ -568,6 +568,24 @@ document.addEventListener("visibilitychange", () => {
 document.addEventListener("click", e => { if (e.target.closest("[data-retry-enrich]")) { e.preventDefault(); lastRetry = Date.now(); retryEnrich(); } });
 
 /* ================= Shared bits ================= */
+// Penere visningsnavn i listene: uten produsent foran, årgang og betegnelser som DOCG/AOC. Lagrede data endres ikke.
+const APPELL = /\b(DOCG|DOC|DOCa|DOQ|AOC|AOP|IGT|IGP|VdP|QbA|D\.O\.C?\.?G?\.?|A\.O\.C\.)(?=\s|$|,)/gi;
+function cleanName(w) {
+  let n = String(w.name || "").replace(/\s+/g, " ").trim();
+  if (!n) return "Uten navn";
+  const orig = n;
+  if (w.vintage) n = n.replace(new RegExp(`(^|\\s)${w.vintage}(?=\\s|$)`), " ");
+  n = n.replace(APPELL, " ").replace(/\s+/g, " ").replace(/[\s,·–-]+$/, "").trim();
+  const p = String(w.producer || "").trim();
+  if (p && n.toLowerCase().startsWith(p.toLowerCase() + " ") && n.length - p.length > 3) n = n.slice(p.length).trim();
+  if (n.length < 3) n = orig;
+  return n.charAt(0).toLocaleUpperCase("nb-NO") + n.slice(1);
+}
+const listSub = w => {
+  const parts = [w.producer && String(w.producer).trim(), w.vintage].filter(Boolean);
+  if (!parts.length) parts.push(...[w.grape, w.region && String(w.region).split(",")[0]].filter(Boolean));
+  return parts.map(esc).join(" · ");
+};
 const metaOf = w => [w.producer, w.grape, w.region && String(w.region).split(",")[0], w.vintage].filter(Boolean).map(esc).join(" · ");
 const shortDate = d => { try { return new Date(d + "T12:00:00").toLocaleDateString("nb-NO", { day: "numeric", month: "short" }); } catch { return ""; } };
 const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
@@ -615,8 +633,8 @@ function renderLog() {
     return `<div class="group"><span class="eyebrow">${esc(label)}</span>${g.items.map(w => swipeRow({
       kind: "wine", id: w.id,
       lead: `<span class="glass" style="background:${glass(w.type)}"></span>`,
-      title: esc(w.name),
-      sub: `${pend.has(w.id) ? `<i class="pending-dot" title="Venter på nett"></i>` : ""}<span>${metaOf(w) || esc(shortDate(w.drankAt))}</span>`,
+      title: esc(cleanName(w)),
+      sub: `${pend.has(w.id) ? `<i class="pending-dot" title="Venter på nett"></i>` : ""}<span>${listSub(w) || esc(shortDate(w.drankAt))}</span>`,
       trail: `<span class="rate">${Number.isFinite(w.rating) ? w.rating : "–"}</span>`,
       actions: [{ act: "del", label: "Slett", c: "red" }],
     })).join("")}</div>`;
@@ -671,7 +689,7 @@ function wineDetail(w) {
     title: "", left: "", right: "Ferdig", rightPlain: true,
     html: `
       <div class="d-head"><span class="glass lg" style="background:${glass(w.type)}"></span>
-        <div class="stack"><h2>${esc(w.name)}</h2><span class="small muted" id="d_meta">${metaOf(w) || "&nbsp;"}</span><span class="small muted">${facts}</span></div></div>
+        <div class="stack"><h2>${esc(cleanName(w))}</h2><span class="small muted" id="d_meta">${metaOf(w) || "&nbsp;"}</span><span class="small muted">${facts}</span></div></div>
       <div class="d-score"><div style="display:flex;align-items:baseline;gap:6px"><span class="big">${Number.isFinite(w.rating) ? w.rating : "–"}</span><span class="of">/10</span></div><span class="word">${esc(WORDS[w.rating] || "")}</span></div>
       ${w.note ? `<section class="fieldset"><h3 class="eyebrow">Ditt notat</h3><p class="quote">«${esc(w.note)}»</p><div class="tags" id="d_tags">${tagsHTML(w)}</div></section>` : ""}
       <section class="fieldset" id="d_ai">${aiBlock(w)}</section>
@@ -896,9 +914,12 @@ function radar(liked, all) {
   if (DIMS.some(([k]) => liked[k] != null)) g += `<polygon points="${poly(liked)}" fill="var(--accent)" fill-opacity=".10" stroke="var(--accent)" stroke-width="1.8" stroke-linejoin="round"/>`;
   return `<svg viewBox="0 0 342 236" role="img" aria-label="Smaksavtrykk">${g}</svg>`;
 }
-let profileCtl = null, profileAiText = "";
+// «Om smaken din»: lagres på telefonen og skrives på nytt av seg selv for hver tredje nye vin du gir karakter.
+const PROFILE_EVERY = 3;
+let profileCtl = null, profileRun = null, profileAutoFailAt = 0;
+const savedProfile = () => ls.get(K("profileAi"), null);
 function renderProfile() {
-  const W = rated(), el = $("#profileBody");
+  const W = rated(), el = $("#profileBody"), sp = savedProfile();
   $("#profEyebrow").textContent = displayName(state.user);
   let html = "";
   if (!W.length) {
@@ -911,6 +932,7 @@ function renderProfile() {
         <div><span class="v">${W.length}</span><span class="k">${W.length === 1 ? "vin" : "viner"}</span></div>
         <div><span class="v">${fmt1(avg(W.map(w => w.rating)))}</span><span class="k">i snitt</span></div>
         <div><span class="v word">${esc(fav ? fav.k : "–")}</span><span class="k">favorittdrue</span></div></div>
+      <button type="button" class="next-cta" id="nextGo"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3.5l1.6 4.6a3 3 0 0 0 1.8 1.8L18 11.5l-4.6 1.6a3 3 0 0 0-1.8 1.8L10 19.5l-1.6-4.6a3 3 0 0 0-1.8-1.8L2 11.5l4.6-1.6a3 3 0 0 0 1.8-1.8z"></path><path d="M18.5 2.5v4M16.5 4.5h4"></path><path d="M19 16.5v3M17.5 18h3"></path></svg></span><span class="tx"><b>Hva bør jeg velge neste gang?</b><span>AI-forslag ut fra smaken din</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
       <section class="panel">
         <div style="display:flex;justify-content:space-between;align-items:baseline"><h2 class="eyebrow">Smaksavtrykk</h2>
           <span class="legend"><span><i style="background:var(--accent)"></i>Det du liker</span><span><i style="background:var(--faint)"></i>Alt</span></span></div>
@@ -918,22 +940,31 @@ function renderProfile() {
       </section>
       ${tc.likes.length || tc.dislikes.length ? `<section class="panel"><h2 class="eyebrow">Fra notatene dine</h2><div class="tags">${tc.likes.map(t => `<span class="tag">+ ${esc(t)}</span>`).join("")}${tc.dislikes.map(t => `<span class="tag neg">− ${esc(t)}</span>`).join("")}</div></section>` : ""}
       <section class="panel"><h2 class="eyebrow">Om smaken din</h2>
-        <p class="ai-text" id="aiOut">${esc(profileAiText)}</p>
-        <div class="progress" id="aiStatus" hidden><span class="spin"></span><span>Leser profilen</span></div>
+        ${sp?.text ? `<p class="ai-text" id="aiOut">${esc(sp.text)}</p>` : `<p class="small muted" id="aiOut">${W.length < PROFILE_EVERY ? `Skrives når du har gitt karakter til ${PROFILE_EVERY} viner.` : ""}</p>`}
+        <div class="progress" id="aiStatus" ${profileRun ? "" : "hidden"}><span class="spin"></span><span>${sp?.text ? "Oppdaterer med de nye vinene" : "Leser profilen"}</span></div>
         <p class="err" id="aiErr" hidden></p>
-        <button class="link" type="button" id="aiGo" style="align-self:flex-start">${profileAiText ? "Les på nytt" : "Hva sier profilen min?"}</button>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+          <span class="small" style="color:var(--faint)">${sp?.text ? `Basert på ${sp.n} ${sp.n === 1 ? "vin" : "viner"} · ${W.length - sp.n > 0 ? `${W.length - sp.n} ny${W.length - sp.n === 1 ? "" : "e"} siden sist` : "oppdatert"}` : ""}</span>
+          <button class="link" type="button" id="aiGo" style="flex:none" ${profileRun ? "disabled" : ""}>${sp?.text ? "Oppdater nå" : "Skriv nå"}</button>
+        </div>
       </section>`;
   }
   html += accountHTML();
   el.innerHTML = html;
-  $("#aiGo")?.addEventListener("click", runProfileAI);
+  $("#aiGo")?.addEventListener("click", () => runProfileAI());
+  $("#nextGo")?.addEventListener("click", nextSheet);
+  // Automatisk oppdatering: første gang ved 3 viner, deretter for hver tredje nye
+  if (W.length >= PROFILE_EVERY && !profileRun && navigator.onLine && Date.now() - profileAutoFailAt > 10 * 60000
+      && (!sp?.text || W.length - (sp.n || 0) >= PROFILE_EVERY)) runProfileAI({ auto: true });
   bindAccount();
 }
-async function runProfileAI() {
-  const out = $("#aiOut"), go = $("#aiGo"), st = $("#aiStatus"), err = $("#aiErr");
-  profileCtl = new AbortController(); go.disabled = true; err.hidden = true; st.hidden = false;
-  try {
-    profileAiText = (await ask(`Du er en erfaren sommelier. Under er vinprofilen til en person, bygget fra viner de har gitt karakter (1–10) og notatene deres.
+async function runProfileAI({ auto = false } = {}) {
+  if (profileRun) return profileRun;
+  const n = rated().length;
+  profileCtl = new AbortController();
+  profileRun = (async () => {
+    try {
+      const text = (await ask(`Du er en erfaren sommelier. Under er vinprofilen til en person, bygget fra viner de har gitt karakter (1–10) og notatene deres.
 
 ${profileText()}
 
@@ -941,9 +972,70 @@ Skriv på norsk bokmål, rett til personen (du-form), uten overskrifter, punktli
 1. 3–5 setninger om hva smaken deres faktisk er: hvilke stiler, druer og strukturer de belønner, og hva de trekker for. Vis til konkrete viner og til det de selv har skrevet. Si fra hvis datagrunnlaget er tynt.
 2. Avslutt med to konkrete forslag til viner eller stiler de bør prøve, ett trygt og ett som utfordrer smaken litt.
 Ikke bruk tankestrek som skilletegn.`, { signal: profileCtl.signal, kind: "profil", max_tokens: 900 })).trim();
-    out.textContent = profileAiText; go.textContent = "Les på nytt";
-  } catch (e) { if (e.code !== "cancelled") { err.textContent = aiErrText(e); err.hidden = false; } }
-  finally { go.disabled = false; st.hidden = true; }
+      if (text) ls.set(K("profileAi"), { text, n, at: Date.now() });
+    } catch (e) {
+      if (auto) profileAutoFailAt = Date.now();
+      if (e.code !== "cancelled") { const err = $("#aiErr"); if (err && state.tab === "profil") { err.textContent = aiErrText(e); err.hidden = false; } }
+      const st = $("#aiStatus"), go = $("#aiGo"); if (st) st.hidden = true; if (go) go.disabled = false;
+      return;
+    } finally { profileRun = null; }
+    if (state.tab === "profil") renderProfile();
+  })();
+  if (state.tab === "profil") { const st = $("#aiStatus"), go = $("#aiGo"); if (st) st.hidden = false; if (go) go.disabled = true; }
+  return profileRun;
+}
+
+/* ---- Neste vin: AI-forslag (rød/hvit/musserende, trygt eller utfordrende) ---- */
+let nextCtl = null;
+function nextSheet() {
+  const last = ls.get(K("nextPick"), { type: "rød", mode: "trygt" });
+  const seg = (id, label, opts, cur) => `<div class="fieldset"><span class="eyebrow">${label}</span>
+    <div class="seg" role="radiogroup" aria-label="${label}" id="${id}"><span class="thumb"></span>${opts.map(([v, l]) => `<button type="button" role="radio" aria-checked="${v === cur}" data-v="${v}">${l}</button>`).join("")}</div></div>`;
+  openSheet({
+    title: "Neste vin", left: "", right: "Ferdig", rightPlain: true,
+    html: `${seg("nx_type", "Type", [["rød", "Rød"], ["hvit", "Hvit"], ["musserende", "Musserende"]], last.type)}
+      ${seg("nx_mode", "Hva vil du ha?", [["trygt", "Noe jeg vil like"], ["nytt", "Utfordre meg"]], last.mode)}
+      <p class="hint" id="nx_hint"></p>
+      <button class="btn accent block" type="button" id="nx_go">Finn forslag</button>
+      <div class="progress" id="nx_status" hidden><span class="spin"></span><span>Tenker på smaken din</span><button class="link muted" id="nx_stop" type="button" style="margin-left:auto">Stopp</button></div>
+      <p class="err" id="nx_err" hidden></p>
+      <div id="nx_out"></div>`,
+    onClose: () => nextCtl?.abort(),
+    mount: b => {
+      const hint = () => { $("#nx_hint", b).textContent = segVal($("#nx_mode", b)) === "nytt"
+        ? "Noe du ikke har prøvd, men med en bro til det du liker."
+        : "Nær det du har gitt høy karakter, men ikke noe du allerede har logget."; };
+      hint(); $("#nx_mode", b).addEventListener("click", () => setTimeout(hint));
+      $("#nx_stop", b).addEventListener("click", () => nextCtl?.abort());
+      $("#nx_go", b).addEventListener("click", () => runNext(b));
+    },
+  });
+}
+async function runNext(b) {
+  const type = segVal($("#nx_type", b)) || "rød", mode = segVal($("#nx_mode", b)) || "trygt";
+  ls.set(K("nextPick"), { type, mode });
+  const where = segVal($("#buyWhere")) || "no";
+  const shop = where === "no" ? "Vinmonopolet i Norge (priser i NOK)" : where === "fr" ? "en vanlig vinbutikk eller cave i Frankrike (oppgi pris i euro)" : "en vanlig vinbutikk";
+  const go = $("#nx_go", b), st = $("#nx_status", b), err = $("#nx_err", b), out = $("#nx_out", b);
+  nextCtl = new AbortController(); go.disabled = true; st.hidden = false; err.hidden = true; out.innerHTML = "";
+  const TYPE_TXT = { "rød": "rødvin", "hvit": "hvitvin", "musserende": "musserende vin (champagne, crémant, cava, franciacorta, pet-nat o.l.)" };
+  try {
+    const r = await askJSON(`Du er sommelier og foreslår hvilken vin personen bør velge neste gang. Smaksprofilen deres, bygget fra viner de har gitt karakter (1–10) og notatene deres:
+${profileText()}
+
+De vil ha: ${TYPE_TXT[type]}.
+${mode === "trygt"
+  ? "Mål: noe de med stor sannsynlighet vil like. Hold deg nær stilene, druene og strukturen de har gitt høy karakter, og unngå det de har trukket for. Ikke foreslå viner de allerede har logget."
+  : "Mål: utfordre smaksløkene. Foreslå druer, regioner eller stiler de IKKE har prøvd ennå, men som har en tydelig bro til noe de liker (for eksempel samme syre eller struktur). Forklar broen. Unngå det de tydelig har mislikt."}
+De kjøper hos: ${shop}. Velg viner som er vanlige å finne der; du kan ikke sjekke lagerstatus, så velg heller kjente produsenter enn sjeldne. Prisene er omtrentlige.${rated().length < 3 ? " Profilen er tynn, så si det kort i note." : ""}
+
+JSON-format:
+{"picks": [{"name": "vin med produsent", "style": "Type · Drue · Region", "price": "omtrentlig pris", "match": 0-100, "why": "1–2 setninger om hvorfor, med henvisning til viner de har vurdert eller det de har skrevet"}], "note": "én kort setning" | null}
+
+Gi 3 forslag, beste først. All tekst på norsk bokmål, uten tankestrek som skilletegn.`, { signal: nextCtl.signal, kind: "kjop", max_tokens: 1300 });
+    renderPicks(out, r, "buy", where);
+  } catch (e) { if (e?.code !== "cancelled") { err.textContent = aiErrText(e); err.hidden = false; } }
+  finally { go.disabled = false; st.hidden = true; go.textContent = "Nye forslag"; }
 }
 
 /* ---- Account ---- */
@@ -962,7 +1054,7 @@ function accountHTML() {
 function bindAccount() {
   $("#logoutBtn").addEventListener("click", async () => {
     if (outbox.length && !confirmInline("#logoutBtn", "Du har endringer som ikke er lagret ennå. Trykk igjen for å logge ut likevel.")) return;
-    ls.del(K("cache")); ls.del(K("outbox")); ls.del(K("draft"));
+    ls.del(K("cache")); ls.del(K("outbox")); ls.del(K("draft")); ls.del(K("profileAi"));
     await sb.auth.signOut();
   });
   $("#pwBtn").addEventListener("click", passwordSheet);
@@ -1154,7 +1246,8 @@ function renderCellar() {
   const bottles = C.reduce((s, b) => s + (b.qty || 0), 0), value = C.reduce((s, b) => s + (b.qty || 0) * (b.price || 0), 0);
   $("#cellarEyebrow").textContent = bottles ? (value ? `Verdi ${kr(value)}` : `${bottles} flasker`) : "Din kjeller";
   if (!C.length) {
-    el.innerHTML = `<div class="empty"><h2>Kjelleren er tom</h2><p>Legg inn flaskene du har liggende. Da ser du hva som bør drikkes først, og rådene kan foreslå noe du allerede eier.</p><button class="btn dark" type="button" id="emptyBottle">Legg til en flaske</button></div>`;
+    $("#cellarRings").innerHTML = "";
+    el.innerHTML = `<div class="empty"><h2>Vinkjelleren er tom</h2><p>Legg inn flaskene du har liggende. Da ser du hva som bør drikkes først, og rådene kan foreslå noe du allerede eier.</p><button class="btn dark" type="button" id="emptyBottle">Legg til en flaske</button></div>`;
     $("#emptyBottle").addEventListener("click", () => bottleForm({}));
     return;
   }
@@ -1163,15 +1256,21 @@ function renderCellar() {
   const SECTIONS = ["Drikk snart", "Klar", "Lagres", "Tomme"];
   const pend = pendingIds();
   const sorted = [...C].sort((a, b) => bottleRank(a) - bottleRank(b) || (a.drinkTo || 9999) - (b.drinkTo || 9999) || String(a.name).localeCompare(String(b.name), "nb"));
-  let html = bottles ? `<div class="dist" role="img" aria-label="${counts.map((n, i) => `${n} ${LABELS[i]}`).join(", ")}">${counts.map((n, i) => n ? `<span style="flex:${n};background:${COLORS[i]}"></span>` : "").join("")}</div>
-    <div class="dist-legend">${counts.map((n, i) => `<span><i style="background:${COLORS[i]}"></i><b>${n}</b> ${LABELS[i]}</span>`).join("")}</div>` : "";
+  // To ringer ved tittelen: modning (drikk snart / klare / lagres) og type (rød / hvit / musserende …)
+  const TYPE_RING = [["rød", "rød", "var(--wine-red)"], ["hvit", "hvit", "#E3C96B"], ["musserende", "musserende", "#B9AE8E"], ["rosé", "rosé", "#EFA59B"], ["oransje", "oransje", "#D9894A"], ["søt", "søt", "#8F5A17"], ["", "annet", "var(--faint)"]];
+  const tcounts = TYPE_RING.map(([t]) => C.filter(b => (TYPES.includes(b.type) ? b.type : "") === t).reduce((s, b) => s + (b.qty || 0), 0));
+  const typeShown = TYPE_RING.map((t, i) => [...t, tcounts[i]]).filter((t, i) => tcounts[i] || i < 3);
+  $("#cellarRings").innerHTML = bottles ? ring(counts.map((n, i) => [n, COLORS[i]]), bottles) + ring(typeShown.map(t => [t[3], t[2]]), "") : "";
+  let html = bottles ? `<div class="dist-legend two" role="img" aria-label="${counts.map((n, i) => `${n} ${LABELS[i]}`).join(", ")}; ${typeShown.map(t => `${t[3]} ${t[1]}`).join(", ")}">
+      <div class="ln">${counts.map((n, i) => `<span><i style="background:${COLORS[i]}"></i><b>${n}</b> ${LABELS[i]}</span>`).join("")}</div>
+      <div class="ln">${typeShown.map(t => `<span><i style="background:${t[2]}"></i><b>${t[3]}</b> ${t[1]}</span>`).join("")}</div></div>` : "";
   for (let r = 0; r < 4; r++) {
     const items = sorted.filter(b => bottleRank(b) === r); if (!items.length) continue;
     html += `<div class="group"><span class="eyebrow" style="${r === 0 ? "color:var(--accent)" : ""}">${SECTIONS[r]}</span>${items.map(b => swipeRow({
       kind: "bottle", id: b.id,
       lead: `<span class="qty">${b.qty || 0}</span>`,
-      title: esc(b.name),
-      sub: `${pend.has(b.id) ? `<i class="pending-dot"></i>` : ""}<span>${metaOf(b) || TYPE_LABEL[b.type] || ""}</span>`,
+      title: esc(cleanName(b)),
+      sub: `${pend.has(b.id) ? `<i class="pending-dot"></i>` : ""}<span>${listSub(b) || TYPE_LABEL[b.type] || ""}</span>`,
       trail: `<span class="window${r === 0 ? " soon" : ""}">${esc(windowText(b))}</span>`,
       actions: b.qty > 0 ? [{ act: "drink", label: "Drakk", c: "ink" }, { act: "del", label: "Slett", c: "red" }] : [{ act: "del", label: "Slett", c: "red" }],
     })).join("")}</div>`;
@@ -1179,6 +1278,17 @@ function renderCellar() {
   el.innerHTML = html;
 }
 $("#addBottleBtn").addEventListener("click", () => bottleForm({}));
+function ring(segs, center) {
+  const R = 20, Cf = 2 * Math.PI * R, tot = segs.reduce((s, [n]) => s + n, 0), parts = segs.filter(([n]) => n > 0);
+  const gap = parts.length > 1 ? 2.2 : 0;
+  let off = 0, arcs = "";
+  for (const [n, col] of parts) {
+    const len = Math.max(0.5, (n / tot) * Cf - gap);
+    arcs += `<circle cx="23" cy="23" r="${R}" stroke="${col}" stroke-dasharray="${len.toFixed(2)} ${(Cf - len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}"></circle>`;
+    off += (n / tot) * Cf;
+  }
+  return `<svg class="ring" viewBox="0 0 46 46"><g transform="rotate(-90 23 23)"><circle class="bg" cx="23" cy="23" r="${R}"></circle>${arcs}</g>${center !== "" ? `<text x="23" y="23.5">${center}</text>` : ""}</svg>`;
+}
 function drinkOne(b) {
   mutate("cellar", "upsert", b.id, { ...b, qty: Math.max(0, (b.qty || 0) - 1) });
   newWine({ name: b.name, producer: b.producer, vintage: b.vintage, type: b.type, grape: b.grape, region: b.region, price: b.price, where: "hjemme" });
@@ -1192,7 +1302,7 @@ function bottleDetail(b) {
     title: "", left: "", right: "Ferdig", rightPlain: true,
     html: `
       <div class="d-head"><span class="glass lg" style="background:${glass(b.type)}"></span>
-        <div class="stack"><h2>${esc(b.name)}</h2><span class="small muted">${metaOf(b) || "&nbsp;"}</span></div></div>
+        <div class="stack"><h2>${esc(cleanName(b))}</h2><span class="small muted">${metaOf(b) || "&nbsp;"}</span></div></div>
       <div class="d-score"><div style="display:flex;align-items:baseline;gap:8px"><span class="big" id="bd_qty">${qty}</span><span class="of" id="bd_w">${qty === 1 ? "flaske" : "flasker"}</span></div>
         <div class="stepper"><button type="button" data-a="minus" aria-label="En mindre" ${qty < 1 ? "disabled" : ""}>−</button><button type="button" data-a="plus" aria-label="En til">+</button></div></div>
       <dl class="facts" style="margin:0">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>

@@ -1,7 +1,7 @@
 // Vinprofil service worker. Øk VERSION når du laster opp nye filer.
 // Egne filer: nett først (oppdateringer slår inn med en gang), lagret kopi uten nett.
 // Skrifter: lagret kopi først. Database og AI går alltid rett på nettet.
-const VERSION = "vin-v6";
+const VERSION = "vin-v7";
 const SHELL = ["./", "./index.html", "./app.js", "./config.js", "./supabase.js", "./styles.js", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 const FONT_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
 
