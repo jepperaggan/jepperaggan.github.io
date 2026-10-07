@@ -6,8 +6,37 @@
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const fmt1 = n => (Math.round(n * 10) / 10).toFixed(1).replace(".", ",");
-const kr = n => Math.round(n).toLocaleString("nb-NO") + " kr";
+/* ================= Språk ================= */
+const I18N = window.VIN_I18N || { nb: {} };
+const LANGS = ["nb", "en", "sv"];
+const LANG = (() => {
+  try { const s = localStorage.getItem("vin-lang"); if (LANGS.includes(s)) return s; } catch {}
+  const n = (navigator.language || "").toLowerCase();
+  return /^(nb|nn|no)/.test(n) ? "nb" : n.startsWith("sv") ? "sv" : n.startsWith("en") ? "en" : "nb";
+})();
+const LOCALE = { nb: "nb-NO", en: "en-GB", sv: "sv-SE" }[LANG];
+function tx(key, vars) {
+  let s = I18N[LANG]?.[key] ?? I18N.nb?.[key] ?? key;
+  if (vars) s = s.replace(/\{([^{}]+)\}/g, (m, k) => vars[k] !== undefined ? vars[k] : m);
+  return s;
+}
+const tn = (n, one, many, vars = {}) => tx(n === 1 ? one : many, { n, ...vars });
+const phrases = key => tx(key).split(/\s*\|\s*/);
+const AI_LANG = { nb: "norsk bokmål", en: "engelsk (skriv svaret på engelsk)", sv: "svensk (skriv svaret på svenska)" }[LANG];
+document.documentElement.lang = LANG;
+function setLang(l) { try { localStorage.setItem("vin-lang", l); } catch {} location.reload(); }
+// Faste tekster i index.html: data-i18n (tekst), data-i18n-ph (placeholder), data-i18n-aria (aria-label), data-i18n-ph-list (fasetekster)
+function applyStatic(root = document) {
+  root.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = tx(el.dataset.i18n); });
+  root.querySelectorAll("[data-i18n-ph]").forEach(el => { el.placeholder = tx(el.dataset.i18nPh); });
+  root.querySelectorAll("[data-i18n-aria]").forEach(el => { el.setAttribute("aria-label", tx(el.dataset.i18nAria)); });
+  root.querySelectorAll("[data-i18n-phrases]").forEach(el => { const p = phrases(el.dataset.i18nPhrases); el.dataset.phrases = p.join("|"); el.textContent = p[0]; });
+}
+applyStatic();
+document.title = tx("app.name");
+
+const fmt1 = n => { const s = (Math.round(n * 10) / 10).toFixed(1); return LANG === "en" ? s : s.replace(".", ","); };
+const kr = n => Math.round(n).toLocaleString(LOCALE) + " kr";
 const today = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
 const YEAR = new Date().getFullYear();
 const numOrNull = v => { const n = parseFloat(String(v ?? "").replace(",", ".")); return Number.isFinite(n) ? n : null; };
@@ -17,7 +46,7 @@ const RM = matchMedia("(prefers-reduced-motion: reduce)");
 document.addEventListener("touchstart", () => {}, { passive: true }); // :active på iOS
 
 const TYPES = ["rød", "hvit", "rosé", "musserende", "oransje", "søt"];
-const TYPE_LABEL = { "rød": "Rød", "hvit": "Hvit", "rosé": "Rosé", "musserende": "Musser.", "oransje": "Oransje", "søt": "Søt" };
+const TYPE_LABEL = { "rød": tx("type.rød"), "hvit": tx("type.hvit"), "rosé": tx("type.rosé"), "musserende": tx("type.short.musserende"), "oransje": tx("type.oransje"), "søt": tx("type.søt") };
 const GLASS = {
   "rød": "radial-gradient(circle at 35% 30%, #A03A55 0%, #6A1A2E 55%, #3E0C1A 100%)",
   "hvit": "radial-gradient(circle at 35% 30%, #F6EBB8 0%, #E2CC7C 60%, #C9AE55 100%)",
@@ -28,9 +57,11 @@ const GLASS = {
   "": "radial-gradient(circle at 35% 30%, #E6E4E8 0%, #CFCCD2 60%, #B6B2BA 100%)",
 };
 const glass = t => GLASS[TYPES.includes(t) ? t : ""];
-const WORDS = { 1: "Udrikkelig", 2: "Dårlig", 3: "Svak", 4: "Middels", 5: "Helt ok", 6: "God", 7: "Veldig god", 8: "Fremragende", 9: "Enestående", 10: "Uforglemmelig" };
-const WHERE = [["restaurant", "Restaurant"], ["butikk", "Kjøpt"], ["hjemme", "Hjemme"], ["hos-noen", "Hos noen"]];
-const DIMS = [["fylde", "Fylde", ["lett", "lett", "middels", "fyldig", "fyldig"]], ["syre", "Syre", ["myk", "myk", "middels", "frisk", "frisk"]], ["tannin", "Tannin", ["glatt", "myk", "middels", "fast", "stram"]], ["sodme", "Sødme", ["tørr", "tørr", "halvtørr", "søtlig", "søt"]], ["frukt", "Frukt", ["dempet", "lite", "middels", "fruktig", "fruktig"]], ["eik", "Eik", ["ingen", "lite", "middels", "mye", "mye"]]];
+const WORDS = Object.fromEntries(Array.from({ length: 10 }, (_, i) => [i + 1, tx("rate." + (i + 1))]));
+const WHERE = ["restaurant", "butikk", "hjemme", "hos-noen"].map(k => [k, tx("where." + k)]);
+// Nivåord per egenskap (1–5): hvilket av de oversatte ordene hvert nivå bruker
+const LVL_MAP = { fylde: [0, 0, 1, 2, 2], syre: [0, 0, 1, 2, 2], tannin: [0, 1, 2, 3, 4], sodme: [0, 0, 1, 2, 3], frukt: [0, 1, 2, 3, 3], eik: [0, 1, 2, 3, 3] };
+const DIMS = ["fylde", "syre", "tannin", "sodme", "frukt", "eik"].map(k => { const w = tx("lvl." + k).split(/\s*·\s*/); return [k, tx("dim." + k), LVL_MAP[k].map(i => w[i] ?? w[w.length - 1])]; });
 const CFG = window.VIN_CONFIG || {};
 const CONFIGURED = !!(CFG.supabaseUrl && CFG.supabaseKey && !/DITT-PROSJEKT/.test(CFG.supabaseUrl) && !/LIM-INN/.test(CFG.supabaseKey));
 
@@ -82,7 +113,7 @@ function toast(msg, action) {
 }
 
 /* ================= Tabs + compact top bar ================= */
-const TITLES = { logg: "Logg", profil: "Din smaksprofil", rad: "Sommelier", kjeller: "Vinkjeller" };
+const TITLES = { logg: tx("title.log"), profil: tx("title.profile"), rad: tx("title.sommelier"), kjeller: tx("title.cellar") };
 function setTab(name) {
   state.tab = name;
   $$(".tabbar .tab[data-tab]").forEach(b => b.setAttribute("aria-current", b.dataset.tab === name ? "page" : "false"));
@@ -303,7 +334,7 @@ async function flush() {
       } catch (e) { error = { message: String(e) }; }
       inFlight = null;
       if (error && !permanent(error)) break;          // nett eller innlogging: prøv igjen senere
-      if (error) { console.warn("Forkastet endring", error); toast("En endring ble avvist av databasen."); }
+      if (error) { console.warn("Forkastet endring", error); toast(tx("e.rejected")); }
       outbox = outbox.filter(o => o !== op);
       ls.set(K("outbox"), outbox);
     }
@@ -325,13 +356,13 @@ async function loadAll({ quiet = false } = {}) {
     state.lastLoad = Date.now();
     saveCache(); onWines(); onCellar();
     runEnrich();
-  } catch (e) { if (!quiet && navigator.onLine) toast("Fikk ikke hentet fra databasen. Viser det som er lagret på telefonen."); }
+  } catch (e) { if (!quiet && navigator.onLine) toast(tx("e.loadFailed")); }
 }
 function removeWithUndo(kind, id) {
   const table = kind === "wine" ? "wines" : "cellar";
   const item = arrOf(table).find(x => x.id === id); if (!item) return;
   mutate(table, "delete", id);
-  toast(kind === "wine" ? `${item.name} er slettet` : `${item.name} er fjernet`, { label: "Angre", fn: () => mutate(table, "upsert", id, item) });
+  toast(kind === "wine" ? tx("d.deleted", { navn: item.name }) : tx("k.removed", { navn: item.name }), { label: tx("c.undo"), fn: () => mutate(table, "upsert", id, item) });
 }
 function onWines() { renderLog(); if (state.tab === "profil") renderProfile(); refreshOpenDetail(); }
 function onCellar() { renderCellar(); refreshOpenDetail(); }
@@ -383,21 +414,10 @@ function parseLoose(t) {
 }
 const askJSON = async (p, o = {}) => parseLoose(await ask(p + "\n\nSvar med kun JSON, uten annen tekst og uten kodeblokk.", { ...o, json: true }));
 function aiErrText(e) {
-  return ({
-    offline: "Ingen nettforbindelse. Prøv igjen når du har nett.",
-    not_signed_in: "Du er logget ut. Logg inn på nytt.",
-    daily_limit: "Dagens kvote for AI er brukt opp. Prøv igjen i morgen.",
-    rate_limited: "Gratiskvoten hos AI-tjenesten er brukt opp for nå (per minutt eller per døgn). Prøv igjen senere.",
-    image_rejected: "Bildet kunne ikke brukes. Prøv et annet bilde.",
-    missing_api_key: "AI er ikke koblet til ennå. Nøkkelen mangler i Supabase.",
-    bad_api_key: "AI-nøkkelen er feil eller utløpt.",
-    no_function: "AI-funksjonen finnes ikke ennå i Supabase.",
-    invalid_json: "Svaret kom i feil format. Prøv igjen.",
-    refused: "AI-en ville ikke svare på dette. Prøv å formulere deg annerledes.",
-    jwt_rejected: "Supabase avviste innloggingen før AI-funksjonen. Slå av «Verify JWT» på funksjonen ai.",
-    function_crashed: "AI-funksjonen krasjet i Supabase. Se Logs på funksjonen ai.",
-    upstream_error: "AI-tjenesten svarte med en feil.",
-  })[e && e.code] || "Noe gikk galt. Prøv igjen.";
+  const K = { offline: "e.offline", not_signed_in: "e.signedOut", daily_limit: "e.dailyLimit", rate_limited: "e.rateLimited", image_rejected: "e.image",
+    missing_api_key: "e.noKey", bad_api_key: "e.badKey", no_function: "e.noFunction", invalid_json: "e.json", refused: "e.refused",
+    jwt_rejected: "e.jwt", function_crashed: "e.crashed", upstream_error: "e.upstream" };
+  return tx(K[e && e.code] || "e.generic");
 }
 
 /* ---- Enrichment: shared profile cache → Vinmonopolet → style reference → AI ---- */
@@ -465,15 +485,15 @@ ${facts}
 ${style}
 
 Oppgave 1: Identifiser vinen og gi den typiske smaksprofilen på skala 1–5.${vmp?.clocks ? " Fylde, syre, tannin og sødme skal følge Vinmonopolets klokker omregnet til 1–5." : ""} Er du usikker på den nøyaktige vinen, hold deg til stilen og sett confidence lavere.
-Oppgave 2: Hent ut fra notatet hva personen likte og mislikte, som korte stikkord på norsk (1 til 3 ord, små bokstaver). Bare det som faktisk står i notatet. Tomme lister hvis notatet ikke sier noe.
+Oppgave 2: Hent ut fra notatet hva personen likte og mislikte, som korte stikkord på ${AI_LANG} (1 til 3 ord, små bokstaver). Bare det som faktisk står i notatet. Tomme lister hvis notatet ikke sier noe.
 
 JSON-format:
-{"style": "id fra stillisten"|null, "producer": string|null, "vintage": number|null, "type": "rød"|"hvit"|"rosé"|"musserende"|"oransje"|"søt", "grape": string|null, "region": "Region, Land" på norsk|null,
+{"style": "id fra stillisten"|null, "producer": string|null, "vintage": number|null, "type": "rød"|"hvit"|"rosé"|"musserende"|"oransje"|"søt", "grape": string|null, "region": "Region, Land" på ${AI_LANG}|null,
  "dims": {"fylde": 1-5, "syre": 1-5, "tannin": 1-5, "sodme": 1-5, "frukt": 1-5, "eik": 1-5},
- "profile": "én kort setning om stilen, uten tankestrek", "confidence": "høy"|"middels"|"lav",
+ "profile": "én kort setning om stilen på ${AI_LANG}, uten tankestrek", "confidence": "høy"|"middels"|"lav",
  "likes": [string], "dislikes": [string]}`;
 }
-const tagsPrompt = note => `Hent ut fra dette vinnotatet hva personen likte og mislikte, som korte stikkord på norsk (1 til 3 ord, små bokstaver). Bare det som faktisk står i notatet.
+const tagsPrompt = note => `Hent ut fra dette vinnotatet hva personen likte og mislikte, som korte stikkord på ${AI_LANG} (1 til 3 ord, små bokstaver). Bare det som faktisk står i notatet.
 Notat: "${note.slice(0, 1200)}"
 JSON-format: {"likes": [string], "dislikes": [string]}`;
 
@@ -551,7 +571,7 @@ async function runEnrich() {
         enrichErr.set(w.id, e || {});
         console.warn("Smaksprofil feilet", w.name, e);
         const c = e?.code || "ukjent";
-        if (!toastedErr.has(c) && c !== "offline") { toastedErr.add(c); toast("Smaksprofil: " + aiErrText(e)); }
+        if (!toastedErr.has(c) && c !== "offline") { toastedErr.add(c); toast(tx("e.tasteFailed", { feil: aiErrText(e) })); }
         refreshOpenDetail(); renderLog();
         if (["offline", "daily_limit", "missing_api_key", "bad_api_key", "no_function", "not_signed_in"].includes(e.code)) break;
       }
@@ -586,7 +606,7 @@ setInterval(() => {
 const APPELL = /\b(DOCG|DOC|DOCa|DOQ|AOC|AOP|IGT|IGP|VdP|QbA|D\.O\.C?\.?G?\.?|A\.O\.C\.)(?=\s|$|,)/gi;
 function cleanName(w) {
   let n = String(w.name || "").replace(/\s+/g, " ").trim();
-  if (!n) return "Uten navn";
+  if (!n) return tx("log.noName");
   const orig = n;
   if (w.vintage) n = n.replace(new RegExp(`(^|\\s)${w.vintage}(?=\\s|$)`), " ");
   n = n.replace(APPELL, " ").replace(/\s+/g, " ").replace(/[\s,·–-]+$/, "").trim();
@@ -601,7 +621,7 @@ const listSub = w => {
   return parts.map(esc).join(" · ");
 };
 const metaOf = w => [w.producer, w.grape, w.region && String(w.region).split(",")[0], w.vintage].filter(Boolean).map(esc).join(" · ");
-const shortDate = d => { try { return new Date(d + "T12:00:00").toLocaleDateString("nb-NO", { day: "numeric", month: "short" }); } catch { return ""; } };
+const shortDate = d => { try { return new Date(d + "T12:00:00").toLocaleDateString(LOCALE, { day: "numeric", month: "short" }); } catch { return ""; } };
 const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
 const rated = () => state.wines.filter(w => Number.isFinite(w.rating));
 const sortedWines = () => [...state.wines].sort((a, b) => (b.drankAt || "").localeCompare(a.drankAt || "") || (b.createdAt || 0) - (a.createdAt || 0));
@@ -617,9 +637,9 @@ function swipeRow({ kind, id, lead, title, sub, trail, actions }) {
 /* ================= Logg ================= */
 function renderLogEyebrow(pending = outbox.length) {
   const r = rated(), n = state.wines.length;
-  let t = n ? `${n} ${n === 1 ? "vin" : "viner"}${r.length ? " · snitt " + fmt1(avg(r.map(w => w.rating))) : ""}` : "Din vinlogg";
-  if (pending) t += ` · ${pending} venter`;
-  $("#logEyebrow").textContent = t;
+  let txt = n ? `${tn(n, "log.wine1", "log.wines")}${r.length ? " · " + tx("log.avg", { x: fmt1(avg(r.map(w => w.rating))) }) : ""}` : tx("log.eyebrowEmpty");
+  if (pending) txt += " · " + tx("log.pending", { n: pending });
+  $("#logEyebrow").textContent = txt;
 }
 function renderLog() {
   openSwipe = null;
@@ -627,13 +647,13 @@ function renderLog() {
   const el = $("#wineList"), q = $("#logSearch").value.trim().toLowerCase();
   $("#logSearchWrap").hidden = state.wines.length < 6;
   if (!state.wines.length) {
-    el.innerHTML = `<div class="empty"><h2>Ingen viner ennå</h2><p>Logg det du drikker og gi det en karakter. Smaksprofilen hentes automatisk, og etter fem til ti viner begynner appen å kjenne smaken din.</p><button class="btn accent" type="button" id="emptyAdd">Legg til første vin</button></div>`;
+    el.innerHTML = `<div class="empty"><h2>${tx("log.emptyTitle")}</h2><p>${tx("log.emptyBody")}</p><button class="btn accent" type="button" id="emptyAdd">${tx("log.emptyCta")}</button></div>`;
     $("#emptyAdd").addEventListener("click", () => newWine());
     return;
   }
   const pend = pendingIds();
   const list = sortedWines().filter(w => !q || [w.name, w.producer, w.grape, w.region, w.note, w.vintage].join(" ").toLowerCase().includes(q));
-  if (!list.length) { el.innerHTML = `<p class="muted" style="padding:16px 0">Ingen treff på «${esc(q)}».</p>`; return; }
+  if (!list.length) { el.innerHTML = `<p class="muted" style="padding:16px 0">${esc(tx("log.noHits", { q }))}</p>`; return; }
   const groups = [];
   for (const w of list) {
     const key = (w.drankAt || "").slice(0, 7);
@@ -642,15 +662,15 @@ function renderLog() {
     g.items.push(w);
   }
   el.innerHTML = groups.map(g => {
-    let label = "Uten dato";
-    try { if (g.key) label = cap(new Date(g.key + "-15T12:00:00").toLocaleDateString("nb-NO", { month: "long", year: "numeric" })); } catch {}
+    let label = tx("log.noDate");
+    try { if (g.key) label = cap(new Date(g.key + "-15T12:00:00").toLocaleDateString(LOCALE, { month: "long", year: "numeric" })); } catch {}
     return `<div class="group"><span class="eyebrow">${esc(label)}</span>${g.items.map(w => swipeRow({
       kind: "wine", id: w.id,
       lead: `<span class="glass" style="background:${glass(w.type)}"></span>`,
       title: esc(cleanName(w)),
-      sub: `${pend.has(w.id) ? `<i class="pending-dot" title="Venter på nett"></i>` : ""}<span>${listSub(w) || esc(shortDate(w.drankAt))}</span>${w.aiPending && navigator.onLine && !enrichErr.has(w.id) ? thinkIcon("xs") : ""}`,
+      sub: `${pend.has(w.id) ? `<i class="pending-dot" title="${tx("log.waitingNet")}"></i>` : ""}<span>${listSub(w) || esc(shortDate(w.drankAt))}</span>${w.aiPending && navigator.onLine && !enrichErr.has(w.id) ? thinkIcon("xs") : ""}`,
       trail: `<span class="rate">${Number.isFinite(w.rating) ? w.rating : "–"}</span>`,
-      actions: [{ act: "del", label: "Slett", c: "red" }],
+      actions: [{ act: "del", label: tx("c.delete"), c: "red" }],
     })).join("")}</div>`;
   }).join("");
 }
@@ -676,22 +696,22 @@ function refreshOpenDetail() {
 const tagsHTML = w => [...(w.ai?.likes || []).map(t => `<span class="tag">+ ${esc(t)}</span>`), ...(w.ai?.dislikes || []).map(t => `<span class="tag neg">− ${esc(t)}</span>`)].join("");
 function aiBlock(w) {
   if (w.ai && Object.keys(w.ai.dims || {}).length) {
-    const src = w.ai.source === "vinmonopolet" ? "fra Vinmonopolet" : w.ai.source === "stil" ? `typisk for ${esc(w.ai.styleName || "stilen")}` : w.ai.confidence === "lav" ? "usikker, typisk for stilen" : "typisk for vinen";
-    return `<div style="display:flex;justify-content:space-between;align-items:baseline"><h3 class="eyebrow">Smaksprofil</h3><span class="small" style="color:var(--faint)">${src}</span></div>
+    const src = w.ai.source === "vinmonopolet" ? tx("d.srcVmp") : w.ai.source === "stil" ? esc(tx("d.srcStyle", { stil: w.ai.styleName || "" })) : w.ai.confidence === "lav" ? tx("d.srcUnsure") : tx("d.srcWine");
+    return `<div style="display:flex;justify-content:space-between;align-items:baseline"><h3 class="eyebrow">${tx("d.taste")}</h3><span class="small" style="color:var(--faint)">${src}</span></div>
       <div class="dims">${DIMS.map(([k, l, words]) => { const v = w.ai.dims[k]; return v ? `<div class="dim"><span class="l">${l}</span><span class="bars">${[1, 2, 3, 4, 5].map(n => `<i class="${n <= v ? "on" : ""}"></i>`).join("")}</span><span class="w">${words[v - 1]}</span></div>` : ""; }).join("")}</div>
       ${w.ai.profile ? `<p class="small muted">${esc(w.ai.profile)}</p>` : ""}
-      ${w.ai.source === "vinmonopolet" ? `<p class="small muted">Fylde, syre, tannin og sødme er satt av Vinmonopolets smakspanel.</p>` : ""}
-      ${w.ai.vmp?.url ? `<a class="link" style="text-decoration:none;align-self:flex-start" href="${esc(w.ai.vmp.url)}" target="_blank" rel="noopener">Se på Vinmonopolet</a>` : ""}`;
+      ${w.ai.source === "vinmonopolet" ? `<p class="small muted">${tx("d.vmpNote")}</p>` : ""}
+      ${w.ai.vmp?.url ? `<a class="link" style="text-decoration:none;align-self:flex-start" href="${esc(w.ai.vmp.url)}" target="_blank" rel="noopener">${tx("d.vmpLink")}</a>` : ""}`;
   }
   if (w.aiPending && enrichErr.has(w.id)) {
     const e = enrichErr.get(w.id);
-    return `<div style="display:flex;justify-content:space-between;align-items:baseline"><h3 class="eyebrow">Smaksprofil</h3><span class="small" style="color:#C2283A">fikk ikke hentet</span></div>
+    return `<div style="display:flex;justify-content:space-between;align-items:baseline"><h3 class="eyebrow">${tx("d.taste")}</h3><span class="small" style="color:#C2283A">${tx("d.failed")}</span></div>
       <p class="small muted">${esc(aiErrText(e))}</p>
       <p class="small" style="color:var(--faint);font-family:var(--mono,ui-monospace),monospace;word-break:break-word">${esc([e.code, e.status, e.detail].filter(Boolean).join(" · ").slice(0, 300))}</p>
-      <button class="btn light" type="button" data-retry-enrich style="align-self:flex-start;height:40px;font-size:15px">Prøv igjen</button>`;
+      <button class="btn light" type="button" data-retry-enrich style="align-self:flex-start;height:40px;font-size:15px">${tx("c.retry")}</button>`;
   }
   if (w.aiPending) {
-    return `<div style="display:flex;justify-content:space-between;align-items:baseline"><h3 class="eyebrow">Smaksprofil</h3>${navigator.onLine ? `<span class="small progress" style="color:var(--faint);gap:6px">${thinkIcon("sm")}<span class="think-txt" data-phrases="Henter|Slår opp vinen|Setter sammen">Henter</span></span>` : `<span class="small" style="color:var(--faint)">hentes når du er på nett</span>`}</div>
+    return `<div style="display:flex;justify-content:space-between;align-items:baseline"><h3 class="eyebrow">${tx("d.taste")}</h3>${navigator.onLine ? `<span class="small progress" style="color:var(--faint);gap:6px">${thinkIcon("sm")}<span class="think-txt" data-phrases="${esc(phrases("d.fetching").join("|"))}">${esc(phrases("d.fetching")[0])}</span></span>` : `<span class="small" style="color:var(--faint)">${tx("d.fetchOffline")}</span>`}</div>
       <div class="dims">${DIMS.map(([, l]) => `<div class="dim"><span class="l">${l}</span><span class="skeleton"></span><span></span></div>`).join("")}</div>`;
   }
   return "";
@@ -700,15 +720,15 @@ function wineDetail(w) {
   openDetailRef = { kind: "wine", id: w.id };
   const facts = [shortDate(w.drankAt), (WHERE.find(x => x[0] === w.where) || [])[1], w.price ? kr(w.price) : ""].filter(Boolean).map(esc).join(" · ");
   openSheet({
-    title: "", left: "", right: "Ferdig", rightPlain: true,
+    title: "", left: "", right: tx("c.done"), rightPlain: true,
     html: `
       <div class="d-head"><span class="glass lg" style="background:${glass(w.type)}"></span>
         <div class="stack"><h2>${esc(cleanName(w))}</h2><span class="small muted" id="d_meta">${metaOf(w) || "&nbsp;"}</span><span class="small muted">${facts}</span></div></div>
       <div class="d-score"><div style="display:flex;align-items:baseline;gap:6px"><span class="big">${Number.isFinite(w.rating) ? w.rating : "–"}</span><span class="of">/10</span></div><span class="word">${esc(WORDS[w.rating] || "")}</span></div>
-      ${w.note ? `<section class="fieldset"><h3 class="eyebrow">Ditt notat</h3><p class="quote">«${esc(w.note)}»</p><div class="tags" id="d_tags">${tagsHTML(w)}</div></section>` : ""}
+      ${w.note ? `<section class="fieldset"><h3 class="eyebrow">${tx("d.note")}</h3><p class="quote">«${esc(w.note)}»</p><div class="tags" id="d_tags">${tagsHTML(w)}</div></section>` : ""}
       <section class="fieldset" id="d_ai">${aiBlock(w)}</section>
-      <div class="actions-row"><button type="button" class="btn light" data-a="edit">Rediger</button><button type="button" class="btn dark" data-a="cellar">Legg i kjelleren</button></div>
-      <button type="button" class="link danger" data-a="del" style="align-self:flex-start">Slett vin</button>`,
+      <div class="actions-row"><button type="button" class="btn light" data-a="edit">${tx("c.edit")}</button><button type="button" class="btn dark" data-a="cellar">${tx("d.toCellar")}</button></div>
+      <button type="button" class="link danger" data-a="del" style="align-self:flex-start">${tx("d.delete")}</button>`,
     onClose: () => { openDetailRef = null; },
     mount: b => b.addEventListener("click", e => {
       const a = e.target.closest("[data-a]")?.dataset.a; if (!a) return;
@@ -721,7 +741,7 @@ function wineDetail(w) {
 
 /* ================= Wine form ================= */
 function typePickerHTML(id, val) {
-  return `<div class="types" id="${id}" role="radiogroup" aria-label="Type">${TYPES.map(t => `<button type="button" role="radio" aria-checked="${t === val}" data-v="${t}"><span class="glass" style="background:${GLASS[t]}"></span>${TYPE_LABEL[t]}</button>`).join("")}</div>`;
+  return `<div class="types" id="${id}" role="radiogroup" aria-label="${tx("f.type")}">${TYPES.map(t => `<button type="button" role="radio" aria-checked="${t === val}" data-v="${t}"><span class="glass" style="background:${GLASS[t]}"></span>${TYPE_LABEL[t]}</button>`).join("")}</div>`;
 }
 document.addEventListener("click", e => {
   const b = e.target.closest(".types button"); if (!b) return;
@@ -732,51 +752,51 @@ document.addEventListener("click", e => {
 });
 const typeVal = el => el?.querySelector('[aria-checked="true"]')?.dataset.v || null;
 function ticksHTML(val) {
-  return `<div class="ticks" role="radiogroup" aria-label="Karakter fra 1 til 10">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<button type="button" role="radio" aria-checked="${n === val}" aria-label="${n} av 10" data-v="${n}"><span class="tick${n % 5 === 0 ? " major" : ""}"></span></button>`).join("")}</div>
+  return `<div class="ticks" role="radiogroup" aria-label="${tx("rate.aria")}">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<button type="button" role="radio" aria-checked="${n === val}" aria-label="${tx("rate.of10", { n })}" data-v="${n}"><span class="tick${n % 5 === 0 ? " major" : ""}"></span></button>`).join("")}</div>
     <div class="tick-nums" aria-hidden="true">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<span data-n="${n}">${n}</span>`).join("")}</div>`;
 }
 function paintTicks(root, val) {
   $$(".ticks button", root).forEach(b => { const n = +b.dataset.v, t = b.firstElementChild; b.setAttribute("aria-checked", String(n === val)); t.classList.toggle("on", n === val); t.classList.toggle("below", val != null && n < val); });
   $$(".tick-nums span", root).forEach(s => s.classList.toggle("on", +s.dataset.n === val));
   $("#w_big", root).textContent = val ?? "–";
-  $("#w_word", root).textContent = val ? WORDS[val] : "Velg karakter";
+  $("#w_word", root).textContent = val ? WORDS[val] : tx("rate.pick");
 }
 function wineFormHTML(f, draftNote) {
   return `
-    ${draftNote ? `<div style="display:flex;justify-content:space-between;align-items:center" class="small muted"><span>Utkastet ditt er tatt vare på.</span><button type="button" class="link" id="w_clear">Start på nytt</button></div>` : ""}
+    ${draftNote ? `<div style="display:flex;justify-content:space-between;align-items:center" class="small muted"><span>${tx("f.draft")}</span><button type="button" class="link" id="w_clear">${tx("f.startOver")}</button></div>` : ""}
     <div class="fieldset">
-      <label class="eyebrow" for="w_name">Vin</label>
+      <label class="eyebrow" for="w_name">${tx("f.wine")}</label>
       <div class="name-row">
-        <input id="w_name" type="text" placeholder="Navn på vinen" autocomplete="off" value="${esc(f.name || "")}">
+        <input id="w_name" type="text" placeholder="${tx("f.namePh")}" autocomplete="off" value="${esc(f.name || "")}">
         <input type="file" id="w_scan" accept="image/*" hidden>
-        <label for="w_scan" class="icon-btn ghost" aria-label="Skann etiketten">${CAM}</label>
+        <label for="w_scan" class="icon-btn ghost" aria-label="${tx("f.scan")}">${CAM}</label>
       </div>
       <div class="meta-line" id="w_meta"></div>
       <p class="scan-status" id="w_scanStatus" hidden></p>
     </div>
     <div class="fieldset">
-      <span class="eyebrow">Hvor godt likte du den?</span>
+      <span class="eyebrow">${tx("f.howMuch")}</span>
       <div class="score"><span class="big" id="w_big">–</span><span class="word" id="w_word"></span></div>
       ${ticksHTML(f.rating)}
     </div>
     <div class="fieldset">
-      <label class="eyebrow" for="w_note">Notat</label>
-      <div class="note"><textarea id="w_note" rows="5" placeholder="Hva smakte den? Hvorfor likte eller mislikte du den?">${esc(f.note || "")}</textarea></div>
-      <p class="hint">Skriv med dine egne ord. Smaksprofilen hentes automatisk, og appen lærer hva du liker av karakteren og det du skriver.</p>
+      <label class="eyebrow" for="w_note">${tx("f.note")}</label>
+      <div class="note"><textarea id="w_note" rows="5" placeholder="${tx("f.notePh")}">${esc(f.note || "")}</textarea></div>
+      <p class="hint">${tx("f.noteHint")}</p>
     </div>
     <div class="fieldset">
-      <button type="button" class="details-toggle" id="w_more" aria-expanded="false" aria-controls="w_details">Detaljer${CHEV}</button>
+      <button type="button" class="details-toggle" id="w_more" aria-expanded="false" aria-controls="w_details">${tx("f.details")}${CHEV}</button>
       <div id="w_details" class="fieldset" hidden>
         ${typePickerHTML("w_type", f.type || null)}
         <div class="fields">
-          <label class="f"><span>Produsent</span><input id="w_producer" type="text" placeholder="Fylles ut automatisk" autocomplete="off" value="${esc(f.producer || "")}"></label>
-          <label class="f"><span>Årgang</span><input id="w_vintage" type="number" inputmode="numeric" placeholder="2019" value="${esc(f.vintage ?? "")}"></label>
-          <label class="f"><span>Drue</span><input id="w_grape" type="text" placeholder="Fylles ut automatisk" autocomplete="off" value="${esc(f.grape || "")}"></label>
-          <label class="f"><span>Region</span><input id="w_region" type="text" placeholder="Fylles ut automatisk" autocomplete="off" value="${esc(f.region || "")}"></label>
-          <label class="f"><span>Pris</span><input id="w_price" type="number" inputmode="decimal" placeholder="kr" value="${esc(f.price ?? "")}"></label>
-          <label class="f"><span>Dato</span><input id="w_date" type="date" value="${esc(f.drankAt || today())}"></label>
+          <label class="f"><span>${tx("f.producer")}</span><input id="w_producer" type="text" placeholder="${tx("f.autoPh")}" autocomplete="off" value="${esc(f.producer || "")}"></label>
+          <label class="f"><span>${tx("f.vintage")}</span><input id="w_vintage" type="number" inputmode="numeric" placeholder="2019" value="${esc(f.vintage ?? "")}"></label>
+          <label class="f"><span>${tx("f.grape")}</span><input id="w_grape" type="text" placeholder="${tx("f.autoPh")}" autocomplete="off" value="${esc(f.grape || "")}"></label>
+          <label class="f"><span>${tx("f.region")}</span><input id="w_region" type="text" placeholder="${tx("f.autoPh")}" autocomplete="off" value="${esc(f.region || "")}"></label>
+          <label class="f"><span>${tx("f.price")}</span><input id="w_price" type="number" inputmode="decimal" placeholder="kr" value="${esc(f.price ?? "")}"></label>
+          <label class="f"><span>${tx("f.date")}</span><input id="w_date" type="date" value="${esc(f.drankAt || today())}"></label>
         </div>
-        <div class="seg" role="radiogroup" aria-label="Hvor" id="w_where"><span class="thumb"></span>${WHERE.map(([v, l]) => `<button type="button" role="radio" aria-checked="${v === (f.where || "restaurant")}" data-v="${v}">${l}</button>`).join("")}</div>
+        <div class="seg" role="radiogroup" aria-label="${tx("f.where")}" id="w_where"><span class="thumb"></span>${WHERE.map(([v, l]) => `<button type="button" role="radio" aria-checked="${v === (f.where || "restaurant")}" data-v="${v}">${l}</button>`).join("")}</div>
       </div>
     </div>
     <p class="err" id="w_err" hidden></p>`;
@@ -800,7 +820,7 @@ function wineForm(f, { editingId = null, draftNote = false } = {}) {
   let rating = Number.isFinite(f.rating) ? f.rating : null;
   const canSave = () => $("#w_name", sheetBody).value.trim() && rating != null;
   openSheet({
-    title: editingId ? "Rediger vin" : "Ny vin", left: "Avbryt", right: editingId ? "Lagre" : "Lagre", rightDisabled: !((f.name || "").trim() && rating != null),
+    title: editingId ? tx("f.edit") : tx("nav.newWine"), left: tx("c.cancel"), right: tx("c.save"), rightDisabled: !((f.name || "").trim() && rating != null),
     html: wineFormHTML(f, draftNote),
     mount: b => {
       const meta = () => {
@@ -808,7 +828,7 @@ function wineForm(f, { editingId = null, draftNote = false } = {}) {
         const txt = [d.producer, d.grape, d.region, d.vintage].filter(Boolean).map(esc).join(" · ");
         const m = $("#w_meta", b);
         m.classList.toggle("empty-meta", !txt);
-        m.innerHTML = txt ? `<span class="glass sm" style="background:${glass(t)}"></span><span>${txt}</span>` : "Produsent, drue og region fylles ut automatisk når du lagrer.";
+        m.innerHTML = txt ? `<span class="glass sm" style="background:${glass(t)}"></span><span>${txt}</span>` : tx("f.autoHint");
       };
       const upd = () => { $("#sheetRight").disabled = !canSave(); };
       paintTicks(b, rating); meta();
@@ -841,7 +861,7 @@ function wineForm(f, { editingId = null, draftNote = false } = {}) {
       mutate("wines", "upsert", id, data);
       enrichFailed.delete(id);
       closeSheet();
-      toast(editingId ? "Endringene er lagret" : `${d.name} er lagt til`);
+      toast(editingId ? tx("f.saved") : tx("f.added", { navn: d.name }));
       runEnrich();
     },
     onClose: () => {
@@ -852,12 +872,12 @@ function wineForm(f, { editingId = null, draftNote = false } = {}) {
   });
 }
 async function scanLabel(file, statusEl) {
-  statusEl.hidden = false; statusEl.textContent = "Leser etiketten …";
+  statusEl.hidden = false; statusEl.textContent = tx("f.readingLabel");
   try {
     const r = await askJSON(`Bildet viser etiketten på en vinflaske. Les den og svar med ett JSON-objekt:
 {"name": string, "producer": string|null, "vintage": number|null, "type": "rød"|"hvit"|"rosé"|"musserende"|"oransje"|"søt"|null, "grape": string|null, "region": string|null, "drinkFrom": number|null, "drinkTo": number|null}
-name er vinens navn slik det står på etiketten, uten produsenten hvis den står for seg. grape: druen(e); utled fra appellasjonen når det er standard (Barolo gir Nebbiolo). region skrives som "Region, Land" på norsk. drinkFrom/drinkTo: ditt beste anslag på drikkevindu i årstall, eller null.`, { images: [file], kind: "etikett", tier: "quick", max_tokens: 400 });
-    statusEl.textContent = "Fylt ut fra etiketten. Sjekk at det stemmer.";
+name er vinens navn slik det står på etiketten, uten produsenten hvis den står for seg. grape: druen(e); utled fra appellasjonen når det er standard (Barolo gir Nebbiolo). region skrives som "Region, Land" på ${AI_LANG}. drinkFrom/drinkTo: ditt beste anslag på drikkevindu i årstall, eller null.`, { images: [file], kind: "etikett", tier: "quick", max_tokens: 400 });
+    statusEl.textContent = tx("f.labelFilled");
     return r && typeof r === "object" ? r : null;
   } catch (e) { statusEl.textContent = aiErrText(e); return null; }
 }
@@ -991,7 +1011,7 @@ function radar(liked, all) {
   });
   if (DIMS.some(([k]) => all[k] != null)) g += `<polygon points="${poly(all)}" fill="none" stroke="var(--faint)" stroke-width="1.2" stroke-dasharray="3 3"/>`;
   if (DIMS.some(([k]) => liked[k] != null)) g += `<polygon points="${poly(liked)}" fill="var(--accent)" fill-opacity=".10" stroke="var(--accent)" stroke-width="1.8" stroke-linejoin="round"/>`;
-  return `<svg viewBox="0 0 342 236" role="img" aria-label="Smaksavtrykk">${g}</svg>`;
+  return `<svg viewBox="0 0 342 236" role="img" aria-label="${tx("p.imprint")}">${g}</svg>`;
 }
 // «Om smaken din»: lagres på telefonen og skrives på nytt av seg selv for hver tredje nye vin du gir karakter.
 const PROFILE_EVERY = 3;
@@ -1002,43 +1022,43 @@ function renderProfile() {
   $("#profEyebrow").textContent = displayName(state.user);
   let html = "";
   if (!W.length) {
-    html += `<div class="empty" style="padding-bottom:26px"><h2>Profilen bygges her</h2><p>Gi vinene du drikker en karakter. Etter fem til ti viner ser du hva du faktisk liker.</p></div>`;
+    html += `<div class="empty" style="padding-bottom:26px"><h2>${tx("p.emptyTitle")}</h2><p>${tx("p.emptyBody")}</p></div>`;
   } else {
     const fav = groupScores(grapeKeys)[0];
     const { liked, all } = dimProfile(), hasDims = DIMS.some(([k]) => all[k] != null);
     const tc = tagCounts();
     html += `<div class="stats">
-        <div><span class="v">${W.length}</span><span class="k">${W.length === 1 ? "vin" : "viner"}</span></div>
-        <div><span class="v">${fmt1(avg(W.map(w => w.rating)))}</span><span class="k">i snitt</span></div>
-        <div>${fav ? `<span class="fav"><span class="v word">${esc(fav.k)}</span>${flagStripe(grapeCountry(fav.k))}</span>` : `<span class="v word">–</span>`}<span class="k">favorittdrue</span></div></div>
+        <div><span class="v">${W.length}</span><span class="k">${W.length === 1 ? tx("p.wine1") : tx("p.wines")}</span></div>
+        <div><span class="v">${fmt1(avg(W.map(w => w.rating)))}</span><span class="k">${tx("p.avg")}</span></div>
+        <div>${fav ? `<span class="fav"><span class="v word">${esc(fav.k)}</span>${flagStripe(grapeCountry(fav.k))}</span>` : `<span class="v word">–</span>`}<span class="k">${tx("p.favGrape")}</span></div></div>
       <section class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:baseline"><h2 class="eyebrow">Smaksavtrykk</h2>
-          <span class="legend"><span><i style="background:var(--accent)"></i>Det du liker</span><span><i style="background:var(--faint)"></i>Alt</span></span></div>
-        ${hasDims ? `<div class="radar">${radar(liked, all)}</div>` : `<p class="small muted">Tegnes når smaksprofilene til vinene dine er hentet.</p>`}
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><h2 class="eyebrow">${tx("p.imprint")}</h2>
+          <span class="legend"><span><i style="background:var(--accent)"></i>${tx("p.youLike")}</span><span><i style="background:var(--faint)"></i>${tx("p.all")}</span></span></div>
+        ${hasDims ? `<div class="radar">${radar(liked, all)}</div>` : `<p class="small muted">${tx("p.radarWait")}</p>`}
       </section>
-      <button type="button" class="next-cta" id="nextGo"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3.5l1.6 4.6a3 3 0 0 0 1.8 1.8L18 11.5l-4.6 1.6a3 3 0 0 0-1.8 1.8L10 19.5l-1.6-4.6a3 3 0 0 0-1.8-1.8L2 11.5l4.6-1.6a3 3 0 0 0 1.8-1.8z"></path><path d="M18.5 2.5v4M16.5 4.5h4"></path><path d="M19 16.5v3M17.5 18h3"></path></svg></span><span class="tx"><b>Hva bør jeg velge neste gang?</b><span>AI-forslag ut fra smaken din</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
-      ${tc.likes.length || tc.dislikes.length ? `<section class="panel"><h2 class="eyebrow">Gjennomgående</h2><div class="tags">${tc.likes.map(t => `<span class="tag">+ ${esc(t)}</span>`).join("")}${tc.dislikes.map(t => `<span class="tag neg">− ${esc(t)}</span>`).join("")}</div></section>` : ""}
-      <section class="panel"><h2 class="eyebrow">Om smaken din</h2>
-        ${sp?.text ? `<p class="ai-text" id="aiOut">${esc(sp.text)}</p>` : `<p class="small muted" id="aiOut">${W.length < PROFILE_EVERY ? `Skrives når du har gitt karakter til ${PROFILE_EVERY} viner.` : ""}</p>`}
-        <div class="progress" id="aiStatus" ${profileRun ? "" : "hidden"}>${thinkHTML(sp?.text ? ["Oppdaterer med de nye vinene", "Ser etter mønstre", "Skriver"] : ["Leser profilen", "Ser etter mønstre", "Skriver"])}</div>
+      <button type="button" class="next-cta" id="nextGo"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3.5l1.6 4.6a3 3 0 0 0 1.8 1.8L18 11.5l-4.6 1.6a3 3 0 0 0-1.8 1.8L10 19.5l-1.6-4.6a3 3 0 0 0-1.8-1.8L2 11.5l4.6-1.6a3 3 0 0 0 1.8-1.8z"></path><path d="M18.5 2.5v4M16.5 4.5h4"></path><path d="M19 16.5v3M17.5 18h3"></path></svg></span><span class="tx"><b>${tx("p.nextCta")}</b><span>${tx("p.nextSub")}</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+      ${tc.likes.length || tc.dislikes.length ? `<section class="panel"><h2 class="eyebrow">${tx("p.recurring")}</h2><div class="tags">${tc.likes.map(t => `<span class="tag">+ ${esc(t)}</span>`).join("")}${tc.dislikes.map(t => `<span class="tag neg">− ${esc(t)}</span>`).join("")}</div></section>` : ""}
+      <section class="panel"><h2 class="eyebrow">${tx("p.about")}</h2>
+        ${sp?.text ? `<p class="ai-text" id="aiOut">${esc(sp.text)}</p>` : `<p class="small muted" id="aiOut">${W.length < PROFILE_EVERY ? tx("p.aboutWait", { n: PROFILE_EVERY }) : ""}</p>`}
+        <div class="progress" id="aiStatus" ${profileRun ? "" : "hidden"}>${thinkHTML(sp?.text ? [tx("p.updating"), ...phrases("p.thinking").slice(1)] : phrases("p.thinking"))}</div>
         <p class="err" id="aiErr" hidden></p>
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
-          <span class="small" style="color:var(--faint)">${sp?.text ? `Basert på ${sp.n} ${sp.n === 1 ? "vin" : "viner"} · ${W.length - sp.n > 0 ? `${W.length - sp.n} ny${W.length - sp.n === 1 ? "" : "e"} siden sist` : "oppdatert"}` : ""}</span>
-          <button class="link" type="button" id="aiGo" style="flex:none" ${profileRun ? "disabled" : ""}>${sp?.text ? "Oppdater nå" : "Skriv nå"}</button>
+          <span class="small" style="color:var(--faint)">${sp?.text ? `${tx("p.basedOn", { n: sp.n })} · ${W.length - sp.n > 0 ? tx("p.newSince", { n: W.length - sp.n }) : tx("p.upToDate")}` : ""}</span>
+          <button class="link" type="button" id="aiGo" style="flex:none" ${profileRun ? "disabled" : ""}>${sp?.text ? tx("p.updateNow") : tx("p.writeNow")}</button>
         </div>
       </section>`;
   }
-  html += `<button type="button" class="settings-btn" id="settingsBtn"><svg class="gear" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg><span>Innstillinger</span><span class="v">${esc(displayName(state.user))}</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>`;
+  html += `<button type="button" class="settings-btn" id="settingsBtn"><svg class="gear" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg><span>${tx("p.settings")}</span><span class="v">${esc(displayName(state.user))}</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>`;
   el.innerHTML = html;
   $("#settingsBtn").addEventListener("click", settingsSheet);
   $("#aiGo")?.addEventListener("click", () => runProfileAI());
   $("#nextGo")?.addEventListener("click", nextSheet);
   // Automatisk oppdatering: første gang ved 3 viner, deretter for hver tredje nye
   if (W.length >= PROFILE_EVERY && !profileRun && navigator.onLine && Date.now() - profileAutoFailAt > 10 * 60000
-      && (!sp?.text || W.length - (sp.n || 0) >= PROFILE_EVERY)) runProfileAI({ auto: true });
+      && (!sp?.text || (sp.lang || "nb") !== LANG || W.length - (sp.n || 0) >= PROFILE_EVERY)) runProfileAI({ auto: true });
 }
 function settingsSheet() {
-  openSheet({ title: "Innstillinger", left: "", right: "Ferdig", rightPlain: true, html: accountHTML(), mount: () => bindAccount() });
+  openSheet({ title: tx("set.title"), left: "", right: tx("c.done"), rightPlain: true, html: accountHTML(), mount: () => bindAccount() });
 }
 async function runProfileAI({ auto = false } = {}) {
   if (profileRun) return profileRun;
@@ -1050,11 +1070,11 @@ async function runProfileAI({ auto = false } = {}) {
 
 ${profileText()}
 
-Skriv på norsk bokmål, rett til personen (du-form), uten overskrifter, punktlister eller markdown:
+Skriv på ${AI_LANG}, rett til personen (du-form), uten overskrifter, punktlister eller markdown:
 1. 3–5 setninger om hva smaken deres faktisk er: hvilke stiler, druer og strukturer de belønner, og hva de trekker for. Vis til konkrete viner og til det de selv har skrevet. Si fra hvis datagrunnlaget er tynt.
 2. Avslutt med to konkrete forslag til viner eller stiler de bør prøve, ett trygt og ett som utfordrer smaken litt.
 Ikke bruk tankestrek som skilletegn.`, { signal: profileCtl.signal, kind: "profil", max_tokens: 900 })).trim();
-      if (text) ls.set(K("profileAi"), { text, n, at: Date.now() });
+      if (text) ls.set(K("profileAi"), { text, n, at: Date.now(), lang: LANG });
     } catch (e) {
       if (auto) profileAutoFailAt = Date.now();
       if (e.code !== "cancelled") { const err = $("#aiErr"); if (err && state.tab === "profil") { err.textContent = aiErrText(e); err.hidden = false; } }
@@ -1074,19 +1094,19 @@ function nextSheet() {
   const seg = (id, label, opts, cur) => `<div class="fieldset"><span class="eyebrow">${label}</span>
     <div class="seg" role="radiogroup" aria-label="${label}" id="${id}"><span class="thumb"></span>${opts.map(([v, l]) => `<button type="button" role="radio" aria-checked="${v === cur}" data-v="${v}">${l}</button>`).join("")}</div></div>`;
   openSheet({
-    title: "Neste vin", left: "", right: "Ferdig", rightPlain: true,
-    html: `${seg("nx_type", "Type", [["rød", "Rød"], ["hvit", "Hvit"], ["musserende", "Musserende"]], last.type)}
-      ${seg("nx_mode", "Hva vil du ha?", [["trygt", "Sikker vinner"], ["nytt", "Utfordre meg"]], last.mode)}
+    title: tx("n.title"), left: "", right: tx("c.done"), rightPlain: true,
+    html: `${seg("nx_type", tx("n.type"), [["rød", tx("type.rød")], ["hvit", tx("type.hvit")], ["musserende", tx("type.musserende")]], last.type)}
+      ${seg("nx_mode", tx("n.want"), [["trygt", tx("n.safe")], ["nytt", tx("n.challenge")]], last.mode)}
       <p class="hint" id="nx_hint"></p>
-      <button class="btn accent block" type="button" id="nx_go">Finn forslag</button>
-      <div class="progress" id="nx_status" hidden>${thinkHTML(["Tenker på smaken din", "Leter etter viner", "Velger de beste"])}<button class="link muted" id="nx_stop" type="button" style="margin-left:auto">Stopp</button></div>
+      <button class="btn accent block" type="button" id="nx_go">${tx("n.find")}</button>
+      <div class="progress" id="nx_status" hidden>${thinkHTML(phrases("n.thinking"))}<button class="link muted" id="nx_stop" type="button" style="margin-left:auto">${tx("c.stop")}</button></div>
       <p class="err" id="nx_err" hidden></p>
       <div id="nx_out"></div>`,
     onClose: () => nextCtl?.abort(),
     mount: b => {
       const hint = () => { $("#nx_hint", b).textContent = segVal($("#nx_mode", b)) === "nytt"
-        ? "En ny vin som er annerledes enn det du pleier å drikke, men ikke noe du helt sikkert ville mislikt."
-        : "En ny vin du ikke har smakt, som du med stor sannsynlighet kommer til å like."; };
+        ? tx("n.challengeHint")
+        : tx("n.safeHint"); };
       hint(); $("#nx_mode", b).addEventListener("click", () => setTimeout(hint));
       $("#nx_stop", b).addEventListener("click", () => nextCtl?.abort());
       $("#nx_go", b).addEventListener("click", () => runNext(b));
@@ -1096,8 +1116,8 @@ function nextSheet() {
 async function runNext(b) {
   const type = segVal($("#nx_type", b)) || "rød", mode = segVal($("#nx_mode", b)) || "trygt";
   ls.set(K("nextPick"), { type, mode });
-  const where = segVal($("#buyWhere")) || "no";
-  const shop = where === "no" ? "Vinmonopolet i Norge (priser i NOK)" : where === "fr" ? "en vanlig vinbutikk eller cave i Frankrike (oppgi pris i euro)" : "en vanlig vinbutikk";
+  const where = segVal($("#buyWhere")) || SHOPS[0][0];
+  const shop = shopText(where);
   const go = $("#nx_go", b), st = $("#nx_status", b), err = $("#nx_err", b), out = $("#nx_out", b);
   nextCtl = new AbortController(); go.disabled = true; st.hidden = false; err.hidden = true; out.innerHTML = "";
   const TYPE_TXT = { "rød": "rødvin", "hvit": "hvitvin", "musserende": "musserende vin (champagne, crémant, cava, franciacorta, pet-nat o.l.)" };
@@ -1114,28 +1134,37 @@ De kjøper hos: ${shop}. Velg viner som er vanlige å finne der; du kan ikke sje
 JSON-format:
 {"picks": [{"name": "vin med produsent", "style": "Type · Drue · Region", "price": "omtrentlig pris", "match": 0-100, "why": "1–2 setninger om hvorfor, med henvisning til viner de har vurdert eller det de har skrevet"}], "note": "én kort setning" | null}
 
-Gi 3 forslag, beste først. All tekst på norsk bokmål, uten tankestrek som skilletegn.`, { signal: nextCtl.signal, kind: "kjop", max_tokens: 1300 });
+Gi 3 forslag, beste først. All tekst på ${AI_LANG}, uten tankestrek som skilletegn.`, { signal: nextCtl.signal, kind: "kjop", max_tokens: 1300 });
     renderPicks(out, r, "buy", where);
   } catch (e) { if (e?.code !== "cancelled") { err.textContent = aiErrText(e); err.hidden = false; } }
-  finally { go.disabled = false; st.hidden = true; go.textContent = "Nye forslag"; }
+  finally { go.disabled = false; st.hidden = true; go.textContent = tx("n.again"); }
 }
+
+/* ---- Butikk: Vinmonopolet, Systembolaget, Frankrike eller annet ---- */
+const SHOPS = LANG === "sv" ? [["sb", "s.sb"], ["no", "s.vmp"], ["other", "s.other"]] : [["no", "s.vmp"], ["fr", "s.france"], ["other", "s.other"]];
+const shopText = w => ({ no: "Vinmonopolet i Norge (priser i NOK)", sb: "Systembolaget i Sverige (priser i SEK)", fr: "en vanlig vinbutikk eller cave i Frankrike (oppgi pris i euro)" })[w] || "en vanlig vinbutikk";
+const shopSearch = (w, name) => w === "no" ? [`https://www.vinmonopolet.no/search?q=${encodeURIComponent(name)}`, tx("s.searchVmp")]
+  : w === "sb" ? [`https://www.systembolaget.se/sok/?textQuery=${encodeURIComponent(name)}`, tx("s.searchSb")] : null;
+$("#buyWhere").innerHTML = `<span class="thumb"></span>` + SHOPS.map(([v, k], i) => `<button type="button" role="radio" aria-checked="${i === 0}" data-v="${v}">${tx(k)}</button>`).join("");
 
 /* ---- Account ---- */
 const displayName = u => { const e = u?.email || ""; return e.endsWith("@" + (CFG.userDomain || "")) ? e.split("@")[0] : e; };
 function accountHTML() {
-  return `<section class="panel" style="border-top:0;padding-top:0"><h2 class="eyebrow">Konto</h2><div class="list-rows">
-    <div><span>Innlogget som</span><span class="v">${esc(displayName(state.user))}</span></div>
-    <div><span>AI-kall siste døgn</span><span class="v" id="usageV">…</span></div>
-    <div><span>Venter på å lagres</span><span class="v">${outbox.length ? outbox.length + " endringer" : "ingenting"}</span></div>
-    <button type="button" id="aiTestBtn"><span>Test AI-tilkobling</span><span class="v" id="aiTestV"></span></button>
-    <button type="button" id="exportBtn"><span>Eksporter alt</span><span class="v">JSON</span></button>
-    <button type="button" id="pwBtn"><span>Bytt passord</span><span class="v"></span></button>
-    <button type="button" id="logoutBtn" style="color:#C2283A"><span>Logg ut</span><span class="v"></span></button>
-  </div>${matchMedia("(display-mode: standalone)").matches || navigator.standalone ? "" : `<p class="hint">Legg appen på hjemskjermen: Del-knappen i Safari → «Legg til på Hjem-skjerm».</p>`}</section>`;
+  return `<section class="panel" style="border-top:0;padding-top:0"><h2 class="eyebrow">${tx("set.language")}</h2><div class="seg" role="radiogroup" aria-label="${tx("set.language")}" id="langSeg" style="margin-bottom:22px"><span class="thumb"></span>${LANGS.map(l => `<button type="button" role="radio" aria-checked="${l === LANG}" data-v="${l}">${tx("lang." + l)}</button>`).join("")}</div>
+    <h2 class="eyebrow">${tx("set.account")}</h2><div class="list-rows">
+    <div><span>${tx("set.signedIn")}</span><span class="v">${esc(displayName(state.user))}</span></div>
+    <div><span>${tx("set.aiCalls")}</span><span class="v" id="usageV">…</span></div>
+    <div><span>${tx("set.waiting")}</span><span class="v">${outbox.length ? tx("set.changes", { n: outbox.length }) : tx("set.nothing")}</span></div>
+    <button type="button" id="aiTestBtn"><span>${tx("set.testAi")}</span><span class="v" id="aiTestV"></span></button>
+    <button type="button" id="exportBtn"><span>${tx("set.export")}</span><span class="v">JSON</span></button>
+    <button type="button" id="pwBtn"><span>${tx("set.changePw")}</span><span class="v"></span></button>
+    <button type="button" id="logoutBtn" style="color:#C2283A"><span>${tx("set.logout")}</span><span class="v"></span></button>
+  </div>${matchMedia("(display-mode: standalone)").matches || navigator.standalone ? "" : `<p class="hint">${tx("set.install")}</p>`}</section>`;
 }
 function bindAccount() {
+  $("#langSeg")?.addEventListener("click", e => { const b = e.target.closest("button[data-v]"); if (b && b.dataset.v !== LANG) setTimeout(() => setLang(b.dataset.v), 220); });
   $("#logoutBtn").addEventListener("click", async () => {
-    if (outbox.length && !confirmInline("#logoutBtn", "Du har endringer som ikke er lagret ennå. Trykk igjen for å logge ut likevel.")) return;
+    if (outbox.length && !confirmInline("#logoutBtn", tx("set.unsaved"))) return;
     ls.del(K("cache")); ls.del(K("outbox")); ls.del(K("draft")); ls.del(K("profileAi"));
     await sb.auth.signOut();
   });
@@ -1147,15 +1176,15 @@ function bindAccount() {
 }
 async function testAi() {
   const v = $("#aiTestV"); if (!v || v.dataset.busy) return;
-  v.dataset.busy = "1"; v.textContent = "tester …";
+  v.dataset.busy = "1"; v.textContent = tx("set.testing");
   const t0 = Date.now();
   try {
     const txt = await ask("Svar bare med ordet OK.", { kind: "test", tier: "quick", max_tokens: 50 });
-    v.textContent = `virker (${((Date.now() - t0) / 1000).toFixed(1)} s)`;
-    toast(`AI svarte: ${String(txt).trim().slice(0, 40) || "(tomt svar)"}`);
+    v.textContent = tx("set.works", { s: ((Date.now() - t0) / 1000).toFixed(1) });
+    toast(tx("set.aiSaid", { x: String(txt).trim().slice(0, 40) || "–" }));
     retryEnrich();
   } catch (e) {
-    v.textContent = e?.code || "feil";
+    v.textContent = e?.code || "error";
     toast(aiErrText(e) + (e?.detail ? ` (${String(e.detail).slice(0, 120)})` : ""));
   } finally { delete v.dataset.busy; }
 }
@@ -1172,24 +1201,24 @@ async function exportData() {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   try {
     const file = new File([blob], name, { type: "application/json" });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Vinprofil-eksport" }); return; }
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: tx("x.export") }); return; }
   } catch (e) { if (e?.name === "AbortError") return; }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 function passwordSheet() {
   openSheet({
-    title: "Bytt passord", left: "Avbryt", right: "Lagre", rightDisabled: true,
+    title: tx("set.changePw"), left: tx("c.cancel"), right: tx("c.save"), rightDisabled: true,
     html: `<div class="fields">
-      <label class="f"><span>Nytt</span><input id="pw1" type="password" autocomplete="new-password" placeholder="Minst 8 tegn"></label>
-      <label class="f"><span>Gjenta</span><input id="pw2" type="password" autocomplete="new-password" placeholder="Samme igjen"></label>
-    </div><p class="hint">Passordet gjelder på alle enhetene dine.</p><p class="err" id="pwErr" hidden></p>`,
+      <label class="f"><span>${tx("pw.new")}</span><input id="pw1" type="password" autocomplete="new-password" placeholder="${tx("pw.min")}"></label>
+      <label class="f"><span>${tx("pw.repeat")}</span><input id="pw2" type="password" autocomplete="new-password" placeholder="${tx("pw.same")}"></label>
+    </div><p class="hint">${tx("pw.allDevices")}</p><p class="err" id="pwErr" hidden></p>`,
     mount: b => { const check = () => { const a = $("#pw1", b).value, c = $("#pw2", b).value; $("#sheetRight").disabled = !(a.length >= 8 && a === c); }; $("#pw1", b).addEventListener("input", check); $("#pw2", b).addEventListener("input", check); },
     onRight: async () => {
       const R = $("#sheetRight"); R.disabled = true;
       const { error } = await sb.auth.updateUser({ password: $("#pw1").value });
-      if (error) { R.disabled = false; const e = $("#pwErr"); e.textContent = /different|same/i.test(error.message) ? "Velg et annet passord enn det du har nå." : "Kunne ikke bytte passord. Prøv igjen."; e.hidden = false; return; }
-      closeSheet(); toast("Passordet er byttet");
+      if (error) { R.disabled = false; const e = $("#pwErr"); e.textContent = /different|same/i.test(error.message) ? tx("pw.different") : tx("pw.failed"); e.hidden = false; return; }
+      closeSheet(); toast(tx("pw.done"));
     },
   });
 }
@@ -1211,11 +1240,11 @@ function tagField(key, items) {
     $$(".tok", tf).forEach(n => n.remove());
     st.tokens.forEach((t, i) => {
       const s = document.createElement("span"); s.className = "tok";
-      s.innerHTML = `<span>${esc(t)}</span><button type="button" aria-label="Fjern ${esc(t)}">${XSVG}</button>`;
+      s.innerHTML = `<span>${esc(t)}</span><button type="button" aria-label="${esc(tx("c.removeX", { x: t }))}">${XSVG}</button>`;
       s.querySelector("button").addEventListener("click", e => { e.stopPropagation(); st.tokens.splice(i, 1); render(); });
       tf.insertBefore(s, ta);
     });
-    ta.placeholder = st.tokens.length ? "Legg til mer" : ta.dataset.ph;
+    ta.placeholder = st.tokens.length ? tx("s.addMore") : ta.dataset.ph;
     sg.innerHTML = items.filter(t => !st.tokens.some(x => x.toLowerCase() === t.toLowerCase())).map(t => `<button type="button">${esc(t)}</button>`).join("");
     $$("button", sg).forEach(b => b.addEventListener("click", () => add(b.textContent)));
   };
@@ -1237,8 +1266,8 @@ function tagField(key, items) {
   tf.addEventListener("click", e => { if (e.target === tf) ta.focus(); });
   render();
 }
-tagField("menu", ["Trygt valg", "Noe nytt for meg", "Best verdi", "Til fisk", "Til kjøtt", "Til skalldyr", "Til ost"]);
-tagField("buy", ["Middag hjemme", "Gave", "Til lagring", "Sommerkveld", "Pizza", "Til fisk", "Til vilt"]);
+tagField("menu", ["chip.safe", "chip.new", "chip.value", "chip.fish", "chip.meat", "chip.shellfish", "chip.cheese"].map(k => tx(k)));
+tagField("buy", ["chip.dinner", "chip.gift", "chip.age", "chip.summer", "chip.pizza", "chip.fish", "chip.game"].map(k => tx(k)));
 const styleParts = style => {
   const st = String(style || "").split("·").map(s => s.trim());
   const t = TYPES.find(t => (st[0] || "").toLowerCase().startsWith(t.slice(0, 3)));
@@ -1260,16 +1289,16 @@ function renderPhotos() {
   $$("img, .rm", el).forEach(n => n.remove());
   const add = $(".add-photo", el);
   menuFiles.forEach((f, i) => { const img = document.createElement("img"); img.src = URL.createObjectURL(f); img.alt = `Side ${i + 1} av vinkartet`; el.insertBefore(img, add); });
-  $("#menuHint").textContent = menuFiles.length ? `${menuFiles.length} ${menuFiles.length === 1 ? "side" : "sider"}` : "Ta bilde av vinkartet. Flere sider går fint.";
+  $("#menuHint").textContent = menuFiles.length ? tn(menuFiles.length, "s.page1", "s.pages") : tx("s.photoHint");
   add.hidden = menuFiles.length >= 4;
-  if (menuFiles.length) { const rm = document.createElement("button"); rm.type = "button"; rm.className = "link muted rm"; rm.textContent = "Fjern"; rm.onclick = () => { menuFiles = []; renderPhotos(); }; el.appendChild(rm); }
+  if (menuFiles.length) { const rm = document.createElement("button"); rm.type = "button"; rm.className = "link muted rm"; rm.textContent = tx("c.remove"); rm.onclick = () => { menuFiles = []; renderPhotos(); }; el.appendChild(rm); }
 }
 $("#menuInput").addEventListener("change", e => { menuFiles = [...menuFiles, ...e.target.files].slice(0, 4); e.target.value = ""; $("#menuErr").hidden = true; renderPhotos(); });
 $("#menuStop").addEventListener("click", () => menuCtl?.abort());
 function busy(p, on) { $("#" + p + "Go").disabled = on; $("#" + p + "Status").hidden = !on; if (on) $("#" + p + "Err").hidden = true; }
 function showErr(p, e) { if (e?.code === "cancelled") return; const el = $("#" + p + "Err"); el.textContent = aiErrText(e); el.hidden = false; }
 $("#menuGo").addEventListener("click", async () => {
-  if (!menuFiles.length) { $("#menuErr").textContent = "Ta bilde av vinkartet først."; $("#menuErr").hidden = false; return; }
+  if (!menuFiles.length) { $("#menuErr").textContent = tx("s.needPhoto"); $("#menuErr").hidden = false; return; }
   menuCtl = new AbortController(); busy("menu", true); $("#menuOut").innerHTML = "";
   try {
     const r = await askJSON(`Du er sommelier og hjelper en person å velge fra vinkartet på en restaurant. Bildet/bildene viser vinkartet.
@@ -1284,7 +1313,7 @@ Les vinkartet og velg de tre vinene som passer best til smaken deres og kveldens
 JSON-format:
 {"readable": true|false, "picks": [{"name": "vinen slik den står på kartet, med årgang", "price": "prisen slik den står, eller null", "style": "Type · Drue · Region, f.eks. Rød · Nebbiolo · Piemonte", "match": 0-100, "why": "1–2 setninger om hvorfor den passer DERES profil, gjerne med henvisning til viner de har vurdert eller det de har skrevet"}], "skip": {"name": "...", "why": "én setning"} | null, "note": "én kort setning hvis kartet var vanskelig å lese eller profilen er tynn" | null}
 
-Sorter picks med beste match først. All tekst på norsk bokmål, uten tankestrek som skilletegn.`, { images: menuFiles, signal: menuCtl.signal, kind: "vinkart", max_tokens: 1500 });
+Sorter picks med beste match først. All tekst på ${AI_LANG}, uten tankestrek som skilletegn.`, { images: menuFiles, signal: menuCtl.signal, kind: "vinkart", max_tokens: 1500 });
     renderPicks($("#menuOut"), r, "menu");
   } catch (e) { showErr("menu", e); }
   finally { busy("menu", false); }
@@ -1293,10 +1322,10 @@ let buyCtl = null;
 $("#buyStop").addEventListener("click", () => buyCtl?.abort());
 $("#buyGo").addEventListener("click", async () => {
   const intent = TAGS.buy.value();
-  if (!intent) { $("#buyErr").textContent = "Skriv kort hva vinen skal brukes til."; $("#buyErr").hidden = false; $("#buyIntent").focus(); return; }
+  if (!intent) { $("#buyErr").textContent = tx("s.needIntent"); $("#buyErr").hidden = false; $("#buyIntent").focus(); return; }
   buyCtl = new AbortController(); busy("buy", true); $("#buyOut").innerHTML = "";
-  const budget = numOrNull($("#buyBudget").value), where = segVal($("#buyWhere")) || "no", useCellar = $("#buyCellar").checked;
-  const shop = where === "no" ? "Vinmonopolet i Norge (priser i NOK)" : where === "fr" ? "en vanlig vinbutikk eller cave i Frankrike (oppgi pris i euro)" : "en vanlig vinbutikk";
+  const budget = numOrNull($("#buyBudget").value), where = segVal($("#buyWhere")) || SHOPS[0][0], useCellar = $("#buyCellar").checked;
+  const shop = shopText(where);
   try {
     const r = await askJSON(`Du er sommelier og gir personlige kjøpsråd. Smaksprofilen til personen, bygget fra viner de har gitt karakter (1–10) og notatene deres:
 ${profileText()}
@@ -1311,25 +1340,25 @@ ${useCellar ? "Sjekk først om noe i kjelleren passer, og ta hensyn til drikkevi
 JSON-format:
 {"from_cellar": [{"name": "...", "why": "én setning"}], "picks": [{"name": "vin med produsent", "style": "Type · Drue · Region", "price": "omtrentlig pris", "match": 0-100, "why": "1–2 setninger om hvorfor den passer DERES profil og kvelden"}], "tip": "ett kort råd om temperatur eller lufting" | null}
 
-from_cellar er tom liste hvis ingenting passer. Sorter picks med beste match først. All tekst på norsk bokmål, uten tankestrek som skilletegn.`, { signal: buyCtl.signal, kind: "kjop", max_tokens: 1500 });
+from_cellar er tom liste hvis ingenting passer. Sorter picks med beste match først. All tekst på ${AI_LANG}, uten tankestrek som skilletegn.`, { signal: buyCtl.signal, kind: "kjop", max_tokens: 1500 });
     renderPicks($("#buyOut"), r, "buy", where);
   } catch (e) { showErr("buy", e); }
   finally { busy("buy", false); }
 });
 function renderPicks(el, r, kind, where) {
-  if (!r || typeof r !== "object") { el.innerHTML = `<p class="err">Fikk ikke et brukbart svar. Prøv igjen.</p>`; return; }
+  if (!r || typeof r !== "object") { el.innerHTML = `<p class="err">${tx("s.badAnswer")}</p>`; return; }
   const picks = Array.isArray(r.picks) ? r.picks : [];
   let h = "";
-  if (kind === "menu" && r.readable === false) h += `<div class="banner">Vinkartet var vanskelig å lese. Prøv et skarpere bilde med mindre gjenskinn.</div>`;
-  if (kind === "buy" && Array.isArray(r.from_cellar) && r.from_cellar.length) h += `<div class="fieldset rise" style="margin-bottom:18px"><span class="eyebrow">Du har allerede</span>${r.from_cellar.map(c => `<p><strong style="font-weight:500">${esc(c.name)}</strong><br><span class="small muted">${esc(c.why)}</span></p>`).join("")}</div>`;
+  if (kind === "menu" && r.readable === false) h += `<div class="banner">${tx("s.unreadable")}</div>`;
+  if (kind === "buy" && Array.isArray(r.from_cellar) && r.from_cellar.length) h += `<div class="fieldset rise" style="margin-bottom:18px"><span class="eyebrow">${tx("s.youHave")}</span>${r.from_cellar.map(c => `<p><strong style="font-weight:500">${esc(c.name)}</strong><br><span class="small muted">${esc(c.why)}</span></p>`).join("")}</div>`;
   h += picks.map((p, i) => pickHTML(p, i, kind === "menu"
-    ? `<button type="button" class="link" data-act="log">Jeg tok denne</button>`
-    : `${where === "no" ? `<a class="link" style="text-decoration:none" href="https://www.vinmonopolet.no/search?q=${encodeURIComponent(p.name)}" target="_blank" rel="noopener">Søk på Vinmonopolet</a>` : ""}<button type="button" class="link" data-act="cellar">Legg i kjelleren</button>`)).join("");
-  if (kind === "menu" && r.skip?.name) h += `<div class="skip rise" style="animation-delay:${picks.length * 50}ms"><span class="eyebrow">Styr unna</span><span>${esc(r.skip.name)}. ${esc(r.skip.why)}</span></div>`;
-  if (kind === "buy" && r.tip) h += `<div class="skip rise" style="animation-delay:${picks.length * 50}ms"><span class="eyebrow">Tips</span><span>${esc(r.tip)}</span></div>`;
+    ? `<button type="button" class="link" data-act="log">${tx("s.tookThis")}</button>`
+    : `${(ss => ss ? `<a class="link" style="text-decoration:none" href="${esc(ss[0])}" target="_blank" rel="noopener">${ss[1]}</a>` : "")(shopSearch(where, p.name))}<button type="button" class="link" data-act="cellar">${tx("d.toCellar")}</button>`)).join("");
+  if (kind === "menu" && r.skip?.name) h += `<div class="skip rise" style="animation-delay:${picks.length * 50}ms"><span class="eyebrow">${tx("s.avoid")}</span><span>${esc(r.skip.name)}. ${esc(r.skip.why)}</span></div>`;
+  if (kind === "buy" && r.tip) h += `<div class="skip rise" style="animation-delay:${picks.length * 50}ms"><span class="eyebrow">${tx("s.tip")}</span><span>${esc(r.tip)}</span></div>`;
   if (r.note) h += `<p class="hint" style="margin-top:14px">${esc(r.note)}</p>`;
-  if (kind === "buy" && picks.length) h += `<p class="hint" style="margin-top:14px">Forslagene bygger på AI-ens vinkunnskap, ikke på lagerdata. Sjekk at flasken finnes før du drar.</p>`;
-  el.innerHTML = h || `<p class="muted">Ingen forslag kom tilbake.</p>`;
+  if (kind === "buy" && picks.length) h += `<p class="hint" style="margin-top:14px">${tx("s.disclaimer")}</p>`;
+  el.innerHTML = h || `<p class="muted">${tx("s.none")}</p>`;
   $$("[data-act=log]", el).forEach(b => b.addEventListener("click", () => {
     const p = picks[+b.closest(".pick").dataset.i], sp = styleParts(p.style);
     const vint = (String(p.name).match(/\b(19|20)\d{2}\b/) || [])[0];
@@ -1349,30 +1378,30 @@ function bottleRank(b) {
   return 1;
 }
 function windowText(b) {
-  if (!(b.qty > 0)) return "tom";
+  if (!(b.qty > 0)) return tx("k.emptyQty");
   if (b.drinkFrom && b.drinkTo) return `${b.drinkFrom}–${String(b.drinkTo).slice(-2)}`;
   if (b.drinkTo) return `–${b.drinkTo}`;
-  if (b.drinkFrom) return `fra ${b.drinkFrom}`;
+  if (b.drinkFrom) return tx("k.from", { "år": b.drinkFrom });
   return "";
 }
 function renderCellar() {
   openSwipe = null;
   const C = state.cellar, el = $("#cellarBody");
   const bottles = C.reduce((s, b) => s + (b.qty || 0), 0), value = C.reduce((s, b) => s + (b.qty || 0) * (b.price || 0), 0);
-  $("#cellarEyebrow").textContent = bottles ? (value ? `Verdi ${kr(value)}` : `${bottles} flasker`) : "Din kjeller";
+  $("#cellarEyebrow").textContent = bottles ? (value ? tx("k.value", { x: kr(value) }) : tn(bottles, "k.bottle1", "k.bottles")) : tx("k.eyebrowEmpty");
   if (!C.length) {
     $("#cellarRings").innerHTML = "";
-    el.innerHTML = `<div class="empty"><h2>Vinkjelleren er tom</h2><p>Legg inn flaskene du har liggende. Da ser du hva som bør drikkes først, og rådene kan foreslå noe du allerede eier.</p><button class="btn dark" type="button" id="emptyBottle">Legg til en flaske</button></div>`;
+    el.innerHTML = `<div class="empty"><h2>${tx("k.emptyTitle")}</h2><p>${tx("k.emptyBody")}</p><button class="btn dark" type="button" id="emptyBottle">${tx("k.addFirst")}</button></div>`;
     $("#emptyBottle").addEventListener("click", () => bottleForm({}));
     return;
   }
   const counts = [0, 1, 2].map(r => C.filter(b => bottleRank(b) === r).reduce((s, b) => s + b.qty, 0));
-  const COLORS = ["var(--accent)", "var(--ink)", "var(--track)"], LABELS = ["drikk snart", "klare", "lagres"];
-  const SECTIONS = ["Drikk snart", "Klar", "Lagres", "Tomme"];
+  const COLORS = ["var(--accent)", "var(--ink)", "var(--track)"], LABELS = [tx("k.lgSoon"), tx("k.lgReady"), tx("k.lgKeep")];
+  const SECTIONS = [tx("k.drinkSoon"), tx("k.ready"), tx("k.keep"), tx("k.empty")];
   const pend = pendingIds();
   const sorted = [...C].sort((a, b) => bottleRank(a) - bottleRank(b) || (a.drinkTo || 9999) - (b.drinkTo || 9999) || String(a.name).localeCompare(String(b.name), "nb"));
   // To ringer ved tittelen: modning (drikk snart / klare / lagres) og type (rød / hvit / musserende …)
-  const TYPE_RING = [["rød", "rød", "var(--wine-red)"], ["hvit", "hvit", "#E3C96B"], ["musserende", "musserende", "#B9AE8E"], ["rosé", "rosé", "#EFA59B"], ["oransje", "oransje", "#D9894A"], ["søt", "søt", "#8F5A17"], ["", "annet", "var(--faint)"]];
+  const TYPE_RING = [["rød", tx("type.lc.rød"), "var(--wine-red)"], ["hvit", tx("type.lc.hvit"), "#E3C96B"], ["musserende", tx("type.lc.musserende"), "#B9AE8E"], ["rosé", tx("type.lc.rosé"), "#EFA59B"], ["oransje", tx("type.lc.oransje"), "#D9894A"], ["søt", tx("type.lc.søt"), "#8F5A17"], ["", tx("type.lc.other"), "var(--faint)"]];
   const tcounts = TYPE_RING.map(([t]) => C.filter(b => (TYPES.includes(b.type) ? b.type : "") === t).reduce((s, b) => s + (b.qty || 0), 0));
   const typeShown = TYPE_RING.map((t, i) => [...t, tcounts[i]]).filter((t, i) => tcounts[i] || i < 3);
   $("#cellarRings").innerHTML = bottles ? ring(counts.map((n, i) => [n, COLORS[i]]), bottles) + ring(typeShown.map(t => [t[3], t[2]]), "") : "";
@@ -1387,7 +1416,7 @@ function renderCellar() {
       title: esc(cleanName(b)),
       sub: `${pend.has(b.id) ? `<i class="pending-dot"></i>` : ""}<span>${listSub(b) || TYPE_LABEL[b.type] || ""}</span>`,
       trail: `<span class="window${r === 0 ? " soon" : ""}">${esc(windowText(b))}</span>`,
-      actions: b.qty > 0 ? [{ act: "drink", label: "Drakk", c: "ink" }, { act: "del", label: "Slett", c: "red" }] : [{ act: "del", label: "Slett", c: "red" }],
+      actions: b.qty > 0 ? [{ act: "drink", label: tx("k.drank"), c: "ink" }, { act: "del", label: tx("c.delete"), c: "red" }] : [{ act: "del", label: tx("c.delete"), c: "red" }],
     })).join("")}</div>`;
   }
   el.innerHTML = html;
@@ -1407,30 +1436,30 @@ function ring(segs, center) {
 function drinkOne(b) {
   mutate("cellar", "upsert", b.id, { ...b, qty: Math.max(0, (b.qty || 0) - 1) });
   newWine({ name: b.name, producer: b.producer, vintage: b.vintage, type: b.type, grape: b.grape, region: b.region, price: b.price, where: "hjemme" });
-  toast("Én flaske mindre i kjelleren");
+  toast(tx("k.oneLess"));
 }
 function bottleDetail(b) {
   openDetailRef = { kind: "bottle", id: b.id };
   let qty = b.qty || 0;
-  const facts = [["Drikkevindu", windowText(b) || "–"], ["Plassering", b.loc || "–"], ["Pris", b.price ? kr(b.price) : "–"]];
+  const facts = [[tx("k.window"), windowText(b) || "–"], [tx("k.location"), b.loc || "–"], [tx("k.price"), b.price ? kr(b.price) : "–"]];
   openSheet({
-    title: "", left: "", right: "Ferdig", rightPlain: true,
+    title: "", left: "", right: tx("c.done"), rightPlain: true,
     html: `
       <div class="d-head"><span class="glass lg" style="background:${glass(b.type)}"></span>
         <div class="stack"><h2>${esc(cleanName(b))}</h2><span class="small muted">${metaOf(b) || "&nbsp;"}</span></div></div>
-      <div class="d-score"><div style="display:flex;align-items:baseline;gap:8px"><span class="big" id="bd_qty">${qty}</span><span class="of" id="bd_w">${qty === 1 ? "flaske" : "flasker"}</span></div>
-        <div class="stepper"><button type="button" data-a="minus" aria-label="En mindre" ${qty < 1 ? "disabled" : ""}>−</button><button type="button" data-a="plus" aria-label="En til">+</button></div></div>
+      <div class="d-score"><div style="display:flex;align-items:baseline;gap:8px"><span class="big" id="bd_qty">${qty}</span><span class="of" id="bd_w">${tn(qty, "k.bottle1", "k.bottles").replace(/^\S+\s/, "")}</span></div>
+        <div class="stepper"><button type="button" data-a="minus" aria-label="${tx("k.less")}" ${qty < 1 ? "disabled" : ""}>−</button><button type="button" data-a="plus" aria-label="${tx("k.more")}">+</button></div></div>
       <dl class="facts" style="margin:0">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
-      ${b.notes ? `<section class="fieldset"><h3 class="eyebrow">Notat</h3><p class="quote">${esc(b.notes)}</p></section>` : ""}
-      <div class="actions-row"><button type="button" class="btn light" data-a="edit">Rediger</button><button type="button" class="btn dark" data-a="drink" ${qty < 1 ? "disabled" : ""}>Drakk en</button></div>
-      <button type="button" class="link danger" data-a="del" style="align-self:flex-start">Fjern fra kjelleren</button>`,
+      ${b.notes ? `<section class="fieldset"><h3 class="eyebrow">${tx("k.note")}</h3><p class="quote">${esc(b.notes)}</p></section>` : ""}
+      <div class="actions-row"><button type="button" class="btn light" data-a="edit">${tx("c.edit")}</button><button type="button" class="btn dark" data-a="drink" ${qty < 1 ? "disabled" : ""}>${tx("k.drankOne")}</button></div>
+      <button type="button" class="link danger" data-a="del" style="align-self:flex-start">${tx("k.remove")}</button>`,
     onClose: () => { openDetailRef = null; },
     mount: body => body.addEventListener("click", e => {
       const a = e.target.closest("[data-a]")?.dataset.a; if (!a) return;
       const cur = state.cellar.find(x => x.id === b.id) || b;
       if (a === "plus" || a === "minus") {
         qty = Math.max(0, qty + (a === "plus" ? 1 : -1));
-        $("#bd_qty", body).textContent = qty; $("#bd_w", body).textContent = qty === 1 ? "flaske" : "flasker";
+        $("#bd_qty", body).textContent = qty; $("#bd_w", body).textContent = tn(qty, "k.bottle1", "k.bottles").replace(/^\S+\s/, "");
         $('[data-a="minus"]', body).disabled = qty < 1; $('[data-a="drink"]', body).disabled = qty < 1;
         mutate("cellar", "upsert", b.id, { ...cur, qty });
       } else if (a === "drink") { closeSheet(); drinkOne({ ...cur, qty }); }
@@ -1442,33 +1471,33 @@ function bottleDetail(b) {
 function bottleForm(f, editingId = null) {
   if (state.tab !== "kjeller") setTab("kjeller");
   openSheet({
-    title: editingId ? "Rediger flaske" : "Ny flaske", left: "Avbryt", right: "Lagre", rightDisabled: !(f.name || "").trim(),
+    title: editingId ? tx("k.edit") : tx("nav.newBottle"), left: tx("c.cancel"), right: tx("c.save"), rightDisabled: !(f.name || "").trim(),
     html: `
       <div class="fieldset">
-        <label class="eyebrow" for="b_name">Vin</label>
+        <label class="eyebrow" for="b_name">${tx("f.wine")}</label>
         <div class="name-row">
-          <input id="b_name" type="text" placeholder="Navn på vinen" autocomplete="off" value="${esc(f.name || "")}">
+          <input id="b_name" type="text" placeholder="${tx("f.namePh")}" autocomplete="off" value="${esc(f.name || "")}">
           <input type="file" id="b_scan" accept="image/*" hidden>
-          <label for="b_scan" class="icon-btn ghost" aria-label="Skann etiketten">${CAM}</label>
+          <label for="b_scan" class="icon-btn ghost" aria-label="${tx("f.scan")}">${CAM}</label>
         </div>
         <p class="scan-status" id="b_scanStatus" hidden></p>
       </div>
       ${typePickerHTML("b_type", f.type || null)}
       <div class="fields">
-        <label class="f"><span>Antall</span><input id="b_qty" type="number" inputmode="numeric" min="0" value="${esc(f.qty ?? 1)}"></label>
-        <label class="f"><span>Drikk fra</span><input id="b_from" type="number" inputmode="numeric" placeholder="År" value="${esc(f.drinkFrom ?? "")}"></label>
-        <label class="f"><span>Drikk til</span><input id="b_to" type="number" inputmode="numeric" placeholder="År" value="${esc(f.drinkTo ?? "")}"></label>
+        <label class="f"><span>${tx("k.qty")}</span><input id="b_qty" type="number" inputmode="numeric" min="0" value="${esc(f.qty ?? 1)}"></label>
+        <label class="f"><span>${tx("k.drinkFrom")}</span><input id="b_from" type="number" inputmode="numeric" placeholder="${tx("k.year")}" value="${esc(f.drinkFrom ?? "")}"></label>
+        <label class="f"><span>${tx("k.drinkTo")}</span><input id="b_to" type="number" inputmode="numeric" placeholder="${tx("k.year")}" value="${esc(f.drinkTo ?? "")}"></label>
       </div>
       <div class="fields">
-        <label class="f"><span>Produsent</span><input id="b_producer" type="text" autocomplete="off" value="${esc(f.producer || "")}"></label>
-        <label class="f"><span>Årgang</span><input id="b_vintage" type="number" inputmode="numeric" value="${esc(f.vintage ?? "")}"></label>
-        <label class="f"><span>Drue</span><input id="b_grape" type="text" autocomplete="off" value="${esc(f.grape || "")}"></label>
-        <label class="f"><span>Region</span><input id="b_region" type="text" autocomplete="off" value="${esc(f.region || "")}"></label>
-        <label class="f"><span>Pris</span><input id="b_price" type="number" inputmode="decimal" placeholder="kr per flaske" value="${esc(f.price ?? "")}"></label>
-        <label class="f"><span>Plassering</span><input id="b_loc" type="text" placeholder="Hylle B, rad 3" autocomplete="off" value="${esc(f.loc || "")}"></label>
+        <label class="f"><span>${tx("f.producer")}</span><input id="b_producer" type="text" autocomplete="off" value="${esc(f.producer || "")}"></label>
+        <label class="f"><span>${tx("f.vintage")}</span><input id="b_vintage" type="number" inputmode="numeric" value="${esc(f.vintage ?? "")}"></label>
+        <label class="f"><span>${tx("f.grape")}</span><input id="b_grape" type="text" autocomplete="off" value="${esc(f.grape || "")}"></label>
+        <label class="f"><span>${tx("f.region")}</span><input id="b_region" type="text" autocomplete="off" value="${esc(f.region || "")}"></label>
+        <label class="f"><span>${tx("k.price")}</span><input id="b_price" type="number" inputmode="decimal" placeholder="${tx("s.perBottle")}" value="${esc(f.price ?? "")}"></label>
+        <label class="f"><span>${tx("k.location")}</span><input id="b_loc" type="text" placeholder="${tx("k.locationPh")}" autocomplete="off" value="${esc(f.loc || "")}"></label>
       </div>
-      <div class="fieldset"><label class="eyebrow" for="b_notes">Notat</label><div class="note"><textarea id="b_notes" rows="3">${esc(f.notes || "")}</textarea></div></div>
-      <p class="hint">Drikkevinduet sorterer kjelleren, så det som bør drikkes snart havner øverst. Skann etiketten for et forslag.</p>`,
+      <div class="fieldset"><label class="eyebrow" for="b_notes">${tx("k.note")}</label><div class="note"><textarea id="b_notes" rows="3">${esc(f.notes || "")}</textarea></div></div>
+      <p class="hint">${tx("k.windowHint")}</p>`,
     mount: b => {
       const name = $("#b_name", b);
       name.addEventListener("input", () => { $("#sheetRight").disabled = !name.value.trim(); });
@@ -1491,7 +1520,7 @@ function bottleForm(f, editingId = null) {
         loc: $("#b_loc", b).value.trim(), notes: $("#b_notes", b).value.trim(), addedAt: existing?.addedAt || Date.now(),
       };
       mutate("cellar", "upsert", editingId || uuid(), data);
-      closeSheet(); toast(editingId ? "Endringene er lagret" : `${name} ligger i kjelleren`);
+      closeSheet(); toast(editingId ? tx("f.saved") : tx("k.inCellar", { navn: name }));
     },
   });
 }
@@ -1519,12 +1548,12 @@ $("#loginForm").addEventListener("submit", async e => {
   e.preventDefault();
   const u = $("#lg_user").value.trim(), p = $("#lg_pass").value, err = $("#lg_err"), btn = $("#lg_go");
   err.hidden = true;
-  if (!u || !p) { err.textContent = "Fyll inn brukernavn og passord."; err.hidden = false; return; }
-  if (!sb) { err.textContent = "Appen er ikke koblet til databasen ennå."; err.hidden = false; return; }
-  btn.disabled = true; btn.textContent = "Logger inn …";
+  if (!u || !p) { err.textContent = tx("login.missing"); err.hidden = false; return; }
+  if (!sb) { err.textContent = tx("login.noDb"); err.hidden = false; return; }
+  btn.disabled = true; btn.textContent = tx("login.busy");
   const { data, error } = await sb.auth.signInWithPassword({ email: toEmail(u), password: p });
-  btn.disabled = false; btn.textContent = "Logg inn";
-  if (error) { err.textContent = !navigator.onLine ? "Ingen nettforbindelse." : /invalid/i.test(error.message) ? "Feil brukernavn eller passord." : "Kunne ikke logge inn. Prøv igjen."; err.hidden = false; return; }
+  btn.disabled = false; btn.textContent = tx("login.go");
+  if (error) { err.textContent = !navigator.onLine ? tx("login.offline") : /invalid/i.test(error.message) ? tx("login.wrong") : tx("login.failed"); err.hidden = false; return; }
   $("#lg_pass").value = "";
   enterApp(data.user);
 });
@@ -1533,7 +1562,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") addEventList
 
 if (!CONFIGURED || !window.supabase?.createClient) {
   showLogin();
-  $("#lg_lead").textContent = "Appen er ikke koblet til databasen ennå. Fyll inn config.js.";
+  $("#lg_lead").textContent = tx("login.noDb") + " config.js";
   $("#lg_go").disabled = true;
 } else {
   sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, { auth: { persistSession: true, autoRefreshToken: true, storageKey: "vinprofil-auth" } });

@@ -369,80 +369,80 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
   <form class="login-in" id="loginForm" novalidate>
     <div class="glass lg" aria-hidden="true"></div>
     <div style="display:flex;flex-direction:column;gap:8px">
-      <h1 class="title">Vinprofil</h1>
-      <p class="muted" id="lg_lead">Logg inn for å komme til vinene dine.</p>
+      <h1 class="title" data-i18n="app.name">Vinprofil</h1>
+      <p class="muted" id="lg_lead" data-i18n="login.lead">Logg inn for å komme til vinene dine.</p>
     </div>
     <div class="fields">
-      <label class="f"><span>Bruker</span><input id="lg_user" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Brukernavn"></label>
-      <label class="f"><span>Passord</span><input id="lg_pass" type="password" autocomplete="current-password" placeholder="Passord"></label>
+      <label class="f"><span data-i18n="login.user">Bruker</span><input id="lg_user" data-i18n-ph="login.userPh" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Brukernavn"></label>
+      <label class="f"><span data-i18n="login.pass">Passord</span><input id="lg_pass" type="password" autocomplete="current-password" placeholder="Passord" data-i18n-ph="login.pass"></label>
     </div>
     <p class="err" id="lg_err" hidden></p>
-    <button class="btn dark block" id="lg_go" type="submit">Logg inn</button>
+    <button class="btn dark block" id="lg_go" type="submit" data-i18n="login.go">Logg inn</button>
   </form>
 </div>
 
 <div id="app" hidden>
-  <div class="topbar" id="topbar" aria-hidden="true"><div id="topbarTitle">Logg</div></div>
+  <div class="topbar" id="topbar" aria-hidden="true"><div id="topbarTitle" data-i18n="title.log">Logg</div></div>
 
   <main>
     <section class="screen" id="tab-logg">
       <div class="head">
-        <div class="stack"><span class="eyebrow" id="logEyebrow"></span><h1 class="title">Logg</h1></div>
-        <button class="icon-btn solid" type="button" id="avatarBtn" aria-label="Profil"></button>
+        <div class="stack"><span class="eyebrow" id="logEyebrow"></span><h1 class="title" data-i18n="title.log">Logg</h1></div>
+        <button class="icon-btn solid" type="button" id="avatarBtn" aria-label="Profil" data-i18n-aria="title.profile"></button>
       </div>
-      <div id="offlineBanner" class="banner" hidden>Du er uten nett. Det du lagrer nå sendes når du er på nett igjen.</div>
-      <label class="search" id="logSearchWrap"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5 21 21"></path></svg><input type="search" id="logSearch" placeholder="Søk i vinene dine" aria-label="Søk i vinene dine" autocomplete="off"></label>
+      <div id="offlineBanner" class="banner" hidden data-i18n="log.offline">Du er uten nett. Det du lagrer nå sendes når du er på nett igjen.</div>
+      <label class="search" id="logSearchWrap"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5 21 21"></path></svg><input type="search" id="logSearch" data-i18n-ph="log.search" data-i18n-aria="log.search" placeholder="Søk i vinene dine" aria-label="Søk i vinene dine" autocomplete="off"></label>
       <div id="wineList"></div>
     </section>
 
     <section class="screen" id="tab-profil" hidden>
-      <div class="head"><div class="stack"><span class="eyebrow" id="profEyebrow"></span><h1 class="title">Din smaksprofil</h1></div></div>
+      <div class="head"><div class="stack"><span class="eyebrow" id="profEyebrow"></span><h1 class="title" data-i18n="title.profile">Din smaksprofil</h1></div></div>
       <div id="profileBody"></div>
     </section>
 
     <section class="screen" id="tab-rad" hidden>
       <div class="head">
-        <h1 class="title">Sommelier</h1>
-        <div class="seg" role="tablist" aria-label="Type råd" id="radSeg">
+        <h1 class="title" data-i18n="title.sommelier">Sommelier</h1>
+        <div class="seg" role="tablist" aria-label="Type råd" data-i18n-aria="s.modeAria" id="radSeg">
           <span class="thumb"></span>
-          <button type="button" role="tab" aria-selected="true" data-mode="menu">Vinkart</button>
-          <button type="button" role="tab" aria-selected="false" data-mode="buy">Kjøp</button>
+          <button type="button" role="tab" aria-selected="true" data-mode="menu" data-i18n="s.menu">Vinkart</button>
+          <button type="button" role="tab" aria-selected="false" data-mode="buy" data-i18n="s.buy">Kjøp</button>
         </div>
       </div>
 
       <div id="menuPane" style="display:flex;flex-direction:column;gap:22px">
         <div class="photos" id="menuPhotos">
-          <label class="add-photo" for="menuInput" aria-label="Ta bilde av vinkartet"><svg viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"></path><circle cx="12" cy="13" r="3.5"></circle></svg></label>
-          <span class="hint" id="menuHint">Ta bilde av vinkartet. Flere sider går fint.</span>
+          <label class="add-photo" for="menuInput" aria-label="Ta bilde av vinkartet" data-i18n-aria="s.photoAria"><svg viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"></path><circle cx="12" cy="13" r="3.5"></circle></svg></label>
+          <span class="hint" id="menuHint" data-i18n="s.photoHint">Ta bilde av vinkartet. Flere sider går fint.</span>
         </div>
         <input type="file" id="menuInput" accept="image/*" multiple hidden>
         <div class="fieldset">
-          <label class="eyebrow" for="menuIntent">I kveld</label>
-          <div class="tagbox" id="menuBox"><div class="tf"><textarea id="menuIntent" rows="1" enterkeyhint="done" placeholder="Til lam, rundt 900 kr, noe nytt"></textarea></div><div class="sugg" id="menuChips"></div></div>
+          <label class="eyebrow" for="menuIntent" data-i18n="s.tonight">I kveld</label>
+          <div class="tagbox" id="menuBox"><div class="tf"><textarea id="menuIntent" rows="1" enterkeyhint="done" data-i18n-ph="s.tonightPh" placeholder="Til lam, rundt 900 kr, noe nytt"></textarea></div><div class="sugg" id="menuChips"></div></div>
         </div>
-        <button class="btn dark block" id="menuGo" type="button">Finn vinen min</button>
-        <div class="progress" id="menuStatus" hidden><span class="think"></span><span class="think-txt" data-phrases="Leser vinkartet|Sammenligner med smaken din|Velger de beste">Leser vinkartet</span><button class="link muted" id="menuStop" type="button" style="margin-left:auto">Stopp</button></div>
+        <button class="btn dark block" id="menuGo" type="button" data-i18n="s.findWine">Finn vinen min</button>
+        <div class="progress" id="menuStatus" hidden><span class="think"></span><span class="think-txt" data-i18n-phrases="s.menuThinking" data-phrases="Leser vinkartet|Sammenligner med smaken din|Velger de beste">Leser vinkartet</span><button class="link muted" id="menuStop" type="button" style="margin-left:auto" data-i18n="c.stop">Stopp</button></div>
         <p class="err" id="menuErr" hidden></p>
         <div id="menuOut"></div>
       </div>
 
       <div id="buyPane" style="display:flex;flex-direction:column;gap:22px" hidden>
         <div class="fieldset">
-          <label class="eyebrow" for="buyIntent">Anledning</label>
-          <div class="tagbox" id="buyBox"><div class="tf"><textarea id="buyIntent" rows="1" enterkeyhint="done" placeholder="Fredagstaco med venner, noe saftig"></textarea></div><div class="sugg" id="buyChips"></div></div>
+          <label class="eyebrow" for="buyIntent" data-i18n="s.occasion">Anledning</label>
+          <div class="tagbox" id="buyBox"><div class="tf"><textarea id="buyIntent" rows="1" enterkeyhint="done" data-i18n-ph="s.occasionPh" placeholder="Fredagstaco med venner, noe saftig"></textarea></div><div class="sugg" id="buyChips"></div></div>
         </div>
         <div class="fields">
-          <label class="f"><span>Budsjett</span><input id="buyBudget" type="number" inputmode="numeric" min="0" placeholder="kr per flaske"></label>
-          <div class="switch-row"><label for="buyCellar" style="font-size:15px;color:var(--muted)">Se i kjelleren først</label><input type="checkbox" class="switch" id="buyCellar" checked></div>
+          <label class="f"><span data-i18n="s.budget">Budsjett</span><input id="buyBudget" type="number" inputmode="numeric" min="0" placeholder="kr per flaske" data-i18n-ph="s.perBottle"></label>
+          <div class="switch-row"><label for="buyCellar" style="font-size:15px;color:var(--muted)" data-i18n="s.cellarFirst">Se i kjelleren først</label><input type="checkbox" class="switch" id="buyCellar" checked></div>
         </div>
-        <div class="seg" role="radiogroup" aria-label="Hvor kjøper du?" id="buyWhere">
+        <div class="seg" role="radiogroup" aria-label="Hvor kjøper du?" data-i18n-aria="s.whereAria" id="buyWhere">
           <span class="thumb"></span>
           <button type="button" role="radio" aria-checked="true" data-v="no">Vinmonopolet</button>
           <button type="button" role="radio" aria-checked="false" data-v="fr">Frankrike</button>
           <button type="button" role="radio" aria-checked="false" data-v="other">Annet</button>
         </div>
-        <button class="btn dark block" id="buyGo" type="button">Gi meg forslag</button>
-        <div class="progress" id="buyStatus" hidden><span class="think"></span><span class="think-txt" data-phrases="Tenker på smaken din|Leter etter flasker|Velger de beste">Tenker på smaken din</span><button class="link muted" id="buyStop" type="button" style="margin-left:auto">Stopp</button></div>
+        <button class="btn dark block" id="buyGo" type="button" data-i18n="s.go">Gi meg forslag</button>
+        <div class="progress" id="buyStatus" hidden><span class="think"></span><span class="think-txt" data-i18n-phrases="s.buyThinking" data-phrases="Tenker på smaken din|Leter etter flasker|Velger de beste">Tenker på smaken din</span><button class="link muted" id="buyStop" type="button" style="margin-left:auto" data-i18n="c.stop">Stopp</button></div>
         <p class="err" id="buyErr" hidden></p>
         <div id="buyOut"></div>
       </div>
@@ -450,9 +450,9 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
 
     <section class="screen" id="tab-kjeller" hidden>
       <div class="head">
-        <div class="stack"><span class="eyebrow" id="cellarEyebrow"></span><h1 class="title">Vinkjeller</h1></div>
+        <div class="stack"><span class="eyebrow" id="cellarEyebrow"></span><h1 class="title" data-i18n="title.cellar">Vinkjeller</h1></div>
         <div class="rings" id="cellarRings" aria-hidden="true"></div>
-        <button class="icon-btn ghost" type="button" id="addBottleBtn" aria-label="Ny flaske"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg></button>
+        <button class="icon-btn ghost" type="button" id="addBottleBtn" aria-label="Ny flaske" data-i18n-aria="nav.newBottle"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg></button>
       </div>
       <div id="cellarBody"></div>
     </section>
@@ -460,12 +460,12 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
 
   <div class="sync-badge" id="syncBadge" hidden></div>
 
-  <nav class="tabbar" aria-label="Seksjoner">
-    <button class="tab" type="button" data-tab="logg" aria-label="Historikk" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"></path><path d="M3.2 4.6v4.1h4.1"></path><path d="M12 7.5V12l3 1.8"></path></svg><i></i></button>
-    <button class="tab" type="button" data-tab="profil" aria-label="Din smaksprofil"><svg viewBox="0 0 24 24"><path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"></path><path d="M12 8l3.5 2.5-1.3 4.2H9.8L8.5 10.5z"></path></svg><i></i></button>
-    <button class="tab plus" type="button" id="plusBtn" aria-label="Ny vin"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg></button>
-    <button class="tab" type="button" data-tab="rad" aria-label="Sommelier"><svg viewBox="0 0 24 24"><path d="M10 3.5l1.6 4.6a3 3 0 0 0 1.8 1.8L18 11.5l-4.6 1.6a3 3 0 0 0-1.8 1.8L10 19.5l-1.6-4.6a3 3 0 0 0-1.8-1.8L2 11.5l4.6-1.6a3 3 0 0 0 1.8-1.8z"></path><path d="M18.5 2.5v4M16.5 4.5h4"></path><path d="M19 16.5v3M17.5 18h3"></path></svg><i></i></button>
-    <button class="tab" type="button" data-tab="kjeller" aria-label="Vinkjeller"><svg viewBox="0 0 24 24"><g transform="translate(-1.2 0)"><g fill="currentColor" stroke="none"><g transform="rotate(20 19.4 7.6)"><path d="M7.80 5.65H14.40C15.50 5.65 15.30 6.80 16.40 6.80H19.40a0.80 0.80 0 0 1 0 1.60H16.40C15.30 8.40 15.50 9.55 14.40 9.55H7.80a.8 .8 0 0 1 -.8 -.8v-2.30a.8 .8 0 0 1 .8 -.8z"/></g><g transform="rotate(20 19.4 13.2)"><path d="M7.80 11.25H14.40C15.50 11.25 15.30 12.40 16.40 12.40H19.40a0.80 0.80 0 0 1 0 1.60H16.40C15.30 14.00 15.50 15.15 14.40 15.15H7.80a.8 .8 0 0 1 -.8 -.8v-2.30a.8 .8 0 0 1 .8 -.8z"/></g><g transform="rotate(20 19.4 18.8)"><path d="M7.80 16.85H14.40C15.50 16.85 15.30 18.00 16.40 18.00H19.40a0.80 0.80 0 0 1 0 1.60H16.40C15.30 19.60 15.50 20.75 14.40 20.75H7.80a.8 .8 0 0 1 -.8 -.8v-2.30a.8 .8 0 0 1 .8 -.8z"/></g></g><path d="M21.2 2.5v19"/><path d="M18.3 5.9v3.4"/><path d="M18.3 11.5v3.4"/><path d="M18.3 17.1v3.4"/></g></svg><i></i></button>
+  <nav class="tabbar" aria-label="Seksjoner" data-i18n-aria="nav.sections">
+    <button class="tab" type="button" data-tab="logg" aria-label="Historikk" data-i18n-aria="tab.log" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"></path><path d="M3.2 4.6v4.1h4.1"></path><path d="M12 7.5V12l3 1.8"></path></svg><i></i></button>
+    <button class="tab" type="button" data-tab="profil" aria-label="Din smaksprofil" data-i18n-aria="title.profile"><svg viewBox="0 0 24 24"><path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"></path><path d="M12 8l3.5 2.5-1.3 4.2H9.8L8.5 10.5z"></path></svg><i></i></button>
+    <button class="tab plus" type="button" id="plusBtn" aria-label="Ny vin" data-i18n-aria="nav.newWine"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg></button>
+    <button class="tab" type="button" data-tab="rad" aria-label="Sommelier" data-i18n-aria="title.sommelier"><svg viewBox="0 0 24 24"><path d="M10 3.5l1.6 4.6a3 3 0 0 0 1.8 1.8L18 11.5l-4.6 1.6a3 3 0 0 0-1.8 1.8L10 19.5l-1.6-4.6a3 3 0 0 0-1.8-1.8L2 11.5l4.6-1.6a3 3 0 0 0 1.8-1.8z"></path><path d="M18.5 2.5v4M16.5 4.5h4"></path><path d="M19 16.5v3M17.5 18h3"></path></svg><i></i></button>
+    <button class="tab" type="button" data-tab="kjeller" aria-label="Vinkjeller" data-i18n-aria="title.cellar"><svg viewBox="0 0 24 24"><g transform="translate(-1.2 0)"><g fill="currentColor" stroke="none"><g transform="rotate(20 19.4 7.6)"><path d="M7.80 5.65H14.40C15.50 5.65 15.30 6.80 16.40 6.80H19.40a0.80 0.80 0 0 1 0 1.60H16.40C15.30 8.40 15.50 9.55 14.40 9.55H7.80a.8 .8 0 0 1 -.8 -.8v-2.30a.8 .8 0 0 1 .8 -.8z"/></g><g transform="rotate(20 19.4 13.2)"><path d="M7.80 11.25H14.40C15.50 11.25 15.30 12.40 16.40 12.40H19.40a0.80 0.80 0 0 1 0 1.60H16.40C15.30 14.00 15.50 15.15 14.40 15.15H7.80a.8 .8 0 0 1 -.8 -.8v-2.30a.8 .8 0 0 1 .8 -.8z"/></g><g transform="rotate(20 19.4 18.8)"><path d="M7.80 16.85H14.40C15.50 16.85 15.30 18.00 16.40 18.00H19.40a0.80 0.80 0 0 1 0 1.60H16.40C15.30 19.60 15.50 20.75 14.40 20.75H7.80a.8 .8 0 0 1 -.8 -.8v-2.30a.8 .8 0 0 1 .8 -.8z"/></g></g><path d="M21.2 2.5v19"/><path d="M18.3 5.9v3.4"/><path d="M18.3 11.5v3.4"/><path d="M18.3 17.1v3.4"/></g></svg><i></i></button>
   </nav>
 </div>
 
@@ -485,6 +485,7 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toastMsg"></span><button type="button" id="toastBtn" hidden></button></div>
 
 <script src="config.js"></script>
+<script src="i18n.js"></script>
 <script src="supabase.js"></script>
 <script src="styles.js"></script>
 <script src="app.js"></script>
