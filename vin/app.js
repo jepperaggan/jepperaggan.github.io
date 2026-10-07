@@ -387,7 +387,7 @@ function aiErrText(e) {
     offline: "Ingen nettforbindelse. Prøv igjen når du har nett.",
     not_signed_in: "Du er logget ut. Logg inn på nytt.",
     daily_limit: "Dagens kvote for AI er brukt opp. Prøv igjen i morgen.",
-    rate_limited: "AI-tjenesten har mye å gjøre akkurat nå. Prøv igjen om litt.",
+    rate_limited: "Gratiskvoten hos AI-tjenesten er brukt opp for nå (per minutt eller per døgn). Prøv igjen senere.",
     image_rejected: "Bildet kunne ikke brukes. Prøv et annet bilde.",
     missing_api_key: "AI er ikke koblet til ennå. Nøkkelen mangler i Supabase.",
     bad_api_key: "AI-nøkkelen er feil eller utløpt.",
