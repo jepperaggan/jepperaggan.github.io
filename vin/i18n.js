@@ -1,6 +1,8 @@
 // Vinprofil: tekster på norsk, engelsk og svensk. Generert fra oversettelsessiden (godkjent 7. okt. 2026).
 window.VIN_I18N = {
 "nb": {
+"login.noAccount": "Har du ikke konto?",
+"login.askJeppe": "Spør Jeppe om du kan få en konto.",
 "k.removed": "{navn} er fjernet",
 "k.addFirst": "Legg til en flaske",
 "k.bottle1": "{n} flaske",
@@ -294,6 +296,8 @@ window.VIN_I18N = {
 "nav.newBottleT": "Ny flaske"
 },
 "en": {
+"login.noAccount": "Don't have an account?",
+"login.askJeppe": "Ask Jeppe if you can get an account.",
 "k.removed": "{navn} removed",
 "k.addFirst": "Add a bottle",
 "k.bottle1": "{n} bottle",
@@ -587,6 +591,8 @@ window.VIN_I18N = {
 "nav.newBottleT": "New bottle"
 },
 "sv": {
+"login.noAccount": "Har du inget konto?",
+"login.askJeppe": "Fråga Jeppe om du kan få ett konto.",
 "k.removed": "{navn} har tagits bort",
 "k.addFirst": "Lägg till en flaska",
 "k.bottle1": "{n} flaska",

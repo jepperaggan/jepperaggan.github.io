@@ -34,6 +34,10 @@ function applyStatic(root = document) {
 }
 applyStatic();
 document.title = tx("app.name");
+$("#lg_noacct")?.addEventListener("click", e => {
+  const msg = $("#lg_ask"), open = msg.hidden;
+  msg.hidden = !open; e.currentTarget.setAttribute("aria-expanded", String(open));
+});
 
 const fmt1 = n => { const s = (Math.round(n * 10) / 10).toFixed(1); return LANG === "en" ? s : s.replace(".", ","); };
 const kr = n => Math.round(n).toLocaleString(LOCALE) + " kr";
