@@ -82,7 +82,7 @@ function toast(msg, action) {
 }
 
 /* ================= Tabs + compact top bar ================= */
-const TITLES = { logg: "Logg", profil: "Din smaksprofil", rad: "Råd", kjeller: "Vinkjeller" };
+const TITLES = { logg: "Logg", profil: "Din smaksprofil", rad: "Sommelier", kjeller: "Vinkjeller" };
 function setTab(name) {
   state.tab = name;
   $$(".tabbar .tab[data-tab]").forEach(b => b.setAttribute("aria-current", b.dataset.tab === name ? "page" : "false"));
@@ -552,7 +552,7 @@ async function runEnrich() {
         console.warn("Smaksprofil feilet", w.name, e);
         const c = e?.code || "ukjent";
         if (!toastedErr.has(c) && c !== "offline") { toastedErr.add(c); toast("Smaksprofil: " + aiErrText(e)); }
-        refreshOpenDetail();
+        refreshOpenDetail(); renderLog();
         if (["offline", "daily_limit", "missing_api_key", "bad_api_key", "no_function", "not_signed_in"].includes(e.code)) break;
       }
     }
@@ -568,6 +568,20 @@ document.addEventListener("visibilitychange", () => {
 document.addEventListener("click", e => { if (e.target.closest("[data-retry-enrich]")) { e.preventDefault(); lastRetry = Date.now(); retryEnrich(); } });
 
 /* ================= Shared bits ================= */
+// «Tenker»-indikator: AI-stjernen puster og de små stjernene blinker, mens teksten bytter mellom faser.
+const THINK_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="s0" d="M10 3.5l1.6 4.6a3 3 0 0 0 1.8 1.8L18 11.5l-4.6 1.6a3 3 0 0 0-1.8 1.8L10 19.5l-1.6-4.6a3 3 0 0 0-1.8-1.8L2 11.5l4.6-1.6a3 3 0 0 0 1.8-1.8z"></path><path class="s1" d="M18.5 2.5v4M16.5 4.5h4"></path><path class="s2" d="M19 16.5v3M17.5 18h3"></path></svg>`;
+$$("span.think:empty").forEach(e => { e.innerHTML = THINK_SVG; });
+const thinkIcon = (cls = "") => `<span class="think ${cls}">${THINK_SVG}</span>`;
+const thinkHTML = phrases => `${thinkIcon()}<span class="think-txt" data-phrases="${esc(phrases.join("|"))}">${esc(phrases[0])}</span>`;
+setInterval(() => {
+  $$(".think-txt[data-phrases]").forEach(el => {
+    if (!el.offsetParent) return;
+    const ph = el.dataset.phrases.split("|"); if (ph.length < 2) return;
+    const i = ((+el.dataset.i || 0) + 1) % ph.length; el.dataset.i = i;
+    el.style.opacity = "0";
+    setTimeout(() => { el.textContent = ph[i]; el.style.opacity = ""; }, 200);
+  });
+}, 2600);
 // Penere visningsnavn i listene: uten produsent foran, årgang og betegnelser som DOCG/AOC. Lagrede data endres ikke.
 const APPELL = /\b(DOCG|DOC|DOCa|DOQ|AOC|AOP|IGT|IGP|VdP|QbA|D\.O\.C?\.?G?\.?|A\.O\.C\.)(?=\s|$|,)/gi;
 function cleanName(w) {
@@ -634,7 +648,7 @@ function renderLog() {
       kind: "wine", id: w.id,
       lead: `<span class="glass" style="background:${glass(w.type)}"></span>`,
       title: esc(cleanName(w)),
-      sub: `${pend.has(w.id) ? `<i class="pending-dot" title="Venter på nett"></i>` : ""}<span>${listSub(w) || esc(shortDate(w.drankAt))}</span>`,
+      sub: `${pend.has(w.id) ? `<i class="pending-dot" title="Venter på nett"></i>` : ""}<span>${listSub(w) || esc(shortDate(w.drankAt))}</span>${w.aiPending && navigator.onLine && !enrichErr.has(w.id) ? thinkIcon("xs") : ""}`,
       trail: `<span class="rate">${Number.isFinite(w.rating) ? w.rating : "–"}</span>`,
       actions: [{ act: "del", label: "Slett", c: "red" }],
     })).join("")}</div>`;
@@ -677,7 +691,7 @@ function aiBlock(w) {
       <button class="btn light" type="button" data-retry-enrich style="align-self:flex-start;height:40px;font-size:15px">Prøv igjen</button>`;
   }
   if (w.aiPending) {
-    return `<div style="display:flex;justify-content:space-between;align-items:baseline"><h3 class="eyebrow">Smaksprofil</h3><span class="small" style="color:var(--faint)">${navigator.onLine ? "hentes …" : "hentes når du er på nett"}</span></div>
+    return `<div style="display:flex;justify-content:space-between;align-items:baseline"><h3 class="eyebrow">Smaksprofil</h3>${navigator.onLine ? `<span class="small progress" style="color:var(--faint);gap:6px">${thinkIcon("sm")}<span class="think-txt" data-phrases="Henter|Slår opp vinen|Setter sammen">Henter</span></span>` : `<span class="small" style="color:var(--faint)">hentes når du er på nett</span>`}</div>
       <div class="dims">${DIMS.map(([, l]) => `<div class="dim"><span class="l">${l}</span><span class="skeleton"></span><span></span></div>`).join("")}</div>`;
   }
   return "";
@@ -932,16 +946,16 @@ function renderProfile() {
         <div><span class="v">${W.length}</span><span class="k">${W.length === 1 ? "vin" : "viner"}</span></div>
         <div><span class="v">${fmt1(avg(W.map(w => w.rating)))}</span><span class="k">i snitt</span></div>
         <div><span class="v word">${esc(fav ? fav.k : "–")}</span><span class="k">favorittdrue</span></div></div>
-      <button type="button" class="next-cta" id="nextGo"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3.5l1.6 4.6a3 3 0 0 0 1.8 1.8L18 11.5l-4.6 1.6a3 3 0 0 0-1.8 1.8L10 19.5l-1.6-4.6a3 3 0 0 0-1.8-1.8L2 11.5l4.6-1.6a3 3 0 0 0 1.8-1.8z"></path><path d="M18.5 2.5v4M16.5 4.5h4"></path><path d="M19 16.5v3M17.5 18h3"></path></svg></span><span class="tx"><b>Hva bør jeg velge neste gang?</b><span>AI-forslag ut fra smaken din</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
       <section class="panel">
         <div style="display:flex;justify-content:space-between;align-items:baseline"><h2 class="eyebrow">Smaksavtrykk</h2>
           <span class="legend"><span><i style="background:var(--accent)"></i>Det du liker</span><span><i style="background:var(--faint)"></i>Alt</span></span></div>
         ${hasDims ? `<div class="radar">${radar(liked, all)}</div>` : `<p class="small muted">Tegnes når smaksprofilene til vinene dine er hentet.</p>`}
       </section>
-      ${tc.likes.length || tc.dislikes.length ? `<section class="panel"><h2 class="eyebrow">Fra notatene dine</h2><div class="tags">${tc.likes.map(t => `<span class="tag">+ ${esc(t)}</span>`).join("")}${tc.dislikes.map(t => `<span class="tag neg">− ${esc(t)}</span>`).join("")}</div></section>` : ""}
+      <button type="button" class="next-cta" id="nextGo"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3.5l1.6 4.6a3 3 0 0 0 1.8 1.8L18 11.5l-4.6 1.6a3 3 0 0 0-1.8 1.8L10 19.5l-1.6-4.6a3 3 0 0 0-1.8-1.8L2 11.5l4.6-1.6a3 3 0 0 0 1.8-1.8z"></path><path d="M18.5 2.5v4M16.5 4.5h4"></path><path d="M19 16.5v3M17.5 18h3"></path></svg></span><span class="tx"><b>Hva bør jeg velge neste gang?</b><span>AI-forslag ut fra smaken din</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+      ${tc.likes.length || tc.dislikes.length ? `<section class="panel"><h2 class="eyebrow">Gjennomgående</h2><div class="tags">${tc.likes.map(t => `<span class="tag">+ ${esc(t)}</span>`).join("")}${tc.dislikes.map(t => `<span class="tag neg">− ${esc(t)}</span>`).join("")}</div></section>` : ""}
       <section class="panel"><h2 class="eyebrow">Om smaken din</h2>
         ${sp?.text ? `<p class="ai-text" id="aiOut">${esc(sp.text)}</p>` : `<p class="small muted" id="aiOut">${W.length < PROFILE_EVERY ? `Skrives når du har gitt karakter til ${PROFILE_EVERY} viner.` : ""}</p>`}
-        <div class="progress" id="aiStatus" ${profileRun ? "" : "hidden"}><span class="spin"></span><span>${sp?.text ? "Oppdaterer med de nye vinene" : "Leser profilen"}</span></div>
+        <div class="progress" id="aiStatus" ${profileRun ? "" : "hidden"}>${thinkHTML(sp?.text ? ["Oppdaterer med de nye vinene", "Ser etter mønstre", "Skriver"] : ["Leser profilen", "Ser etter mønstre", "Skriver"])}</div>
         <p class="err" id="aiErr" hidden></p>
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
           <span class="small" style="color:var(--faint)">${sp?.text ? `Basert på ${sp.n} ${sp.n === 1 ? "vin" : "viner"} · ${W.length - sp.n > 0 ? `${W.length - sp.n} ny${W.length - sp.n === 1 ? "" : "e"} siden sist` : "oppdatert"}` : ""}</span>
@@ -949,14 +963,17 @@ function renderProfile() {
         </div>
       </section>`;
   }
-  html += accountHTML();
+  html += `<button type="button" class="settings-btn" id="settingsBtn"><svg class="gear" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg><span>Innstillinger</span><span class="v">${esc(displayName(state.user))}</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>`;
   el.innerHTML = html;
+  $("#settingsBtn").addEventListener("click", settingsSheet);
   $("#aiGo")?.addEventListener("click", () => runProfileAI());
   $("#nextGo")?.addEventListener("click", nextSheet);
   // Automatisk oppdatering: første gang ved 3 viner, deretter for hver tredje nye
   if (W.length >= PROFILE_EVERY && !profileRun && navigator.onLine && Date.now() - profileAutoFailAt > 10 * 60000
       && (!sp?.text || W.length - (sp.n || 0) >= PROFILE_EVERY)) runProfileAI({ auto: true });
-  bindAccount();
+}
+function settingsSheet() {
+  openSheet({ title: "Innstillinger", left: "", right: "Ferdig", rightPlain: true, html: accountHTML(), mount: () => bindAccount() });
 }
 async function runProfileAI({ auto = false } = {}) {
   if (profileRun) return profileRun;
@@ -997,7 +1014,7 @@ function nextSheet() {
       ${seg("nx_mode", "Hva vil du ha?", [["trygt", "Sikker vinner"], ["nytt", "Utfordre meg"]], last.mode)}
       <p class="hint" id="nx_hint"></p>
       <button class="btn accent block" type="button" id="nx_go">Finn forslag</button>
-      <div class="progress" id="nx_status" hidden><span class="spin"></span><span>Tenker på smaken din</span><button class="link muted" id="nx_stop" type="button" style="margin-left:auto">Stopp</button></div>
+      <div class="progress" id="nx_status" hidden>${thinkHTML(["Tenker på smaken din", "Leter etter viner", "Velger de beste"])}<button class="link muted" id="nx_stop" type="button" style="margin-left:auto">Stopp</button></div>
       <p class="err" id="nx_err" hidden></p>
       <div id="nx_out"></div>`,
     onClose: () => nextCtl?.abort(),
@@ -1041,7 +1058,7 @@ Gi 3 forslag, beste først. All tekst på norsk bokmål, uten tankestrek som ski
 /* ---- Account ---- */
 const displayName = u => { const e = u?.email || ""; return e.endsWith("@" + (CFG.userDomain || "")) ? e.split("@")[0] : e; };
 function accountHTML() {
-  return `<section class="panel"><h2 class="eyebrow">Konto</h2><div class="list-rows">
+  return `<section class="panel" style="border-top:0;padding-top:0"><h2 class="eyebrow">Konto</h2><div class="list-rows">
     <div><span>Innlogget som</span><span class="v">${esc(displayName(state.user))}</span></div>
     <div><span>AI-kall siste døgn</span><span class="v" id="usageV">…</span></div>
     <div><span>Venter på å lagres</span><span class="v">${outbox.length ? outbox.length + " endringer" : "ingenting"}</span></div>
@@ -1118,12 +1135,45 @@ function setRadMode(mode) {
   $("#menuPane").hidden = mode !== "menu"; $("#buyPane").hidden = mode !== "buy";
   if (mode === "buy") requestAnimationFrame(() => placeThumb($("#buyWhere")));
 }
-function chips(el, target, items) {
-  el.innerHTML = items.map(t => `<button type="button" class="chip">${esc(t)}</button>`).join("");
-  $$("button", el).forEach(b => b.addEventListener("click", () => { const ta = $(target); ta.value = ta.value.trim() ? ta.value.trim() + ", " + b.textContent.toLowerCase() : b.textContent; }));
+// Stikkordfelt: forslag og egne ord blir bobler med x. Komma eller punktum gjør teksten til en boble.
+const TAGS = {};
+const XSVG = `<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6"></path></svg>`;
+function tagField(key, items) {
+  const box = $("#" + key + "Box"), tf = $(".tf", box), ta = $("#" + key + "Intent"), sg = $("#" + key + "Chips");
+  const st = TAGS[key] = { tokens: [], value: () => [...st.tokens, ta.value.replace(/[,.]\s*$/, "").trim()].filter(Boolean).join(", ") };
+  const fit = () => { ta.style.height = "32px"; ta.style.height = Math.max(32, ta.scrollHeight) + "px"; };
+  const render = () => {
+    $$(".tok", tf).forEach(n => n.remove());
+    st.tokens.forEach((t, i) => {
+      const s = document.createElement("span"); s.className = "tok";
+      s.innerHTML = `<span>${esc(t)}</span><button type="button" aria-label="Fjern ${esc(t)}">${XSVG}</button>`;
+      s.querySelector("button").addEventListener("click", e => { e.stopPropagation(); st.tokens.splice(i, 1); render(); });
+      tf.insertBefore(s, ta);
+    });
+    ta.placeholder = st.tokens.length ? "Legg til mer" : ta.dataset.ph;
+    sg.innerHTML = items.filter(t => !st.tokens.some(x => x.toLowerCase() === t.toLowerCase())).map(t => `<button type="button">${esc(t)}</button>`).join("");
+    $$("button", sg).forEach(b => b.addEventListener("click", () => add(b.textContent)));
+  };
+  const add = t => {
+    t = String(t).replace(/^[\s,.]+|[\s,.]+$/g, "");
+    if (t && !st.tokens.some(x => x.toLowerCase() === t.toLowerCase())) st.tokens.push(t);
+    render();
+  };
+  ta.dataset.ph = ta.placeholder;
+  ta.addEventListener("input", () => {
+    if (/[,.]\s*$/.test(ta.value) || /\n/.test(ta.value)) { add(ta.value); ta.value = ""; }
+    fit();
+  });
+  ta.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); if (ta.value.trim()) { add(ta.value); ta.value = ""; fit(); } else ta.blur(); }
+    else if (e.key === "Backspace" && !ta.value && st.tokens.length) { st.tokens.pop(); render(); }
+  });
+  ta.addEventListener("blur", () => { if (ta.value.trim().length > 1 && ta.value.trim().length < 40) { add(ta.value); ta.value = ""; fit(); } });
+  tf.addEventListener("click", e => { if (e.target === tf) ta.focus(); });
+  render();
 }
-chips($("#menuChips"), "#menuIntent", ["Trygt valg", "Noe nytt for meg", "Best verdi", "Til fisk", "Til kjøtt"]);
-chips($("#buyChips"), "#buyIntent", ["Middag hjemme", "Gave", "Til lagring", "Sommerkveld", "Pizza"]);
+tagField("menu", ["Trygt valg", "Noe nytt for meg", "Best verdi", "Til fisk", "Til kjøtt", "Til skalldyr", "Til ost"]);
+tagField("buy", ["Middag hjemme", "Gave", "Til lagring", "Sommerkveld", "Pizza", "Til fisk", "Til vilt"]);
 const styleParts = style => {
   const st = String(style || "").split("·").map(s => s.trim());
   const t = TYPES.find(t => (st[0] || "").toLowerCase().startsWith(t.slice(0, 3)));
@@ -1162,7 +1212,7 @@ $("#menuGo").addEventListener("click", async () => {
 Smaksprofilen deres, bygget fra viner de har gitt karakter (1–10) og notatene deres:
 ${profileText()}
 
-Det de vil ha i kveld: ${$("#menuIntent").value.trim() || "ikke oppgitt"}
+Det de vil ha i kveld: ${TAGS.menu.value() || "ikke oppgitt"}
 
 Les vinkartet og velg de tre vinene som passer best til smaken deres og kveldens ønske. Velg bare viner som faktisk står på kartet, og bruk prisene slik de står. Har de vurdert en vin som står på kartet, ta hensyn til karakteren.
 
@@ -1177,7 +1227,7 @@ Sorter picks med beste match først. All tekst på norsk bokmål, uten tankestre
 let buyCtl = null;
 $("#buyStop").addEventListener("click", () => buyCtl?.abort());
 $("#buyGo").addEventListener("click", async () => {
-  const intent = $("#buyIntent").value.trim();
+  const intent = TAGS.buy.value();
   if (!intent) { $("#buyErr").textContent = "Skriv kort hva vinen skal brukes til."; $("#buyErr").hidden = false; $("#buyIntent").focus(); return; }
   buyCtl = new AbortController(); busy("buy", true); $("#buyOut").innerHTML = "";
   const budget = numOrNull($("#buyBudget").value), where = segVal($("#buyWhere")) || "no", useCellar = $("#buyCellar").checked;

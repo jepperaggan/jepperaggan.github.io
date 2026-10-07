@@ -237,7 +237,7 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
 .stats .v{font-size:40px;line-height:1;font-weight:200;letter-spacing:-.05em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stats .v.word{font-size:22px;line-height:1.6;font-weight:500;letter-spacing:-.03em}
 .stats .k{font-size:12px;color:var(--muted);letter-spacing:0}
-.next-cta{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:16px 16px 16px 14px;margin:4px 0 22px;border-radius:20px;background:var(--accent-soft);color:var(--ink);transition:transform 160ms ease}
+.next-cta{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:16px 16px 16px 14px;margin:2px 0 20px;border-radius:20px;background:var(--accent-soft);color:var(--ink);transition:transform 160ms ease}
 .next-cta .ic{width:40px;height:40px;border-radius:12px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;flex:none}
 .next-cta .ic svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .next-cta .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
@@ -245,6 +245,10 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
 .next-cta .tx span{font-size:13px;color:var(--muted)}
 .next-cta .chev{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .next-cta:active{transform:scale(.98)}
+.settings-btn{display:flex;align-items:center;gap:12px;width:100%;margin-top:26px;padding:15px 16px;border-radius:16px;background:var(--surface);box-shadow:0 0 0 .5px var(--shadow);font-size:16px;text-align:left}
+.settings-btn .v{margin-left:auto;color:var(--muted);font-size:15px}
+.settings-btn .gear{width:20px;height:20px;stroke:var(--muted);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.settings-btn .chev{width:16px;height:16px;stroke:var(--faint);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .panel{padding:18px 0;border-top:.5px solid var(--line);display:flex;flex-direction:column;gap:12px}
 .panel:last-child{border-bottom:.5px solid var(--line)}
 .legend{display:flex;gap:14px;font-size:11px;color:var(--muted);letter-spacing:0}
@@ -263,10 +267,36 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
 .add-photo{width:56px;height:72px;border-radius:8px;border:1px dashed var(--track);display:grid;place-items:center;color:var(--muted)}
 .add-photo svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linejoin:round}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
+/* Felt med stikkord-bobler: forslag nederst i samme kort, valgte og egne stikkord som bobler med x */
+.tagbox{border-radius:18px;background:var(--surface);box-shadow:0 0 0 .5px var(--shadow);transition:box-shadow 160ms ease}
+.tagbox:focus-within{box-shadow:0 0 0 1.5px var(--ink)}
+.tagbox .tf{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:12px 12px 10px 14px;min-height:56px;cursor:text}
+.tagbox textarea{flex:1 1 140px;min-width:120px;border:0;background:transparent;resize:none;outline:none;font-size:16px;line-height:1.4;padding:5px 2px;height:32px;overflow:hidden}
+.tagbox textarea::placeholder{color:var(--faint)}
+.tok{display:inline-flex;align-items:center;gap:2px;height:32px;padding:0 4px 0 12px;border-radius:16px;background:var(--accent-soft);color:var(--ink);font-size:14px;letter-spacing:-.005em;animation:tok-in 200ms var(--ease-out) both}
+.tok button{width:26px;height:26px;border-radius:13px;display:grid;place-items:center;color:var(--muted)}
+.tok button svg{width:12px;height:12px;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;fill:none}
+@keyframes tok-in{from{opacity:0;transform:scale(.92)}}
+.sugg{display:flex;gap:6px;overflow-x:auto;padding:10px 12px 12px;border-top:.5px solid var(--line);scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.sugg::-webkit-scrollbar{display:none}
+.sugg:empty{display:none}
+.sugg button{flex:none;height:30px;padding:0 12px;border-radius:15px;background:var(--fill);font-size:13px;color:var(--muted);letter-spacing:0}
+.sugg button::before{content:"+ ";color:var(--faint)}
 .chip{height:32px;padding:0 13px;border-radius:16px;background:var(--fill);font-size:13px;letter-spacing:0}
 .progress{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:15px}
 .spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--ink);animation:sp .8s linear infinite;flex:none}
 @keyframes sp{to{transform:rotate(1turn)}}
+.think{width:20px;height:20px;flex:none;color:var(--accent);display:inline-block}
+.think.sm{width:15px;height:15px}
+.think.xs{width:13px;height:13px;margin-left:-2px}
+.think svg{display:block;width:100%;height:100%;overflow:visible;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.think .s0{fill:currentColor;fill-opacity:.16;transform-box:fill-box;transform-origin:center;animation:think-breathe 1.6s var(--ease-in-out) infinite}
+.think .s1,.think .s2{transform-box:fill-box;transform-origin:center;animation:think-twinkle 1.6s ease-in-out infinite}
+.think .s2{animation-delay:-.8s}
+@keyframes think-breathe{0%,100%{transform:scale(.8) rotate(0deg)}50%{transform:scale(1) rotate(14deg)}}
+@keyframes think-twinkle{0%,100%{opacity:.15;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}
+@keyframes think-fade{0%,100%{opacity:.35}50%{opacity:1}}
+.think-txt{transition:opacity 200ms ease}
 .pick{display:flex;flex-direction:column;gap:9px;padding:18px 0;border-top:.5px solid var(--line)}
 .pick .top{display:flex;align-items:flex-start;gap:14px}
 .pick .glass{width:30px;height:30px}
@@ -284,6 +314,7 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
 /* Kjeller */
 .dist{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px;margin-bottom:10px}
 #tab-kjeller .head .stack{flex:1}
+#tab-rad .head{flex-direction:column;align-items:stretch;gap:16px}
 .rings{display:flex;gap:10px;align-self:center;margin-bottom:-4px}
 .rings:empty{display:none}
 .ring{width:46px;height:46px;display:block}
@@ -321,6 +352,7 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
   .btn:active,.icon-btn:active,.tab:active,.chip:active,.cta:active{transform:none;opacity:.6}
   .toast{transform:translate(-50%,0)!important;transition:opacity 200ms ease!important}
   .skeleton,.spin{animation:none}
+  .think .s0,.think .s1,.think .s2{animation:think-fade 2s ease-in-out infinite;transform:none}
 }
 @media (prefers-reduced-transparency: reduce){
   .tabbar,.topbar{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}
@@ -366,11 +398,11 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
 
     <section class="screen" id="tab-rad" hidden>
       <div class="head">
-        <h1 class="title">Råd</h1>
-        <div class="seg" role="tablist" aria-label="Type råd" id="radSeg" style="width:162px">
-          <span class="thumb" style="width:78px"></span>
-          <button type="button" role="tab" aria-selected="true" data-mode="menu" style="width:78px;flex:none">Vinkart</button>
-          <button type="button" role="tab" aria-selected="false" data-mode="buy" style="width:78px;flex:none">Kjøp</button>
+        <h1 class="title">Sommelier</h1>
+        <div class="seg" role="tablist" aria-label="Type råd" id="radSeg">
+          <span class="thumb"></span>
+          <button type="button" role="tab" aria-selected="true" data-mode="menu">Vinkart</button>
+          <button type="button" role="tab" aria-selected="false" data-mode="buy">Kjøp</button>
         </div>
       </div>
 
@@ -382,11 +414,10 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
         <input type="file" id="menuInput" accept="image/*" multiple hidden>
         <div class="fieldset">
           <label class="eyebrow" for="menuIntent">I kveld</label>
-          <div class="note"><textarea id="menuIntent" rows="2" placeholder="Til lam, rundt 900 kr flasken, gjerne noe jeg ikke har prøvd"></textarea></div>
-          <div class="chips" id="menuChips"></div>
+          <div class="tagbox" id="menuBox"><div class="tf"><textarea id="menuIntent" rows="1" enterkeyhint="done" placeholder="Til lam, rundt 900 kr, noe nytt"></textarea></div><div class="sugg" id="menuChips"></div></div>
         </div>
         <button class="btn dark block" id="menuGo" type="button">Finn vinen min</button>
-        <div class="progress" id="menuStatus" hidden><span class="spin"></span><span>Leser vinkartet</span><button class="link muted" id="menuStop" type="button" style="margin-left:auto">Stopp</button></div>
+        <div class="progress" id="menuStatus" hidden><span class="think"></span><span class="think-txt" data-phrases="Leser vinkartet|Sammenligner med smaken din|Velger de beste">Leser vinkartet</span><button class="link muted" id="menuStop" type="button" style="margin-left:auto">Stopp</button></div>
         <p class="err" id="menuErr" hidden></p>
         <div id="menuOut"></div>
       </div>
@@ -394,8 +425,7 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
       <div id="buyPane" style="display:flex;flex-direction:column;gap:22px" hidden>
         <div class="fieldset">
           <label class="eyebrow" for="buyIntent">Anledning</label>
-          <div class="note"><textarea id="buyIntent" rows="2" placeholder="Fredagstaco med venner, noe saftig og ukomplisert"></textarea></div>
-          <div class="chips" id="buyChips"></div>
+          <div class="tagbox" id="buyBox"><div class="tf"><textarea id="buyIntent" rows="1" enterkeyhint="done" placeholder="Fredagstaco med venner, noe saftig"></textarea></div><div class="sugg" id="buyChips"></div></div>
         </div>
         <div class="fields">
           <label class="f"><span>Budsjett</span><input id="buyBudget" type="number" inputmode="numeric" min="0" placeholder="kr per flaske"></label>
@@ -408,7 +438,7 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
           <button type="button" role="radio" aria-checked="false" data-v="other">Annet</button>
         </div>
         <button class="btn dark block" id="buyGo" type="button">Gi meg forslag</button>
-        <div class="progress" id="buyStatus" hidden><span class="spin"></span><span>Tenker på smaken din</span><button class="link muted" id="buyStop" type="button" style="margin-left:auto">Stopp</button></div>
+        <div class="progress" id="buyStatus" hidden><span class="think"></span><span class="think-txt" data-phrases="Tenker på smaken din|Leter etter flasker|Velger de beste">Tenker på smaken din</span><button class="link muted" id="buyStop" type="button" style="margin-left:auto">Stopp</button></div>
         <p class="err" id="buyErr" hidden></p>
         <div id="buyOut"></div>
       </div>
@@ -430,7 +460,7 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
     <button class="tab" type="button" data-tab="logg" aria-label="Historikk" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"></path><path d="M3.2 4.6v4.1h4.1"></path><path d="M12 7.5V12l3 1.8"></path></svg><i></i></button>
     <button class="tab" type="button" data-tab="profil" aria-label="Din smaksprofil"><svg viewBox="0 0 24 24"><path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"></path><path d="M12 8l3.5 2.5-1.3 4.2H9.8L8.5 10.5z"></path></svg><i></i></button>
     <button class="tab plus" type="button" id="plusBtn" aria-label="Ny vin"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg></button>
-    <button class="tab" type="button" data-tab="rad" aria-label="Råd fra AI"><svg viewBox="0 0 24 24"><path d="M10 3.5l1.6 4.6a3 3 0 0 0 1.8 1.8L18 11.5l-4.6 1.6a3 3 0 0 0-1.8 1.8L10 19.5l-1.6-4.6a3 3 0 0 0-1.8-1.8L2 11.5l4.6-1.6a3 3 0 0 0 1.8-1.8z"></path><path d="M18.5 2.5v4M16.5 4.5h4"></path><path d="M19 16.5v3M17.5 18h3"></path></svg><i></i></button>
+    <button class="tab" type="button" data-tab="rad" aria-label="Sommelier"><svg viewBox="0 0 24 24"><path d="M10 3.5l1.6 4.6a3 3 0 0 0 1.8 1.8L18 11.5l-4.6 1.6a3 3 0 0 0-1.8 1.8L10 19.5l-1.6-4.6a3 3 0 0 0-1.8-1.8L2 11.5l4.6-1.6a3 3 0 0 0 1.8-1.8z"></path><path d="M18.5 2.5v4M16.5 4.5h4"></path><path d="M19 16.5v3M17.5 18h3"></path></svg><i></i></button>
     <button class="tab" type="button" data-tab="kjeller" aria-label="Vinkjeller"><svg viewBox="0 0 24 24"><g transform="rotate(-22 12 12)" fill="currentColor" stroke="none"><path d="M5.20 4.20H13.40C14.61 4.20 14.39 5.35 15.60 5.35H19.60a0.85 0.85 0 0 1 0 1.70H15.60C14.39 7.05 14.61 8.20 13.40 8.20H5.20a.8 .8 0 0 1 -.8 -.8v-2.40a.8 .8 0 0 1 .8 -.8z"></path><path d="M5.20 10.00H13.40C14.61 10.00 14.39 11.15 15.60 11.15H19.60a0.85 0.85 0 0 1 0 1.70H15.60C14.39 12.85 14.61 14.00 13.40 14.00H5.20a.8 .8 0 0 1 -.8 -.8v-2.40a.8 .8 0 0 1 .8 -.8z"></path><path d="M5.20 15.80H13.40C14.61 15.80 14.39 16.95 15.60 16.95H19.60a0.85 0.85 0 0 1 0 1.70H15.60C14.39 18.65 14.61 19.80 13.40 19.80H5.20a.8 .8 0 0 1 -.8 -.8v-2.40a.8 .8 0 0 1 .8 -.8z"></path></g></svg><i></i></button>
   </nav>
 </div>
