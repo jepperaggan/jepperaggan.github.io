@@ -994,7 +994,7 @@ function nextSheet() {
   openSheet({
     title: "Neste vin", left: "", right: "Ferdig", rightPlain: true,
     html: `${seg("nx_type", "Type", [["rød", "Rød"], ["hvit", "Hvit"], ["musserende", "Musserende"]], last.type)}
-      ${seg("nx_mode", "Hva vil du ha?", [["trygt", "Noe jeg vil like"], ["nytt", "Utfordre meg"]], last.mode)}
+      ${seg("nx_mode", "Hva vil du ha?", [["trygt", "Sikker vinner"], ["nytt", "Utfordre meg"]], last.mode)}
       <p class="hint" id="nx_hint"></p>
       <button class="btn accent block" type="button" id="nx_go">Finn forslag</button>
       <div class="progress" id="nx_status" hidden><span class="spin"></span><span>Tenker på smaken din</span><button class="link muted" id="nx_stop" type="button" style="margin-left:auto">Stopp</button></div>
@@ -1003,8 +1003,8 @@ function nextSheet() {
     onClose: () => nextCtl?.abort(),
     mount: b => {
       const hint = () => { $("#nx_hint", b).textContent = segVal($("#nx_mode", b)) === "nytt"
-        ? "Noe du ikke har prøvd, men med en bro til det du liker."
-        : "Nær det du har gitt høy karakter, men ikke noe du allerede har logget."; };
+        ? "En ny vin som er annerledes enn det du pleier å drikke, men ikke noe du helt sikkert ville mislikt."
+        : "En ny vin du ikke har smakt, som du med stor sannsynlighet kommer til å like."; };
       hint(); $("#nx_mode", b).addEventListener("click", () => setTimeout(hint));
       $("#nx_stop", b).addEventListener("click", () => nextCtl?.abort());
       $("#nx_go", b).addEventListener("click", () => runNext(b));
@@ -1025,8 +1025,8 @@ ${profileText()}
 
 De vil ha: ${TYPE_TXT[type]}.
 ${mode === "trygt"
-  ? "Mål: noe de med stor sannsynlighet vil like. Hold deg nær stilene, druene og strukturen de har gitt høy karakter, og unngå det de har trukket for. Ikke foreslå viner de allerede har logget."
-  : "Mål: utfordre smaksløkene. Foreslå druer, regioner eller stiler de IKKE har prøvd ennå, men som har en tydelig bro til noe de liker (for eksempel samme syre eller struktur). Forklar broen. Unngå det de tydelig har mislikt."}
+  ? "Mål: en SIKKER VINNER. Foreslå viner de ikke har smakt (ingen av vinene i profilen over), men som de nesten garantert vil like. Hold deg tett på stilene, druene, regionene og strukturen de har gitt høyest karakter og skrevet positivt om, og styr helt unna det de har trukket for eller mislikt. match skal være høy."
+  : "Mål: UTFORDRE SMAKSLØKENE. Foreslå viner de ikke har smakt, i druer, regioner eller stiler som er annerledes enn det de pleier å drikke: enten noe de aldri har prøvd, eller en stil de har prøvd men ikke gitt høy karakter, fordi et godt eksempel kan endre mening. Unngå det de nesten helt sikkert ikke vil like, altså egenskaper de gjentatte ganger har mislikt eller gitt lav karakter (for eksempel mye eik, høy sødme eller lav syre hvis det er det de trekker for). Forklar kort hva som er nytt og hvorfor de likevel kan like det."}
 De kjøper hos: ${shop}. Velg viner som er vanlige å finne der; du kan ikke sjekke lagerstatus, så velg heller kjente produsenter enn sjeldne. Prisene er omtrentlige.${rated().length < 3 ? " Profilen er tynn, så si det kort i note." : ""}
 
 JSON-format:
