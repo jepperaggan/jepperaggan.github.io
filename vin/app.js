@@ -367,7 +367,11 @@ async function ask(prompt, { images = [], tier = "default", kind = "", signal, m
     });
   } catch (e) { throw { code: e?.name === "AbortError" ? "cancelled" : "offline" }; }
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw { code: j.error || (r.status === 404 ? "no_function" : "upstream_error") };
+  if (!r.ok) {
+    // Feil fra selve funksjonen har j.error. Feil fra Supabase foran funksjonen (f.eks. «Verify JWT») har bare message.
+    const code = j.error || (r.status === 404 ? "no_function" : r.status === 401 ? "jwt_rejected" : r.status >= 500 && r.status !== 502 ? "function_crashed" : "upstream_error");
+    throw { code, status: r.status, detail: j.detail || j.message || j.msg || null };
+  }
   return j.text || "";
 }
 function parseLoose(t) {
@@ -390,6 +394,9 @@ function aiErrText(e) {
     no_function: "AI-funksjonen finnes ikke ennå i Supabase.",
     invalid_json: "Svaret kom i feil format. Prøv igjen.",
     refused: "AI-en ville ikke svare på dette. Prøv å formulere deg annerledes.",
+    jwt_rejected: "Supabase avviste innloggingen før AI-funksjonen. Slå av «Verify JWT» på funksjonen ai.",
+    function_crashed: "AI-funksjonen krasjet i Supabase. Se Logs på funksjonen ai.",
+    upstream_error: "AI-tjenesten svarte med en feil.",
   })[e && e.code] || "Noe gikk galt. Prøv igjen.";
 }
 
@@ -419,7 +426,7 @@ const profileKey = w => `${normTxt(w.name)}|${w.vintage || ""}`;
 const clock5 = v => Math.max(1, Math.min(5, Math.round(1 + (v - 1) * 4 / 11)));
 const CLOCK_MAP = { fylde: "fylde", friskhet: "syre", garvestoffer: "tannin", sodme: "sodme" };
 const vmpType = c => { c = String(c || "").toLowerCase(); return c.includes("rød") ? "rød" : c.includes("hvit") ? "hvit" : (c.includes("rosé") || c.includes("rose")) ? "rosé" : c.includes("musser") ? "musserende" : (c.includes("sterk") || c.includes("søt")) ? "søt" : (c.includes("orange") || c.includes("oransje")) ? "oransje" : null; };
-const PERMANENT_AI = ["missing_api_key", "bad_api_key", "no_function", "refused"];
+const TRANSIENT_AI = ["offline", "not_signed_in", "rate_limited", "daily_limit", "cancelled"];
 
 async function vmpLookup(w) {
   try {
@@ -494,7 +501,7 @@ async function enrichWine(w) {
   const cached = await cachedProfile(key);
   if (cached?.dims && Object.keys(cached.dims).length) {
     let tags = { likes: [], dislikes: [] };
-    if (w.note) tags = await askJSON(tagsPrompt(w.note), { kind: "stikkord", tier: "quick", max_tokens: 200 });
+    if (w.note) { try { tags = await askJSON(tagsPrompt(w.note), { kind: "stikkord", tier: "quick", max_tokens: 200 }); } catch (e) { if (TRANSIENT_AI.includes(e.code)) throw e; } }
     return { base: cached, tags };
   }
   const pre = matchStyle(w);
@@ -503,7 +510,7 @@ async function enrichWine(w) {
   try { r = await askJSON(enrichPrompt(w, pre, vmp), { kind: "berik", search: true, max_tokens: 700 }); }
   catch (e) {
     // AI utilgjengelig for godt: bruk det vi har (Vinmonopolet og/eller stilen) i stedet for å vente
-    if (PERMANENT_AI.includes(e.code) && (pre || vmp)) return { base: buildProfile(w, null, pre, vmp), tags: { likes: [], dislikes: [] } };
+    if (!TRANSIENT_AI.includes(e.code) && (pre || vmp)) return { base: buildProfile(w, null, pre, vmp), tags: { likes: [], dislikes: [] } };
     throw e;
   }
   const base = buildProfile(w, r, pre, vmp);
@@ -525,6 +532,8 @@ function mergeAi(w, { base, tags }) {
   return out;
 }
 const enrichFailed = new Set();
+const enrichErr = new Map();      // vin-id → siste feil, vises i vinens detaljvisning
+const toastedErr = new Set();
 let enriching = false;
 async function runEnrich() {
   if (enriching || !navigator.onLine || !sb) return;
@@ -539,12 +548,24 @@ async function runEnrich() {
         if (cur) mutate("wines", "upsert", cur.id, mergeAi(cur, res));
       } catch (e) {
         enrichFailed.add(w.id);
+        enrichErr.set(w.id, e || {});
+        console.warn("Smaksprofil feilet", w.name, e);
+        const c = e?.code || "ukjent";
+        if (!toastedErr.has(c) && c !== "offline") { toastedErr.add(c); toast("Smaksprofil: " + aiErrText(e)); }
+        refreshOpenDetail();
         if (["offline", "daily_limit", "missing_api_key", "bad_api_key", "no_function", "not_signed_in"].includes(e.code)) break;
       }
     }
   } finally { enriching = false; }
 }
-addEventListener("online", () => { enrichFailed.clear(); runEnrich(); });
+function retryEnrich() { enrichFailed.clear(); enrichErr.clear(); toastedErr.clear(); refreshOpenDetail(); runEnrich(); }
+addEventListener("online", retryEnrich);
+// Hjemskjerm-apper på iPhone lastes sjelden på nytt, så prøv igjen når appen åpnes (maks hvert minutt)
+let lastRetry = 0;
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && enrichFailed.size && Date.now() - lastRetry > 60000) { lastRetry = Date.now(); retryEnrich(); }
+});
+document.addEventListener("click", e => { if (e.target.closest("[data-retry-enrich]")) { e.preventDefault(); lastRetry = Date.now(); retryEnrich(); } });
 
 /* ================= Shared bits ================= */
 const metaOf = w => [w.producer, w.grape, w.region && String(w.region).split(",")[0], w.vintage].filter(Boolean).map(esc).join(" · ");
@@ -629,6 +650,13 @@ function aiBlock(w) {
       ${w.ai.profile ? `<p class="small muted">${esc(w.ai.profile)}</p>` : ""}
       ${w.ai.source === "vinmonopolet" ? `<p class="small muted">Fylde, syre, tannin og sødme er satt av Vinmonopolets smakspanel.</p>` : ""}
       ${w.ai.vmp?.url ? `<a class="link" style="text-decoration:none;align-self:flex-start" href="${esc(w.ai.vmp.url)}" target="_blank" rel="noopener">Se på Vinmonopolet</a>` : ""}`;
+  }
+  if (w.aiPending && enrichErr.has(w.id)) {
+    const e = enrichErr.get(w.id);
+    return `<div style="display:flex;justify-content:space-between;align-items:baseline"><h3 class="eyebrow">Smaksprofil</h3><span class="small" style="color:#C2283A">fikk ikke hentet</span></div>
+      <p class="small muted">${esc(aiErrText(e))}</p>
+      <p class="small" style="color:var(--faint);font-family:var(--mono,ui-monospace),monospace;word-break:break-word">${esc([e.code, e.status, e.detail].filter(Boolean).join(" · ").slice(0, 300))}</p>
+      <button class="btn light" type="button" data-retry-enrich style="align-self:flex-start;height:40px;font-size:15px">Prøv igjen</button>`;
   }
   if (w.aiPending) {
     return `<div style="display:flex;justify-content:space-between;align-items:baseline"><h3 class="eyebrow">Smaksprofil</h3><span class="small" style="color:var(--faint)">${navigator.onLine ? "hentes …" : "hentes når du er på nett"}</span></div>
@@ -925,6 +953,7 @@ function accountHTML() {
     <div><span>Innlogget som</span><span class="v">${esc(displayName(state.user))}</span></div>
     <div><span>AI-kall siste døgn</span><span class="v" id="usageV">…</span></div>
     <div><span>Venter på å lagres</span><span class="v">${outbox.length ? outbox.length + " endringer" : "ingenting"}</span></div>
+    <button type="button" id="aiTestBtn"><span>Test AI-tilkobling</span><span class="v" id="aiTestV"></span></button>
     <button type="button" id="exportBtn"><span>Eksporter alt</span><span class="v">JSON</span></button>
     <button type="button" id="pwBtn"><span>Bytt passord</span><span class="v"></span></button>
     <button type="button" id="logoutBtn" style="color:#C2283A"><span>Logg ut</span><span class="v"></span></button>
@@ -938,8 +967,23 @@ function bindAccount() {
   });
   $("#pwBtn").addEventListener("click", passwordSheet);
   $("#exportBtn").addEventListener("click", exportData);
+  $("#aiTestBtn").addEventListener("click", testAi);
   sb.from("ai_usage").select("id", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 864e5).toISOString())
     .then(({ count, error }) => { const v = $("#usageV"); if (v) v.textContent = error ? "–" : `${count ?? 0}`; }, () => {});
+}
+async function testAi() {
+  const v = $("#aiTestV"); if (!v || v.dataset.busy) return;
+  v.dataset.busy = "1"; v.textContent = "tester …";
+  const t0 = Date.now();
+  try {
+    const txt = await ask("Svar bare med ordet OK.", { kind: "test", tier: "quick", max_tokens: 50 });
+    v.textContent = `virker (${((Date.now() - t0) / 1000).toFixed(1)} s)`;
+    toast(`AI svarte: ${String(txt).trim().slice(0, 40) || "(tomt svar)"}`);
+    retryEnrich();
+  } catch (e) {
+    v.textContent = e?.code || "feil";
+    toast(aiErrText(e) + (e?.detail ? ` (${String(e.detail).slice(0, 120)})` : ""));
+  } finally { delete v.dataset.busy; }
 }
 function confirmInline(sel, msg) {
   const b = $(sel);
