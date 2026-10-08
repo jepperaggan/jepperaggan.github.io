@@ -386,6 +386,7 @@ async function fileToImage(file, max = 1568) {
   c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
   return { media_type: "image/jpeg", data: c.toDataURL("image/jpeg", 0.85).split(",")[1] };
 }
+let lastAiModel = "";
 async function ask(prompt, { images = [], tier = "default", kind = "", signal, max_tokens, search = false, json = false } = {}) {
   if (!navigator.onLine) throw { code: "offline" };
   const { data: { session } } = await sb.auth.getSession();
@@ -407,6 +408,7 @@ async function ask(prompt, { images = [], tier = "default", kind = "", signal, m
     const code = j.error || (r.status === 404 ? "no_function" : r.status === 401 ? "jwt_rejected" : r.status >= 500 && r.status !== 502 ? "function_crashed" : "upstream_error");
     throw { code, status: r.status, detail: j.detail || j.message || j.msg || null };
   }
+  lastAiModel = j.model || "";
   return j.text || "";
 }
 function parseLoose(t) {
@@ -883,7 +885,7 @@ async function scanLabel(file, statusEl) {
 name er vinens navn slik det står på etiketten, uten produsenten hvis den står for seg. grape: druen(e); utled fra appellasjonen når det er standard (Barolo gir Nebbiolo). region skrives som "Region, Land" på ${AI_LANG}. drinkFrom/drinkTo: ditt beste anslag på drikkevindu i årstall, eller null.`, { images: [file], kind: "etikett", tier: "quick", max_tokens: 400 });
     statusEl.textContent = tx("f.labelFilled");
     return r && typeof r === "object" ? r : null;
-  } catch (e) { statusEl.textContent = aiErrText(e); return null; }
+  } catch (e) { statusEl.textContent = aiErrText(e) + (e?.detail ? ` (${String(e.detail).slice(0, 220)})` : ""); return null; }
 }
 
 /* ================= Profile ================= */
@@ -1184,7 +1186,7 @@ async function testAi() {
   const t0 = Date.now();
   try {
     const txt = await ask("Svar bare med ordet OK.", { kind: "test", tier: "quick", max_tokens: 50 });
-    v.textContent = tx("set.works", { s: ((Date.now() - t0) / 1000).toFixed(1) });
+    v.textContent = tx("set.works", { s: ((Date.now() - t0) / 1000).toFixed(1) }) + (lastAiModel ? " · " + lastAiModel.replace(/^gemini-/, "") : "");
     toast(tx("set.aiSaid", { x: String(txt).trim().slice(0, 40) || "–" }));
     retryEnrich();
   } catch (e) {
