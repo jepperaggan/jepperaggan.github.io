@@ -24,7 +24,8 @@
   --accent:#0E6E83; --accent-ink:#FFFFFF; --accent-soft:rgba(14,110,131,.10);
   --busy:#C2412D; --busy-soft:rgba(194,65,45,.10); --free:#2F8A57; --free-soft:rgba(47,138,87,.10);
   --font:"Geist",-apple-system,"Helvetica Neue",Arial,sans-serif; --mono:"Geist Mono",ui-monospace,Menlo,monospace;
-  --ease:cubic-bezier(0.23,1,0.32,1);
+  --ease:cubic-bezier(0.23,1,0.32,1); --ease-drawer:cubic-bezier(0.32,0.72,0,1);
+  --glass:rgba(244,246,247,.72); --toast:rgba(28,32,35,.94); --toast-ink:#F4F7F8;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -32,12 +33,14 @@
   --line:rgba(255,255,255,.09); --shadow:rgba(0,0,0,.4); --press:#20262A;
   --accent:#3BA7C0; --accent-ink:#06191E; --accent-soft:rgba(59,167,192,.14);
   --busy:#EE7A64; --busy-soft:rgba(238,122,100,.14); --free:#5CC487; --free-soft:rgba(92,196,135,.13);
+  --glass:rgba(13,16,18,.72); --toast:rgba(44,50,54,.95); --toast-ink:#EEF2F4;
   color-scheme:dark }}
 :root[data-theme="dark"]{
   --bg:#0D1012; --surface:#171B1E; --ink:#EEF2F4; --muted:#9AA4AA; --faint:#5F686E;
   --line:rgba(255,255,255,.09); --shadow:rgba(0,0,0,.4); --press:#20262A;
   --accent:#3BA7C0; --accent-ink:#06191E; --accent-soft:rgba(59,167,192,.14);
   --busy:#EE7A64; --busy-soft:rgba(238,122,100,.14); --free:#5CC487; --free-soft:rgba(92,196,135,.13);
+  --glass:rgba(13,16,18,.72); --toast:rgba(44,50,54,.95); --toast-ink:#EEF2F4;
   color-scheme:dark }
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -74,14 +77,24 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
 .quick button:active{transform:scale(.96)}
 .primary{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:16px;transition:transform 120ms var(--ease),opacity 140ms ease}
 .primary:active{transform:scale(.98)}
+.primary{transition:transform 120ms var(--ease),opacity 140ms ease,background-color 200ms ease,color 200ms ease}
 .primary:disabled{opacity:.4;cursor:default;transform:none}
+.primary.done,.primary.done:disabled{opacity:1;background:var(--free);color:#fff}
+.primary svg{width:18px;height:18px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .formmsg{margin:-6px 2px 0;font-size:13px;color:var(--muted);min-height:1em}
 .formmsg.err{color:var(--busy)}
 
 /* Liste */
-.tools{display:flex;gap:6px;overflow-x:auto;margin:0 -16px;padding:0 16px 2px;scrollbar-width:none}
+.bar{position:sticky;top:0;z-index:5;margin:0 -16px;padding:calc(env(safe-area-inset-top,0px) + 8px) 0 8px;background:var(--glass);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);
+  box-shadow:0 1px 0 transparent;transition:box-shadow 200ms ease}
+.bar.stuck{box-shadow:0 .5px 0 var(--line)}
+.sentinel{height:1px;margin-bottom:-11px}
+.tools{display:flex;gap:6px;overflow-x:auto;padding:0 16px 2px;scrollbar-width:none}
 .tools::-webkit-scrollbar{display:none}
-.tools button{flex:none;font-size:13px;font-weight:500;padding:6px 11px;border-radius:999px;background:var(--surface);box-shadow:0 0 0 .5px var(--line);color:var(--muted)}
+.tools button{flex:none;font-size:13px;font-weight:500;padding:7px 12px;border-radius:999px;background:var(--surface);box-shadow:0 0 0 .5px var(--line);color:var(--muted);
+  transition:background-color 160ms ease,color 160ms ease,transform 120ms var(--ease)}
+.tools button:active{transform:scale(.96)}
 .tools button[aria-pressed="true"]{background:var(--ink);color:var(--bg);box-shadow:none}
 .list{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:22px;box-shadow:0 0 0 .5px var(--line),0 1px 2px var(--shadow);overflow:hidden}
 .item{position:relative;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px}
@@ -93,13 +106,28 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
 .item .note{display:block;font-size:13px;color:var(--muted);margin-top:1px;overflow-wrap:anywhere}
 .item .now{display:inline-block;margin-left:6px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--busy);vertical-align:2px}
 .item.past{opacity:.55}
-.del{flex:none;height:32px;min-width:32px;padding:0 8px;border-radius:10px;display:grid;place-items:center;color:var(--faint);font-size:13px;font-weight:600;transition:background-color 140ms ease,color 140ms ease}
+.item.enter{animation:enter 320ms var(--ease) both}
+.item.enter::after{content:"";position:absolute;inset:0;background:var(--accent-soft);pointer-events:none;animation:glow 1400ms ease-out 200ms both}
+@keyframes enter{from{opacity:0;transform:translateY(-6px) scale(.98)}}
+@keyframes glow{from{opacity:1}to{opacity:0}}
+.item.leaving{overflow:hidden;transition:height 220ms var(--ease),opacity 160ms ease,padding 220ms var(--ease);opacity:0;padding-top:0;padding-bottom:0}
+.del{flex:none;width:36px;height:36px;border-radius:12px;display:grid;place-items:center;color:var(--faint);transition:background-color 140ms ease,color 140ms ease,transform 120ms var(--ease)}
+.del:active{transform:scale(.9);background:var(--press);color:var(--ink)}
 .del svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
-.del:hover{background:var(--press);color:var(--ink)}
-.del.arm{background:var(--busy);color:#fff;padding:0 12px}
+@media (hover:hover) and (pointer:fine){.del:hover{background:var(--press);color:var(--ink)}}
 .empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:15px}
-.more{align-self:center;font-size:14px;font-weight:500;color:var(--accent);padding:8px 12px}
+.more{align-self:center;font-size:14px;font-weight:500;color:var(--accent);padding:8px 12px;border-radius:10px;transition:opacity 120ms ease}
+.more:active{opacity:.55}
 
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:20;width:calc(100% - 32px);max-width:528px;
+  display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;border-radius:16px;background:var(--toast);color:var(--toast-ink);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);box-shadow:0 12px 32px -8px rgba(0,0,0,.35);
+  transform:translate(-50%,calc(100% + 24px));opacity:0;visibility:hidden;
+  transition:transform 240ms var(--ease-drawer),opacity 200ms ease,visibility 0s linear 240ms}
+.toast.show{transform:translate(-50%,0);opacity:1;visibility:visible;transition:transform 420ms var(--ease-drawer),opacity 200ms ease,visibility 0s}
+.toast span{flex:1;min-width:0;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toast button{flex:none;font-weight:600;font-size:15px;color:var(--toast-ink);padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.12);transition:transform 120ms var(--ease)}
+.toast button:active{transform:scale(.95)}
 .banner{display:none;padding:12px 14px;border-radius:14px;background:var(--busy-soft);color:var(--ink);font-size:14px}
 .banner.show{display:block}
 .foot{display:flex;justify-content:space-between;align-items:center;color:var(--faint);font-size:12px;padding:0 4px}
@@ -107,7 +135,17 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
 .sync{display:inline-flex;align-items:center;gap:6px}
 .sync i{width:6px;height:6px;border-radius:50%;background:var(--free)}
 .sync.off i{background:var(--busy)}
-@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:120ms!important}
+  .item.enter{animation:fade 200ms ease both}
+  @keyframes fade{from{opacity:0}}
+  .toast,.toast.show{transform:translate(-50%,0)}
+  .chip:active,.primary:active,.tools button:active,.del:active,.toast button:active,.quick button:active{transform:none}
+}
+@media (prefers-reduced-transparency: reduce){
+  .bar{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .toast{background:#1C2023;-webkit-backdrop-filter:none;backdrop-filter:none}
+}
 </style>
 </head>
 <body>
@@ -115,8 +153,9 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
   <div class="banner" id="banner"></div>
 
   <section class="section" aria-labelledby="h-list">
-    <h1 id="h-list">Kommende</h1>
-    <div class="tools" id="filter" role="group" aria-label="Filtrer på person"></div>
+    <h1 id="h-list">Ikke book</h1>
+    <div class="sentinel" id="sentinel" aria-hidden="true"></div>
+    <div class="bar" id="bar"><div class="tools" id="filter" role="group" aria-label="Filtrer på person"></div></div>
     <ul class="list" id="list"></ul>
     <button class="more" id="past" type="button">Vis tidligere</button>
   </section>
@@ -155,6 +194,7 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
     <a href="/">raggan.no</a>
   </footer>
 </main>
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toastTxt"></span><button type="button" id="undo">Angre</button></div>
 
 <script>
 (() => {
@@ -193,6 +233,10 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
   let rows = [];
   let filter = "Alle";
   let showPast = false;
+  let lastJson = "";
+  const seen = new Set();   // ids vist før, så bare nye rader animeres inn
+  let firstPaint = true;
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   const picked = new Set();
 
   // ---------- API ----------
@@ -210,7 +254,10 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
 
   async function load() {
     try {
-      rows = await api("?select=*&order=fra.asc,person.asc");
+      const data = await api("?select=*&order=fra.asc,person.asc");
+      const json = JSON.stringify(data);
+      if (json === lastJson) { banner(""); setSync(true, "Oppdatert " + new Date().toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })); return; }
+      lastJson = json; rows = data;
       banner("");
       setSync(true, "Oppdatert " + new Date().toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" }));
     } catch (e) {
@@ -237,7 +284,6 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
       .filter(r => filter === "Alle" || r.person === filter)
       .filter(r => showPast ? r.til < t : r.til >= t)
       .sort((a, b) => showPast ? (b.fra.localeCompare(a.fra)) : (a.fra.localeCompare(b.fra) || a.person.localeCompare(b.person)));
-    $("h-list").textContent = showPast ? "Tidligere" : "Kommende";
     $("past").textContent = showPast ? "Vis kommende" : "Vis tidligere";
     if (!list.length) {
       $("list").innerHTML = `<li class="empty">${showPast ? "Ingenting tidligere." : (filter==="Alle" ? "Ingen blokkeringer. Alle kan bookes." : esc(filter) + " kan bookes alle dager.")}</li>`;
@@ -245,14 +291,19 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
     }
     $("list").innerHTML = list.map(r => {
       const now = r.fra <= t && r.til >= t;
-      return `<li class="item${r.til < t ? " past" : ""}">${avatar(r.person)}
+      const isNew = !firstPaint && !seen.has(r.id);
+      return `<li class="item${r.til < t ? " past" : ""}${isNew ? " enter" : ""}" data-id="${esc(r.id)}">${avatar(r.person)}
         <div class="body"><span class="who">${esc(r.person)}</span>${now ? '<span class="now">nå</span>' : ""}
           <div class="when">${esc(fmtRange(r.fra, r.til))}</div>${r.notat ? `<span class="note">${esc(r.notat)}</span>` : ""}</div>
         <button type="button" class="del" data-id="${esc(r.id)}" aria-label="Slett ${esc(r.person)} ${esc(fmtRange(r.fra, r.til))}">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></li>`;
     }).join("");
   }
-  function render() { renderList(); }
+  function render() {
+    renderList();
+    rows.forEach(r => seen.add(r.id));
+    if (rows.length || lastJson) firstPaint = false;
+  }
 
   // ---------- form ----------
   function setRange(a, b) { $("fra").value = iso(a); $("til").value = iso(b); validate(); }
@@ -291,31 +342,60 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
     $("save").disabled = true; $("save").textContent = "Lagrer …";
     try {
       await api("", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(payload) });
-      const names = [...picked].join(", ");
       picked.clear(); renderPick(); $("notat").value = "";
-      $("formmsg").textContent = `Lagret: ${names}, ${fmtRange(fra, til)}.`;
+      if (!showPast) { if (filter !== "Alle" && !payload.some(x => x.person === filter)) { filter = "Alle"; renderFilter(); } }
       await load();
+      const fresh = $("list").querySelector(".item.enter");
+      if (fresh) fresh.scrollIntoView({ block: "nearest", behavior: reduced.matches ? "auto" : "smooth" });
+      const btn = $("save");
+      btn.classList.add("done");
+      btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Lagret';
+      setTimeout(() => { btn.classList.remove("done"); btn.textContent = "Lagre"; btn.disabled = picked.size === 0; }, 1400);
+      return;
     } catch (err) {
       $("formmsg").classList.add("err");
       $("formmsg").textContent = "Klarte ikke å lagre. Prøv igjen.";
-    } finally {
-      $("save").textContent = "Lagre"; $("save").disabled = picked.size === 0;
     }
+    $("save").textContent = "Lagre"; $("save").disabled = picked.size === 0;
   });
 
   // ---------- list actions ----------
-  let armTimer;
+  // Slett med en gang, med «Angre» i en toast (tilgivelse i stedet for bekreftelsesdialog)
+  let undoRow = null, toastTimer;
+  function toast(msg) {
+    $("toastTxt").textContent = msg; $("toast").classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, 5000);
+  }
+  function hideToast() { $("toast").classList.remove("show"); undoRow = null; }
+
+  function collapse(li) {
+    return new Promise(res => {
+      if (reduced.matches) { li.style.opacity = 0; return setTimeout(res, 120); }
+      li.style.height = li.offsetHeight + "px"; li.offsetHeight;
+      li.classList.add("leaving"); li.style.height = "0px";
+      setTimeout(res, 230);
+    });
+  }
+
   $("list").addEventListener("click", async e => {
     const b = e.target.closest(".del"); if (!b) return;
-    if (!b.classList.contains("arm")) {
-      document.querySelectorAll(".del.arm").forEach(x => { x.classList.remove("arm"); x.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'; });
-      b.classList.add("arm"); b.textContent = "Slett?";
-      clearTimeout(armTimer); armTimer = setTimeout(renderList, 3000);
-      return;
-    }
-    clearTimeout(armTimer); b.textContent = "…";
-    try { await api("?id=eq." + encodeURIComponent(b.dataset.id), { method: "DELETE" }); }
-    catch { banner("Klarte ikke å slette. Prøv igjen."); }
+    const id = b.dataset.id, row = rows.find(r => r.id === id); if (!row) return;
+    const li = b.closest(".item");
+    b.disabled = true;
+    try {
+      await api("?id=eq." + encodeURIComponent(id), { method: "DELETE" });
+    } catch { b.disabled = false; banner("Klarte ikke å slette. Prøv igjen."); return; }
+    await collapse(li);
+    rows = rows.filter(r => r.id !== id); lastJson = ""; renderList();
+    undoRow = { id: row.id, person: row.person, fra: row.fra, til: row.til, notat: row.notat };
+    seen.delete(row.id);
+    toast(`Slettet ${row.person}, ${fmtRange(row.fra, row.til)}`);
+  });
+  $("undo").addEventListener("click", async () => {
+    if (!undoRow) return;
+    const r = undoRow; hideToast();
+    try { await api("", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify([r]) }); }
+    catch { banner("Klarte ikke å angre. Legg den inn på nytt."); }
     load();
   });
   $("filter").addEventListener("click", e => {
@@ -323,6 +403,9 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
     filter = f; renderFilter(); renderList();
   });
   $("past").addEventListener("click", () => { showPast = !showPast; renderList(); });
+
+  // ---------- sticky bar: skillelinje bare når innhold glir under ----------
+  new IntersectionObserver(([en]) => $("bar").classList.toggle("stuck", !en.isIntersecting)).observe($("sentinel"));
 
   // ---------- init ----------
   const t0 = parse(today()); setRange(t0, t0); $("save").disabled = true;
