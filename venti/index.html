@@ -48,38 +48,13 @@ button{cursor:pointer;border:0;background:none;padding:0}
   padding:calc(env(safe-area-inset-top,0px) + 44px) calc(env(safe-area-inset-right,0px) + 16px) calc(env(safe-area-inset-bottom,0px) + 40px) calc(env(safe-area-inset-left,0px) + 16px)}
 .eyebrow{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0}
 header{display:flex;flex-direction:column;gap:8px;padding:0 4px}
-h1{margin:0;font-size:clamp(36px,11vw,46px);line-height:1;font-weight:600;letter-spacing:-.045em}
+h1{margin:0 4px 4px;font-size:clamp(34px,10vw,42px);line-height:1;font-weight:600;letter-spacing:-.045em}
 .lede{margin:0;color:var(--muted);font-size:16px;max-width:36ch}
 h2{margin:0;font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0}
 .card{background:var(--surface);border-radius:22px;box-shadow:0 0 0 .5px var(--line),0 1px 2px var(--shadow);padding:16px}
 .section{display:flex;flex-direction:column;gap:10px}
 .section > .head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:0 4px}
 
-/* Dagsjekk */
-.days{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x proximity;margin:0 -16px;padding:2px 16px 6px;scrollbar-width:none}
-.days::-webkit-scrollbar{display:none}
-.day{flex:none;scroll-snap-align:start;width:48px;padding:8px 0 7px;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--press);transition:background-color 140ms ease,color 140ms ease,transform 120ms var(--ease)}
-.day:active{transform:scale(.95)}
-.day .dw{font-size:11px;color:var(--muted)}
-.day .dn{font-size:18px;font-weight:600;letter-spacing:-.03em;line-height:1.15}
-.day .dot{width:5px;height:5px;border-radius:50%;background:transparent}
-.day.has .dot{background:var(--busy)}
-.day.weekend .dn{color:var(--muted)}
-.day[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-.day[aria-pressed="true"] .dw,.day[aria-pressed="true"].weekend .dn{color:inherit;opacity:.75}
-.day[aria-pressed="true"].has .dot{background:var(--bg)}
-.daylabel{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 2px 10px}
-.daylabel strong{font-size:17px;font-weight:600;letter-spacing:-.02em}
-.pickbtn{position:relative;flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:var(--press);font-size:13px;font-weight:500;color:var(--muted);overflow:hidden}
-.pickbtn svg{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.pickbtn input{position:absolute;inset:0;width:100%;height:100%;opacity:0;padding:0;min-height:0;cursor:pointer}
-.status{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
-.st{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:13px;background:var(--free-soft);min-width:0}
-.st.busy{background:var(--busy-soft)}
-.st .nm{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
-.st .nm b{font-weight:500;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.st .tag{font-size:12px;font-weight:500;color:var(--free);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.st.busy .tag{color:var(--busy)}
 .av{width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:12px;font-weight:600;color:#fff;background:var(--c)}
 
 /* Skjema */
@@ -137,21 +112,13 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
 </head>
 <body>
 <main class="wrap">
-  <header>
-    <p class="eyebrow">Ventilasjonsspesialisten</p>
-    <h1>Ikke book</h1>
-    <p class="lede">Hvem som ikke skal bookes når. Legg det inn her i stedet for i gruppechatten.</p>
-  </header>
-
   <div class="banner" id="banner"></div>
 
-  <section class="section" aria-labelledby="h-day">
-    <div class="head"><h2 id="h-day">Hvem kan bookes?</h2></div>
-    <div class="card">
-      <div class="days" id="days" role="group" aria-label="Velg dag"></div>
-      <div class="daylabel"><strong id="dayTitle"></strong><label class="pickbtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Annen dato<input type="date" id="dayPick" aria-label="Velg annen dato"></label></div>
-      <div class="status" id="status"></div>
-    </div>
+  <section class="section" aria-labelledby="h-list">
+    <h1 id="h-list">Kommende</h1>
+    <div class="tools" id="filter" role="group" aria-label="Filtrer på person"></div>
+    <ul class="list" id="list"></ul>
+    <button class="more" id="past" type="button">Vis tidligere</button>
   </section>
 
   <section class="section" aria-labelledby="h-add">
@@ -183,13 +150,6 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
     </form>
   </section>
 
-  <section class="section" aria-labelledby="h-list">
-    <div class="head"><h2 id="h-list">Kommende</h2></div>
-    <div class="tools" id="filter" role="group" aria-label="Filtrer på person"></div>
-    <ul class="list" id="list"></ul>
-    <button class="more" id="past" type="button">Vis tidligere</button>
-  </section>
-
   <footer class="foot">
     <span class="sync" id="sync"><i></i><span id="syncTxt">Kobler til …</span></span>
     <a href="/">raggan.no</a>
@@ -215,7 +175,6 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
   const today = () => iso(new Date());
 
   const fmtWd = new Intl.DateTimeFormat("nb-NO", { weekday: "short" });
-  const fmtLong = new Intl.DateTimeFormat("nb-NO", { weekday: "long", day: "numeric", month: "long" });
   const MONTHS = ["jan","feb","mar","apr","mai","jun","jul","aug","sep","okt","nov","des"];
   const wd = d => fmtWd.format(d).replace(".", "");
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
@@ -228,18 +187,10 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
       return `${A.getDate()}.–${B.getDate()}. ${MONTHS[A.getMonth()]}${yr(A)}`;
     return `${A.getDate()}. ${MONTHS[A.getMonth()]}${A.getFullYear()!==B.getFullYear()?yr(A):""} – ${B.getDate()}. ${MONTHS[B.getMonth()]}${yr(B)}`;
   }
-  function relDay(s) {
-    const diff = Math.round((parse(s) - parse(today())) / 864e5);
-    if (diff === 0) return "I dag";
-    if (diff === 1) return "I morgen";
-    const t = fmtLong.format(parse(s));
-    return t.charAt(0).toUpperCase() + t.slice(1);
-  }
   const avatar = p => `<span class="av" style="--c:${color(p)}" aria-hidden="true">${esc(p[0])}</span>`;
 
   // ---------- state ----------
   let rows = [];
-  let day = today();
   let filter = "Alle";
   let showPast = false;
   const picked = new Set();
@@ -272,33 +223,6 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
   }
 
   // ---------- render ----------
-  function renderDays() {
-    const start = parse(today());
-    const busyDays = new Set();
-    let html = "";
-    for (let i = 0; i < 21; i++) {
-      const d = addDays(start, i), s = iso(d);
-      const has = rows.some(r => r.fra <= s && r.til >= s);
-      const we = d.getDay() === 0 || d.getDay() === 6;
-      html += `<button type="button" class="day${has?" has":""}${we?" weekend":""}" data-d="${s}" aria-pressed="${s===day}" aria-label="${esc(fmtLong.format(d))}${has?", noen er opptatt":""}">
-        <span class="dw">${esc(i===0?"I dag":cap(wd(d)))}</span><span class="dn">${d.getDate()}</span><span class="dot"></span></button>`;
-    }
-    $("days").innerHTML = html;
-    const sel = $("days").querySelector('[aria-pressed="true"]'), box = $("days");
-    if (sel) { const l = sel.offsetLeft - box.offsetLeft, r = l + sel.offsetWidth;
-      if (l < box.scrollLeft + 16 || r > box.scrollLeft + box.clientWidth - 16) box.scrollLeft = l - 16; }
-  }
-  function renderStatus() {
-    $("dayTitle").textContent = relDay(day);
-    $("dayPick").value = day;
-    $("status").innerHTML = PEOPLE.map(p => {
-      const hits = rows.filter(r => r.person === p && r.fra <= day && r.til >= day);
-      const busy = hits.length > 0;
-      const why = hits.map(h => h.notat).filter(Boolean).join(", ");
-      return `<div class="st${busy?" busy":""}">${avatar(p)}
-        <span class="nm"><b>${esc(p)}</b><span class="tag">${busy ? "Ikke book" + (why ? " · " + esc(why) : "") : "Ledig"}</span></span></div>`;
-    }).join("");
-  }
   function renderPick() {
     $("pick").innerHTML = PEOPLE.map(p =>
       `<button type="button" class="chip" data-p="${p}" aria-pressed="${picked.has(p)}">${avatar(p)}${esc(p)}</button>`).join("");
@@ -328,7 +252,7 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></li>`;
     }).join("");
   }
-  function render() { renderDays(); renderStatus(); renderList(); }
+  function render() { renderList(); }
 
   // ---------- form ----------
   function setRange(a, b) { $("fra").value = iso(a); $("til").value = iso(b); validate(); }
@@ -370,7 +294,7 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
       const names = [...picked].join(", ");
       picked.clear(); renderPick(); $("notat").value = "";
       $("formmsg").textContent = `Lagret: ${names}, ${fmtRange(fra, til)}.`;
-      day = fra; await load();
+      await load();
     } catch (err) {
       $("formmsg").classList.add("err");
       $("formmsg").textContent = "Klarte ikke å lagre. Prøv igjen.";
@@ -399,13 +323,6 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
     filter = f; renderFilter(); renderList();
   });
   $("past").addEventListener("click", () => { showPast = !showPast; renderList(); });
-
-  // ---------- day picker ----------
-  $("days").addEventListener("click", e => {
-    const d = e.target.closest(".day")?.dataset.d; if (!d) return;
-    day = d; renderDays(); renderStatus();
-  });
-  $("dayPick").addEventListener("change", e => { if (e.target.value) { day = e.target.value; renderDays(); renderStatus(); } });
 
   // ---------- init ----------
   const t0 = parse(today()); setRange(t0, t0); $("save").disabled = true;
