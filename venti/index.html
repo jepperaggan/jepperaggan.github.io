@@ -19,175 +19,231 @@
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#F4F6F7; --surface:#FFFFFF; --ink:#121518; --muted:#667077; --faint:#A2AAB0;
+  --bg:#F4F6F7; --surface:#FFFFFF; --ink:#121518; --muted:#5F6970; --faint:#A2AAB0;
   --line:rgba(18,21,24,.09); --shadow:rgba(18,21,24,.07); --press:#ECEFF1;
-  --accent:#0E6E83; --accent-ink:#FFFFFF; --accent-soft:rgba(14,110,131,.10);
-  --busy:#C2412D; --busy-soft:rgba(194,65,45,.10); --free:#2F8A57; --free-soft:rgba(47,138,87,.10);
-  --font:"Geist",-apple-system,"Helvetica Neue",Arial,sans-serif; --mono:"Geist Mono",ui-monospace,Menlo,monospace;
+  --cell:#F7F8F9; --cell-we:#EEF1F2;
+  --accent:#0E6E83; --accent-ink:#FFFFFF; --accent-soft:rgba(14,110,131,.12);
+  --busy:#B03A27; --busy-soft:rgba(176,58,39,.10); --free:#2F8A57;
+  --font:"Geist",-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif; --mono:"Geist Mono",ui-monospace,Menlo,monospace;
   --ease:cubic-bezier(0.23,1,0.32,1); --ease-drawer:cubic-bezier(0.32,0.72,0,1);
-  --glass:rgba(244,246,247,.72); --toast:rgba(28,32,35,.94); --toast-ink:#F4F7F8;
+  --toast:rgba(28,32,35,.94); --toast-ink:#F4F7F8; --pill-mix:16%;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0D1012; --surface:#171B1E; --ink:#EEF2F4; --muted:#9AA4AA; --faint:#5F686E;
   --line:rgba(255,255,255,.09); --shadow:rgba(0,0,0,.4); --press:#20262A;
-  --accent:#3BA7C0; --accent-ink:#06191E; --accent-soft:rgba(59,167,192,.14);
-  --busy:#EE7A64; --busy-soft:rgba(238,122,100,.14); --free:#5CC487; --free-soft:rgba(92,196,135,.13);
-  --glass:rgba(13,16,18,.72); --toast:rgba(44,50,54,.95); --toast-ink:#EEF2F4;
+  --cell:#1C2124; --cell-we:#15191B;
+  --accent:#3BA7C0; --accent-ink:#06191E; --accent-soft:rgba(59,167,192,.16);
+  --busy:#EE7A64; --busy-soft:rgba(238,122,100,.14); --free:#5CC487;
+  --toast:rgba(44,50,54,.95); --toast-ink:#EEF2F4; --pill-mix:30%;
   color-scheme:dark }}
 :root[data-theme="dark"]{
   --bg:#0D1012; --surface:#171B1E; --ink:#EEF2F4; --muted:#9AA4AA; --faint:#5F686E;
   --line:rgba(255,255,255,.09); --shadow:rgba(0,0,0,.4); --press:#20262A;
-  --accent:#3BA7C0; --accent-ink:#06191E; --accent-soft:rgba(59,167,192,.14);
-  --busy:#EE7A64; --busy-soft:rgba(238,122,100,.14); --free:#5CC487; --free-soft:rgba(92,196,135,.13);
-  --glass:rgba(13,16,18,.72); --toast:rgba(44,50,54,.95); --toast-ink:#EEF2F4;
+  --cell:#1C2124; --cell-we:#15191B;
+  --accent:#3BA7C0; --accent-ink:#06191E; --accent-soft:rgba(59,167,192,.16);
+  --busy:#EE7A64; --busy-soft:rgba(238,122,100,.14); --free:#5CC487;
+  --toast:rgba(44,50,54,.95); --toast-ink:#EEF2F4; --pill-mix:30%;
   color-scheme:dark }
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;min-height:100dvh;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--font);letter-spacing:-.01em;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
-button,input,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+body{margin:0;min-height:100dvh;background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--font);letter-spacing:-.01em;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button,input{font:inherit;color:inherit;letter-spacing:inherit}
 button{cursor:pointer;border:0;background:none;padding:0}
-.wrap{width:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:28px;
-  padding:calc(env(safe-area-inset-top,0px) + 44px) calc(env(safe-area-inset-right,0px) + 16px) calc(env(safe-area-inset-bottom,0px) + 40px) calc(env(safe-area-inset-left,0px) + 16px)}
-.eyebrow{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0}
-header{display:flex;flex-direction:column;gap:8px;padding:0 4px}
-h1{margin:0 4px 4px;font-size:clamp(34px,10vw,42px);line-height:1;font-weight:600;letter-spacing:-.045em}
-.lede{margin:0;color:var(--muted);font-size:16px;max-width:36ch}
-h2{margin:0;font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0}
-.card{background:var(--surface);border-radius:22px;box-shadow:0 0 0 .5px var(--line),0 1px 2px var(--shadow);padding:16px}
-.section{display:flex;flex-direction:column;gap:10px}
-.section > .head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:0 4px}
+.wrap{width:100%;max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:24px;
+  padding:calc(env(safe-area-inset-top,0px) + 40px) calc(env(safe-area-inset-right,0px) + 32px) calc(env(safe-area-inset-bottom,0px) + 40px) calc(env(safe-area-inset-left,0px) + 32px)}
+.card{background:var(--surface);border-radius:20px;box-shadow:0 0 0 .5px var(--line),0 1px 2px var(--shadow)}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+h1{margin:0;font-size:40px;line-height:1;font-weight:600;letter-spacing:-.045em}
+h2{margin:0;font-size:16px;font-weight:600;letter-spacing:-.02em}
+.nav{display:flex;align-items:center;gap:6px}
+.nav .lbl{font-size:15px;font-weight:600;margin-right:6px;font-variant-numeric:tabular-nums}
+.iconbtn{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--surface);box-shadow:0 0 0 .5px var(--line),0 1px 2px var(--shadow);transition:transform 120ms var(--ease),background-color 140ms ease}
+.iconbtn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.iconbtn:active{transform:scale(.94)}
+.txtbtn{height:36px;padding:0 12px;border-radius:11px;font-size:13px;font-weight:500;background:var(--surface);box-shadow:0 0 0 .5px var(--line),0 1px 2px var(--shadow);transition:transform 120ms var(--ease)}
+.txtbtn:active{transform:scale(.96)}
+.txtbtn[hidden]{display:none}
 
-.av{width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:12px;font-weight:600;color:#fff;background:var(--c)}
+/* Kalender */
+.months{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.month{padding:16px 12px 12px}
+.month h2{padding:0 4px 12px;text-transform:capitalize}
+.grid{display:grid;grid-template-columns:20px repeat(7,minmax(0,1fr));gap:3px}
+.wd{font-size:11px;font-weight:500;color:var(--muted);text-align:center;padding-bottom:2px}
+.wk{font-family:var(--mono);font-size:10px;color:var(--faint);display:flex;align-items:flex-start;justify-content:center;padding-top:9px}
+.d{position:relative;min-height:88px;border-radius:10px;background:var(--cell);padding:5px 4px 5px;display:flex;flex-direction:column;align-items:stretch;gap:3px;text-align:left;
+  transition:background-color 140ms ease,box-shadow 140ms ease}
+.d.we{background:var(--cell-we)}
+.d.out{visibility:hidden;pointer-events:none}
+.d.past{opacity:.42;cursor:default}
+.d .n{align-self:flex-start;font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;line-height:20px;min-width:20px;height:20px;padding:0 3px;border-radius:10px;text-align:center}
+.d.we .n{color:var(--muted)}
+.d.today .n{background:var(--ink);color:var(--bg);font-weight:600;padding:0 6px}
+.d.sel{box-shadow:inset 0 0 0 2px var(--accent);background:var(--accent-soft)}
+@media (hover:hover) and (pointer:fine){ .d:not(.past):hover{box-shadow:inset 0 0 0 1px var(--faint)} .d.sel:hover{box-shadow:inset 0 0 0 2px var(--accent)} }
+.d:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.pill{display:flex;align-items:center;gap:0;min-width:0;height:18px;padding:0 5px;border-radius:6px;font-size:11.5px;font-weight:500;line-height:1;
+  background:color-mix(in srgb,var(--c) var(--pill-mix),transparent);transition:box-shadow 140ms ease,background-color 140ms ease}
+.pill i{display:none;font-style:normal}
+.pill b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill.hl{background:var(--c);color:#fff}
 
-/* Skjema */
-.form{display:flex;flex-direction:column;gap:16px}
-.field{display:flex;flex-direction:column;gap:8px}
-.field > span{font-size:13px;font-weight:500;color:var(--muted)}
-.people{display:flex;flex-wrap:wrap;gap:6px}
-.chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--press);font-size:15px;font-weight:500;transition:background-color 140ms ease,box-shadow 140ms ease,transform 120ms var(--ease)}
-.chip .av{width:24px;height:24px;font-size:11px}
-.chip:active{transform:scale(.96)}
-.chip[aria-pressed="true"]{background:var(--accent-soft);box-shadow:inset 0 0 0 1.5px var(--accent)}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-input[type="date"],input[type="text"]{width:100%;min-width:0;padding:11px 12px;border-radius:12px;border:0;background:var(--press);font-size:16px;outline:none;-webkit-appearance:none;appearance:none;min-height:44px}
-input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
-.quick{display:flex;gap:6px;flex-wrap:wrap}
-.quick button{font-size:13px;font-weight:500;padding:5px 10px;border-radius:999px;background:var(--press);color:var(--muted)}
-.quick button:active{transform:scale(.96)}
-.primary{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:16px;transition:transform 120ms var(--ease),opacity 140ms ease}
-.primary:active{transform:scale(.98)}
-.primary{transition:transform 120ms var(--ease),opacity 140ms ease,background-color 200ms ease,color 200ms ease}
-.primary:disabled{opacity:.4;cursor:default;transform:none}
-.primary.done,.primary.done:disabled{opacity:1;background:var(--free);color:#fff}
-.primary svg{width:18px;height:18px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.formmsg{margin:-6px 2px 0;font-size:13px;color:var(--muted);min-height:1em}
-.formmsg.err{color:var(--busy)}
+.more-n{font-size:11px;font-weight:500;color:var(--muted);padding-left:4px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding:12px 4px 0;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.hint{margin:0;padding:10px 4px 0;font-size:12px;color:var(--muted)}
+.hint kbd{font:500 11px var(--mono);padding:1px 5px;border-radius:5px;background:var(--press);color:var(--ink)}
 
-/* Liste */
-.bar{position:sticky;top:0;z-index:5;margin:0 -16px;padding:calc(env(safe-area-inset-top,0px) + 8px) 0 8px;background:var(--glass);
-  -webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);
-  box-shadow:0 1px 0 transparent;transition:box-shadow 200ms ease}
-.bar.stuck{box-shadow:0 .5px 0 var(--line)}
-.sentinel{height:1px;margin-bottom:-11px}
-.tools{display:flex;gap:6px;overflow-x:auto;padding:0 16px 2px;scrollbar-width:none}
-.tools::-webkit-scrollbar{display:none}
-.tools button{flex:none;font-size:13px;font-weight:500;padding:7px 12px;border-radius:999px;background:var(--surface);box-shadow:0 0 0 .5px var(--line);color:var(--muted);
-  transition:background-color 160ms ease,color 160ms ease,transform 120ms var(--ease)}
-.tools button:active{transform:scale(.96)}
-.tools button[aria-pressed="true"]{background:var(--ink);color:var(--bg);box-shadow:none}
-.list{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:22px;box-shadow:0 0 0 .5px var(--line),0 1px 2px var(--shadow);overflow:hidden}
-.item{position:relative;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px}
-.item + .item::before{content:"";position:absolute;top:0;left:54px;right:0;height:1px;background:var(--line);transform:scaleY(.5);transform-origin:top}
-.item .av{width:30px;height:30px;font-size:12px}
-.item .body{flex:1;min-width:0}
-.item .who{font-weight:600;font-size:16px;letter-spacing:-.015em}
-.item .when{font-size:15px}
-.item .note{display:block;font-size:13px;color:var(--muted);margin-top:1px;overflow-wrap:anywhere}
-.item .now{display:inline-block;margin-left:6px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--busy);vertical-align:2px}
+/* Nederst: liste + skjema */
+.lower{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr);gap:16px;align-items:start}
+.section{display:flex;flex-direction:column;gap:10px;min-width:0}
+.section .head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:0 4px}
+.count{font-size:13px;color:var(--muted)}
+.list{list-style:none;margin:0;padding:0;overflow:hidden}
+.item{position:relative;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;transition:background-color 140ms ease}
+.item + .item::before{content:"";position:absolute;top:0;left:38px;right:0;height:1px;background:var(--line);transform:scaleY(.5);transform-origin:top}
+@media (hover:hover) and (pointer:fine){.item:hover{background:var(--cell)}}
+.item .dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--c)}
+.item .who{flex:none;font-weight:600;font-size:15px}
+.item .note{flex:1;min-width:0;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .when{flex:none;font-size:14px;font-variant-numeric:tabular-nums;text-align:right}
+.item .now{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:#fff;background:var(--busy);padding:2px 6px;border-radius:5px;margin-right:8px;vertical-align:1px}
 .item.past{opacity:.55}
 .item.enter{animation:enter 320ms var(--ease) both}
 .item.enter::after{content:"";position:absolute;inset:0;background:var(--accent-soft);pointer-events:none;animation:glow 1400ms ease-out 200ms both}
 @keyframes enter{from{opacity:0;transform:translateY(-6px) scale(.98)}}
 @keyframes glow{from{opacity:1}to{opacity:0}}
 .item.leaving{overflow:hidden;transition:height 220ms var(--ease),opacity 160ms ease,padding 220ms var(--ease);opacity:0;padding-top:0;padding-bottom:0}
-.del{flex:none;width:36px;height:36px;border-radius:12px;display:grid;place-items:center;color:var(--faint);transition:background-color 140ms ease,color 140ms ease,transform 120ms var(--ease)}
+.del{flex:none;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;color:var(--faint);transition:background-color 140ms ease,color 140ms ease,transform 120ms var(--ease)}
+.del svg{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
 .del:active{transform:scale(.9);background:var(--press);color:var(--ink)}
-.del svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
 @media (hover:hover) and (pointer:fine){.del:hover{background:var(--press);color:var(--ink)}}
-.empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:15px}
+.empty{padding:26px 16px;text-align:center;color:var(--muted);font-size:14px}
 .more{align-self:center;font-size:14px;font-weight:500;color:var(--accent);padding:8px 12px;border-radius:10px;transition:opacity 120ms ease}
 .more:active{opacity:.55}
 
-.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:20;width:calc(100% - 32px);max-width:528px;
+.form{display:flex;flex-direction:column;gap:16px;padding:16px;position:sticky;top:16px;transition:box-shadow 300ms ease}
+.form.flash{box-shadow:0 0 0 2px var(--accent),0 1px 2px var(--shadow)}
+.field{display:flex;flex-direction:column;gap:8px}
+.field > span{font-size:13px;font-weight:500;color:var(--muted)}
+.people{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 5px;border-radius:999px;background:var(--press);font-size:14px;font-weight:500;transition:background-color 140ms ease,box-shadow 140ms ease,transform 120ms var(--ease)}
+.chip .av{width:22px;height:22px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:11px;font-weight:600;color:#fff;background:var(--c)}
+.chip:active{transform:scale(.96)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+input[type="date"],input[type="text"]{width:100%;min-width:0;padding:10px 12px;border-radius:11px;border:0;background:var(--press);font-size:15px;outline:none;-webkit-appearance:none;appearance:none;min-height:42px}
+input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
+.primary{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:15px;
+  transition:transform 120ms var(--ease),opacity 140ms ease,background-color 200ms ease,color 200ms ease}
+.primary:active{transform:scale(.98)}
+.primary:disabled{opacity:.4;cursor:default;transform:none}
+.primary.done,.primary.done:disabled{opacity:1;background:var(--free);color:#fff}
+.primary svg{width:18px;height:18px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.formmsg{margin:-6px 2px 0;font-size:13px;color:var(--muted);min-height:1em}
+.formmsg.err{color:var(--busy)}
+
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);z-index:20;width:calc(100% - 32px);max-width:420px;
   display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;border-radius:16px;background:var(--toast);color:var(--toast-ink);
   -webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);box-shadow:0 12px 32px -8px rgba(0,0,0,.35);
-  transform:translate(-50%,calc(100% + 24px));opacity:0;visibility:hidden;
+  transform:translate(-50%,calc(100% + 28px));opacity:0;visibility:hidden;
   transition:transform 240ms var(--ease-drawer),opacity 200ms ease,visibility 0s linear 240ms}
 .toast.show{transform:translate(-50%,0);opacity:1;visibility:visible;transition:transform 420ms var(--ease-drawer),opacity 200ms ease,visibility 0s}
-.toast span{flex:1;min-width:0;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.toast button{flex:none;font-weight:600;font-size:15px;color:var(--toast-ink);padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.12);transition:transform 120ms var(--ease)}
+.toast span{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toast button{flex:none;font-weight:600;font-size:14px;color:var(--toast-ink);padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.12);transition:transform 120ms var(--ease)}
 .toast button:active{transform:scale(.95)}
-.banner{display:none;padding:12px 14px;border-radius:14px;background:var(--busy-soft);color:var(--ink);font-size:14px}
+
+.banner{display:none;padding:12px 14px;border-radius:14px;background:var(--busy-soft);font-size:14px}
 .banner.show{display:block}
 .foot{display:flex;justify-content:space-between;align-items:center;color:var(--faint);font-size:12px;padding:0 4px}
 .foot a{color:inherit;text-decoration:none}
 .sync{display:inline-flex;align-items:center;gap:6px}
 .sync i{width:6px;height:6px;border-radius:50%;background:var(--free)}
 .sync.off i{background:var(--busy)}
+
+/* Smal skjerm (telefon) */
+@media (max-width: 1000px){
+  .lower{grid-template-columns:1fr}
+  .form{position:static}
+}
+@media (max-width: 760px){
+  .wrap{padding-left:calc(env(safe-area-inset-left,0px) + 14px);padding-right:calc(env(safe-area-inset-right,0px) + 14px);padding-top:calc(env(safe-area-inset-top,0px) + 28px);gap:18px}
+  h1{font-size:34px}
+  .months{grid-template-columns:1fr}
+  .month{padding:12px 8px 10px}
+  .grid{grid-template-columns:18px repeat(7,minmax(0,1fr));gap:3px}
+  .d{min-height:52px;padding:4px 2px;align-items:center;gap:3px}
+  .d .n{align-self:center;font-size:12px}
+  .d .stack{display:flex;justify-content:center}
+  .pill{width:16px;height:16px;padding:0;border-radius:50%;justify-content:center;background:var(--c);box-shadow:0 0 0 1.5px var(--cell)}
+  .pill + .pill{margin-left:-5px}
+  .pill i{display:block;font-size:9px;font-weight:600;color:#fff}
+  .pill b{display:none}
+  .more-n{display:none}
+  .hint{display:none}
+}
+@media (min-width: 761px){ .d .stack{display:flex;flex-direction:column;gap:3px} }
 @media (prefers-reduced-motion: reduce){
   *{transition-duration:120ms!important}
   .item.enter{animation:fade 200ms ease both}
   @keyframes fade{from{opacity:0}}
   .toast,.toast.show{transform:translate(-50%,0)}
-  .chip:active,.primary:active,.tools button:active,.del:active,.toast button:active,.quick button:active{transform:none}
+  .chip:active,.primary:active,.del:active,.toast button:active,.iconbtn:active,.txtbtn:active{transform:none}
 }
-@media (prefers-reduced-transparency: reduce){
-  .bar{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none}
-  .toast{background:#1C2023;-webkit-backdrop-filter:none;backdrop-filter:none}
-}
+@media (prefers-reduced-transparency: reduce){ .toast{background:#1C2023;-webkit-backdrop-filter:none;backdrop-filter:none} }
 </style>
 </head>
 <body>
 <main class="wrap">
+  <div class="top">
+    <h1>Ikke book</h1>
+    <div class="nav">
+      <span class="lbl" id="range"></span>
+      <button class="txtbtn" id="todayBtn" type="button" hidden>I dag</button>
+      <button class="iconbtn" id="prev" type="button" aria-label="Forrige måned"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="iconbtn" id="next" type="button" aria-label="Neste måned"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+  </div>
+
   <div class="banner" id="banner"></div>
 
-  <section class="section" aria-labelledby="h-list">
-    <h1 id="h-list">Ikke book</h1>
-    <div class="sentinel" id="sentinel" aria-hidden="true"></div>
-    <div class="bar" id="bar"><div class="tools" id="filter" role="group" aria-label="Filtrer på person"></div></div>
-    <ul class="list" id="list"></ul>
-    <button class="more" id="past" type="button">Vis tidligere</button>
+  <section aria-label="Kalender">
+    <div class="months" id="months"></div>
+    <p class="hint">Klikk på en dag for å legge inn. <kbd>Shift</kbd>+klikk for å velge flere dager.</p>
   </section>
 
-  <section class="section" aria-labelledby="h-add">
-    <div class="head"><h2 id="h-add">Legg inn</h2></div>
-    <form class="card form" id="form" autocomplete="off">
-      <div class="field">
-        <span>Hvem (velg en eller flere)</span>
-        <div class="people" id="pick"></div>
-      </div>
-      <div class="field">
-        <span>Når</span>
-        <div class="row2">
-          <input type="date" id="fra" required aria-label="Fra dato">
-          <input type="date" id="til" required aria-label="Til og med dato">
+  <div class="lower">
+    <section class="section" aria-labelledby="h-list">
+      <div class="head"><h2 id="h-list">Alle kommende</h2><span class="count" id="count"></span></div>
+      <ul class="list card" id="list"></ul>
+      <button class="more" id="past" type="button">Vis tidligere</button>
+    </section>
+
+    <section class="section" aria-labelledby="h-add">
+      <div class="head"><h2 id="h-add">Legg inn</h2></div>
+      <form class="card form" id="form" autocomplete="off">
+        <div class="field">
+          <span>Hvem (velg en eller flere)</span>
+          <div class="people" id="pick"></div>
         </div>
-        <div class="quick" id="quick">
-          <button type="button" data-q="0">I dag</button>
-          <button type="button" data-q="1">I morgen</button>
-          <button type="button" data-q="w">Resten av uka</button>
-          <button type="button" data-q="nw">Neste uke</button>
+        <div class="field">
+          <span>Fra og til (med)</span>
+          <div class="row2">
+            <input type="date" id="fra" required aria-label="Fra dato">
+            <input type="date" id="til" required aria-label="Til og med dato">
+          </div>
         </div>
-      </div>
-      <div class="field">
-        <span>Notat (valgfritt)</span>
-        <input type="text" id="notat" maxlength="140" placeholder="F.eks. ferie, bare formiddag, syk">
-      </div>
-      <button class="primary" id="save" type="submit" disabled>Lagre</button>
-      <p class="formmsg" id="formmsg" aria-live="polite"></p>
-    </form>
-  </section>
+        <div class="field">
+          <span>Notat (valgfritt)</span>
+          <input type="text" id="notat" maxlength="140" placeholder="F.eks. ferie, bare formiddag, syk">
+        </div>
+        <button class="primary" id="save" type="submit" disabled>Lagre</button>
+        <p class="formmsg" id="formmsg" aria-live="polite"></p>
+      </form>
+    </section>
+  </div>
 
   <footer class="foot">
     <span class="sync" id="sync"><i></i><span id="syncTxt">Kobler til …</span></span>
@@ -215,10 +271,17 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
   const today = () => iso(new Date());
 
   const fmtWd = new Intl.DateTimeFormat("nb-NO", { weekday: "short" });
+  const fmtMonth = new Intl.DateTimeFormat("nb-NO", { month: "long" });
+  const fmtFull = new Intl.DateTimeFormat("nb-NO", { weekday: "long", day: "numeric", month: "long" });
   const MONTHS = ["jan","feb","mar","apr","mai","jun","jul","aug","sep","okt","nov","des"];
   const wd = d => fmtWd.format(d).replace(".", "");
-  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
+  function isoWeek(d) {
+    const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);
+    const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+    return Math.ceil(((t - y0) / 864e5 + 1) / 7);
+  }
   function fmtRange(a, b) {
     const A = parse(a), B = parse(b), yNow = new Date().getFullYear();
     const yr = d => d.getFullYear() !== yNow ? " " + d.getFullYear() : "";
@@ -231,13 +294,14 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
 
   // ---------- state ----------
   let rows = [];
-  let filter = "Alle";
   let showPast = false;
+  let monthOffset = 0;
   let lastJson = "";
-  const seen = new Set();   // ids vist før, så bare nye rader animeres inn
   let firstPaint = true;
-  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+  let touched = false;   // marker valgt periode i kalenderen først når noen har valgt dato
+  const seen = new Set();
   const picked = new Set();
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
 
   // ---------- API ----------
   async function api(path = "", opts = {}) {
@@ -251,15 +315,15 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
   }
   function setSync(ok, txt) { $("sync").classList.toggle("off", !ok); $("syncTxt").textContent = txt; }
   function banner(msg) { const b = $("banner"); b.innerHTML = msg || ""; b.classList.toggle("show", !!msg); }
+  const stamp = () => "Oppdatert " + new Date().toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
 
   async function load() {
     try {
       const data = await api("?select=*&order=fra.asc,person.asc");
+      banner(""); setSync(true, stamp());
       const json = JSON.stringify(data);
-      if (json === lastJson) { banner(""); setSync(true, "Oppdatert " + new Date().toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })); return; }
+      if (json === lastJson) return;
       lastJson = json; rows = data;
-      banner("");
-      setSync(true, "Oppdatert " + new Date().toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" }));
     } catch (e) {
       if (e.code === "PGRST205" || e.code === "42P01" || e.status === 404)
         banner("<b>Databasen er ikke satt opp ennå.</b> Kjør SQL-en i Supabase, så virker siden.");
@@ -269,53 +333,99 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
     render();
   }
 
-  // ---------- render ----------
-  function renderPick() {
-    $("pick").innerHTML = PEOPLE.map(p =>
-      `<button type="button" class="chip" data-p="${p}" aria-pressed="${picked.has(p)}">${avatar(p)}${esc(p)}</button>`).join("");
+  // ---------- kalender ----------
+  function entriesOn(s) {
+    return rows.filter(r => r.fra <= s && r.til >= s).sort((a, b) => PEOPLE.indexOf(a.person) - PEOPLE.indexOf(b.person));
   }
-  function renderFilter() {
-    $("filter").innerHTML = ["Alle", ...PEOPLE].map(p =>
-      `<button type="button" data-f="${p}" aria-pressed="${p===filter}">${esc(p)}</button>`).join("");
+  function renderMonth(year, month) {
+    const first = new Date(year, month, 1);
+    const last = new Date(year, month + 1, 0);
+    const t = today(), selA = $("fra").value, selB = $("til").value;
+    let start = addDays(first, -((first.getDay() + 6) % 7));
+    let html = `<div class="grid"><span></span>${["Man","Tir","Ons","Tor","Fre","Lør","Søn"].map(x => `<span class="wd">${x}</span>`).join("")}`;
+    for (let d = start; d <= last; d = addDays(d, 7)) {
+      html += `<span class="wk" title="Uke ${isoWeek(d)}">${isoWeek(d)}</span>`;
+      for (let i = 0; i < 7; i++) {
+        const day = addDays(d, i), s = iso(day);
+        const out = day.getMonth() !== month;
+        if (out) { html += `<span class="d out" aria-hidden="true"></span>`; continue; }
+        const es = entriesOn(s);
+        const past = s < t;
+        const cls = ["d", i >= 5 ? "we" : "", s === t ? "today" : "", past ? "past" : "", (touched && !past && selA && selB && s >= selA && s <= selB) ? "sel" : ""].filter(Boolean).join(" ");
+        const shown = es.slice(0, 3), extra = es.length - shown.length;
+        const tip = es.map(e => e.person + (e.notat ? ": " + e.notat : "")).join("\n");
+        const label = `${fmtFull.format(day)}${es.length ? ". Ikke book: " + es.map(e => e.person).join(", ") : ""}`;
+        html += `<button type="button" class="${cls}" data-d="${s}" ${past ? "disabled" : ""} aria-label="${esc(label)}"${tip ? ` title="${esc(tip)}"` : ""}>
+          <span class="n">${day.getDate()}</span>
+          <span class="stack">${shown.map(e => `<span class="pill" data-id="${esc(e.id)}" style="--c:${color(e.person)}"><i>${esc(e.person[0])}</i><b>${esc(e.person)}</b></span>`).join("")}${extra > 0 ? `<span class="more-n">+${extra} til</span>` : ""}</span>
+        </button>`;
+      }
+    }
+    return html + "</div>";
   }
+  function renderCalendar() {
+    const now = new Date();
+    const a = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+    const b = new Date(a.getFullYear(), a.getMonth() + 1, 1);
+    const name = d => { const m = fmtMonth.format(d); return m.charAt(0).toUpperCase() + m.slice(1); };
+    const yr = d => d.getFullYear() !== now.getFullYear() ? " " + d.getFullYear() : "";
+    $("months").innerHTML = [a, b].map(m =>
+      `<div class="card month"><h2>${esc(name(m))}${esc(yr(m))}</h2>${renderMonth(m.getFullYear(), m.getMonth())}</div>`).join("");
+    $("range").textContent = `${name(a)} – ${name(b)}${b.getFullYear() !== now.getFullYear() ? " " + b.getFullYear() : ""}`;
+    $("todayBtn").hidden = monthOffset === 0;
+    $("prev").disabled = monthOffset <= 0; $("prev").style.opacity = monthOffset <= 0 ? .4 : 1;
+  }
+
+  // ---------- liste ----------
   function renderList() {
     const t = today();
     const list = rows
-      .filter(r => filter === "Alle" || r.person === filter)
       .filter(r => showPast ? r.til < t : r.til >= t)
-      .sort((a, b) => showPast ? (b.fra.localeCompare(a.fra)) : (a.fra.localeCompare(b.fra) || a.person.localeCompare(b.person)));
+      .sort((a, b) => showPast ? b.fra.localeCompare(a.fra) : (a.fra.localeCompare(b.fra) || PEOPLE.indexOf(a.person) - PEOPLE.indexOf(b.person)));
+    $("h-list").textContent = showPast ? "Tidligere" : "Alle kommende";
+    $("count").textContent = list.length ? list.length + " stk" : "";
     $("past").textContent = showPast ? "Vis kommende" : "Vis tidligere";
     if (!list.length) {
-      $("list").innerHTML = `<li class="empty">${showPast ? "Ingenting tidligere." : (filter==="Alle" ? "Ingen blokkeringer. Alle kan bookes." : esc(filter) + " kan bookes alle dager.")}</li>`;
+      $("list").innerHTML = `<li class="empty">${showPast ? "Ingenting tidligere." : "Ingen blokkeringer. Alle kan bookes."}</li>`;
       return;
     }
     $("list").innerHTML = list.map(r => {
       const now = r.fra <= t && r.til >= t;
       const isNew = !firstPaint && !seen.has(r.id);
-      return `<li class="item${r.til < t ? " past" : ""}${isNew ? " enter" : ""}" data-id="${esc(r.id)}">${avatar(r.person)}
-        <div class="body"><span class="who">${esc(r.person)}</span>${now ? '<span class="now">nå</span>' : ""}
-          <div class="when">${esc(fmtRange(r.fra, r.til))}</div>${r.notat ? `<span class="note">${esc(r.notat)}</span>` : ""}</div>
+      return `<li class="item${r.til < t ? " past" : ""}${isNew ? " enter" : ""}" data-id="${esc(r.id)}" style="--c:${color(r.person)}">
+        <span class="dot" aria-hidden="true"></span><span class="who">${esc(r.person)}</span>
+        <span class="note">${r.notat ? esc(r.notat) : ""}</span>
+        <span class="when">${now ? '<span class="now">NÅ</span>' : ""}${esc(fmtRange(r.fra, r.til))}</span>
         <button type="button" class="del" data-id="${esc(r.id)}" aria-label="Slett ${esc(r.person)} ${esc(fmtRange(r.fra, r.til))}">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></li>`;
     }).join("");
   }
   function render() {
-    renderList();
+    renderCalendar(); renderList();
     rows.forEach(r => seen.add(r.id));
-    if (rows.length || lastJson) firstPaint = false;
+    if (lastJson) firstPaint = false;
   }
 
-  // ---------- form ----------
-  function setRange(a, b) { $("fra").value = iso(a); $("til").value = iso(b); validate(); }
+  // Hold over en rad i lista: marker dagene i kalenderen
+  $("list").addEventListener("mouseover", e => {
+    const li = e.target.closest(".item"); if (!li) return;
+    document.querySelectorAll(".pill.hl").forEach(p => p.classList.remove("hl"));
+    document.querySelectorAll(`.pill[data-id="${CSS.escape(li.dataset.id)}"]`).forEach(p => p.classList.add("hl"));
+  });
+  $("list").addEventListener("mouseleave", () => document.querySelectorAll(".pill.hl").forEach(p => p.classList.remove("hl")));
+
+  // ---------- skjema ----------
   function validate() {
     const f = $("fra").value, t = $("til").value;
-    const ok = picked.size > 0 && f && t && t >= f;
-    $("save").disabled = !ok;
-    $("formmsg").classList.remove("err");
-    $("formmsg").textContent = f && t && t < f ? "Til-datoen er før fra-datoen." : "";
-    if (f && t && t < f) $("formmsg").classList.add("err");
+    $("save").disabled = !(picked.size > 0 && f && t && t >= f);
+    const bad = f && t && t < f;
+    $("formmsg").classList.toggle("err", !!bad);
+    $("formmsg").textContent = bad ? "Til-datoen er før fra-datoen." : "";
   }
-
+  function renderPick() {
+    $("pick").innerHTML = PEOPLE.map(p =>
+      `<button type="button" class="chip" data-p="${p}" aria-pressed="${picked.has(p)}" style="--c:${color(p)}">${avatar(p)}${esc(p)}</button>`).join("");
+  }
   $("pick").addEventListener("click", e => {
     const b = e.target.closest(".chip"); if (!b) return;
     const p = b.dataset.p; picked.has(p) ? picked.delete(p) : picked.add(p);
@@ -323,16 +433,23 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
   });
   $("fra").addEventListener("change", () => {
     if (!$("til").value || $("til").value < $("fra").value) $("til").value = $("fra").value;
-    validate();
+    touched = true; validate(); renderCalendar();
   });
-  $("til").addEventListener("change", validate);
-  $("quick").addEventListener("click", e => {
-    const q = e.target.closest("button")?.dataset.q; if (q == null) return;
-    const t = parse(today()), dow = (t.getDay() + 6) % 7; // man=0
-    if (q === "0") setRange(t, t);
-    else if (q === "1") setRange(addDays(t,1), addDays(t,1));
-    else if (q === "w") setRange(t, addDays(t, Math.max(0, 4 - dow)));
-    else if (q === "nw") { const m = addDays(t, 7 - dow); setRange(m, addDays(m, 4)); }
+  $("til").addEventListener("change", () => { touched = true; validate(); renderCalendar(); });
+
+  // Klikk på en dag = fyll inn datoen. Shift+klikk = utvid perioden.
+  let flashTimer;
+  $("months").addEventListener("click", e => {
+    const b = e.target.closest(".d[data-d]"); if (!b || b.disabled) return;
+    const s = b.dataset.d, f = $("fra").value;
+    if (e.shiftKey && f) {
+      if (s >= f) $("til").value = s; else { $("til").value = $("til").value > f ? $("til").value : f; $("fra").value = s; }
+    } else { $("fra").value = s; $("til").value = s; }
+    touched = true; validate(); renderCalendar();
+    const form = $("form");
+    const r = form.getBoundingClientRect();
+    if (r.top < 0 || r.bottom > innerHeight) form.scrollIntoView({ block: "nearest", behavior: reduced.matches ? "auto" : "smooth" });
+    form.classList.add("flash"); clearTimeout(flashTimer); flashTimer = setTimeout(() => form.classList.remove("flash"), 700);
   });
 
   $("form").addEventListener("submit", async e => {
@@ -343,31 +460,27 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
     try {
       await api("", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(payload) });
       picked.clear(); renderPick(); $("notat").value = "";
-      if (!showPast) { if (filter !== "Alle" && !payload.some(x => x.person === filter)) { filter = "Alle"; renderFilter(); } }
+      showPast = false; touched = false;
       await load();
-      const fresh = $("list").querySelector(".item.enter");
-      if (fresh) fresh.scrollIntoView({ block: "nearest", behavior: reduced.matches ? "auto" : "smooth" });
       const btn = $("save");
       btn.classList.add("done");
       btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Lagret';
-      setTimeout(() => { btn.classList.remove("done"); btn.textContent = "Lagre"; btn.disabled = picked.size === 0; }, 1400);
+      setTimeout(() => { btn.classList.remove("done"); btn.textContent = "Lagre"; validate(); }, 1400);
       return;
     } catch (err) {
       $("formmsg").classList.add("err");
       $("formmsg").textContent = "Klarte ikke å lagre. Prøv igjen.";
     }
-    $("save").textContent = "Lagre"; $("save").disabled = picked.size === 0;
+    $("save").textContent = "Lagre"; validate();
   });
 
-  // ---------- list actions ----------
-  // Slett med en gang, med «Angre» i en toast (tilgivelse i stedet for bekreftelsesdialog)
+  // ---------- slett med angre ----------
   let undoRow = null, toastTimer;
   function toast(msg) {
     $("toastTxt").textContent = msg; $("toast").classList.add("show");
     clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, 5000);
   }
   function hideToast() { $("toast").classList.remove("show"); undoRow = null; }
-
   function collapse(li) {
     return new Promise(res => {
       if (reduced.matches) { li.style.opacity = 0; return setTimeout(res, 120); }
@@ -376,19 +489,16 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
       setTimeout(res, 230);
     });
   }
-
   $("list").addEventListener("click", async e => {
     const b = e.target.closest(".del"); if (!b) return;
     const id = b.dataset.id, row = rows.find(r => r.id === id); if (!row) return;
-    const li = b.closest(".item");
     b.disabled = true;
-    try {
-      await api("?id=eq." + encodeURIComponent(id), { method: "DELETE" });
-    } catch { b.disabled = false; banner("Klarte ikke å slette. Prøv igjen."); return; }
-    await collapse(li);
-    rows = rows.filter(r => r.id !== id); lastJson = ""; renderList();
+    try { await api("?id=eq." + encodeURIComponent(id), { method: "DELETE" }); }
+    catch { b.disabled = false; banner("Klarte ikke å slette. Prøv igjen."); return; }
+    await collapse(b.closest(".item"));
+    rows = rows.filter(r => r.id !== id); lastJson = ""; seen.delete(id);
+    renderCalendar(); renderList();
     undoRow = { id: row.id, person: row.person, fra: row.fra, til: row.til, notat: row.notat };
-    seen.delete(row.id);
     toast(`Slettet ${row.person}, ${fmtRange(row.fra, row.til)}`);
   });
   $("undo").addEventListener("click", async () => {
@@ -398,18 +508,16 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
     catch { banner("Klarte ikke å angre. Legg den inn på nytt."); }
     load();
   });
-  $("filter").addEventListener("click", e => {
-    const f = e.target.closest("button")?.dataset.f; if (!f) return;
-    filter = f; renderFilter(); renderList();
-  });
   $("past").addEventListener("click", () => { showPast = !showPast; renderList(); });
 
-  // ---------- sticky bar: skillelinje bare når innhold glir under ----------
-  new IntersectionObserver(([en]) => $("bar").classList.toggle("stuck", !en.isIntersecting)).observe($("sentinel"));
+  // ---------- månedsnavigasjon ----------
+  $("prev").addEventListener("click", () => { if (monthOffset > 0) { monthOffset--; renderCalendar(); } });
+  $("next").addEventListener("click", () => { monthOffset++; renderCalendar(); });
+  $("todayBtn").addEventListener("click", () => { monthOffset = 0; renderCalendar(); });
 
-  // ---------- init ----------
-  const t0 = parse(today()); setRange(t0, t0); $("save").disabled = true;
-  renderPick(); renderFilter(); render(); load();
+  // ---------- start ----------
+  const t0 = today(); $("fra").value = t0; $("til").value = t0;
+  renderPick(); render(); validate(); load();
   setInterval(() => { if (!document.hidden) load(); }, 30000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
 })();
