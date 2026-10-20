@@ -21,9 +21,9 @@
 :root{
   --bg:#F4F6F7; --surface:#FFFFFF; --ink:#121518; --muted:#5F6970; --faint:#A2AAB0;
   --line:rgba(18,21,24,.09); --shadow:rgba(18,21,24,.07); --press:#ECEFF1;
-  --cell:#F7F8F9; --cell-we:#EEF1F2;
+  --cell:#F1F3F4; --ring:#FBEFEC; --busy-soft2:rgba(176,58,39,.14);
   --accent:#0E6E83; --accent-ink:#FFFFFF; --accent-soft:rgba(14,110,131,.12);
-  --busy:#B03A27; --busy-soft:rgba(176,58,39,.10); --free:#2F8A57;
+  --busy:#B03A27; --busy-soft:rgba(176,58,39,.08); --free:#2F8A57;
   --font:"Geist",-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif; --mono:"Geist Mono",ui-monospace,Menlo,monospace;
   --ease:cubic-bezier(0.23,1,0.32,1); --ease-drawer:cubic-bezier(0.32,0.72,0,1);
   --toast:rgba(28,32,35,.94); --toast-ink:#F4F7F8; --pill-mix:16%;
@@ -32,7 +32,7 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0D1012; --surface:#171B1E; --ink:#EEF2F4; --muted:#9AA4AA; --faint:#5F686E;
   --line:rgba(255,255,255,.09); --shadow:rgba(0,0,0,.4); --press:#20262A;
-  --cell:#1C2124; --cell-we:#15191B;
+  --cell:#20262A; --ring:#2A2220; --busy-soft2:rgba(238,122,100,.22);
   --accent:#3BA7C0; --accent-ink:#06191E; --accent-soft:rgba(59,167,192,.16);
   --busy:#EE7A64; --busy-soft:rgba(238,122,100,.14); --free:#5CC487;
   --toast:rgba(44,50,54,.95); --toast-ink:#EEF2F4; --pill-mix:30%;
@@ -40,7 +40,7 @@
 :root[data-theme="dark"]{
   --bg:#0D1012; --surface:#171B1E; --ink:#EEF2F4; --muted:#9AA4AA; --faint:#5F686E;
   --line:rgba(255,255,255,.09); --shadow:rgba(0,0,0,.4); --press:#20262A;
-  --cell:#1C2124; --cell-we:#15191B;
+  --cell:#20262A; --ring:#2A2220; --busy-soft2:rgba(238,122,100,.22);
   --accent:#3BA7C0; --accent-ink:#06191E; --accent-soft:rgba(59,167,192,.16);
   --busy:#EE7A64; --busy-soft:rgba(238,122,100,.14); --free:#5CC487;
   --toast:rgba(44,50,54,.95); --toast-ink:#EEF2F4; --pill-mix:30%;
@@ -50,60 +50,47 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0;min-height:100dvh;background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--font);letter-spacing:-.01em;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 button,input{font:inherit;color:inherit;letter-spacing:inherit}
 button{cursor:pointer;border:0;background:none;padding:0}
-.wrap{width:100%;max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:24px;
-  padding:calc(env(safe-area-inset-top,0px) + 40px) calc(env(safe-area-inset-right,0px) + 32px) calc(env(safe-area-inset-bottom,0px) + 40px) calc(env(safe-area-inset-left,0px) + 32px)}
+.wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:20px;
+  padding:calc(env(safe-area-inset-top,0px) + 44px) calc(env(safe-area-inset-right,0px) + 20px) calc(env(safe-area-inset-bottom,0px) + 40px) calc(env(safe-area-inset-left,0px) + 20px)}
 .card{background:var(--surface);border-radius:20px;box-shadow:0 0 0 .5px var(--line),0 1px 2px var(--shadow)}
-.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
-h1{margin:0;font-size:40px;line-height:1;font-weight:600;letter-spacing:-.045em}
-h2{margin:0;font-size:16px;font-weight:600;letter-spacing:-.02em}
-.nav{display:flex;align-items:center;gap:6px}
-.nav .lbl{font-size:15px;font-weight:600;margin-right:6px;font-variant-numeric:tabular-nums}
-.iconbtn{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--surface);box-shadow:0 0 0 .5px var(--line),0 1px 2px var(--shadow);transition:transform 120ms var(--ease),background-color 140ms ease}
-.iconbtn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.iconbtn:active{transform:scale(.94)}
-.txtbtn{height:36px;padding:0 12px;border-radius:11px;font-size:13px;font-weight:500;background:var(--surface);box-shadow:0 0 0 .5px var(--line),0 1px 2px var(--shadow);transition:transform 120ms var(--ease)}
-.txtbtn:active{transform:scale(.96)}
-.txtbtn[hidden]{display:none}
+h1{margin:0 4px;font-size:40px;line-height:1;font-weight:600;letter-spacing:-.045em}
+h2{margin:0;font-size:15px;font-weight:600;letter-spacing:-.02em}
 
-/* Kalender */
-.months{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.month{padding:16px 12px 12px}
-.month h2{padding:0 4px 12px;text-transform:capitalize}
-.grid{display:grid;grid-template-columns:20px repeat(7,minmax(0,1fr));gap:3px}
-.wd{font-size:11px;font-weight:500;color:var(--muted);text-align:center;padding-bottom:2px}
-.wk{font-family:var(--mono);font-size:10px;color:var(--faint);display:flex;align-items:flex-start;justify-content:center;padding-top:9px}
-.d{position:relative;min-height:88px;border-radius:10px;background:var(--cell);padding:5px 4px 5px;display:flex;flex-direction:column;align-items:stretch;gap:3px;text-align:left;
-  transition:background-color 140ms ease,box-shadow 140ms ease}
-.d.we{background:var(--cell-we)}
-.d.out{visibility:hidden;pointer-events:none}
-.d.past{opacity:.42;cursor:default}
-.d .n{align-self:flex-start;font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;line-height:20px;min-width:20px;height:20px;padding:0 3px;border-radius:10px;text-align:center}
-.d.we .n{color:var(--muted)}
-.d.today .n{background:var(--ink);color:var(--bg);font-weight:600;padding:0 6px}
-.d.sel{box-shadow:inset 0 0 0 2px var(--accent);background:var(--accent-soft)}
-@media (hover:hover) and (pointer:fine){ .d:not(.past):hover{box-shadow:inset 0 0 0 1px var(--faint)} .d.sel:hover{box-shadow:inset 0 0 0 2px var(--accent)} }
+/* Kalender (design B) */
+.months{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.month{padding:12px 10px 10px;display:flex;flex-direction:column;gap:4px}
+.mhead{display:flex;justify-content:space-between;align-items:center;padding:0 4px 6px}
+.mhead h2{text-transform:capitalize}
+.mhead span{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--muted)}
+.row7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.wd{text-align:center;font-size:11px;font-weight:500;color:var(--muted)}
+.d{height:54px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:6px;transition:background-color 140ms ease,box-shadow 140ms ease}
+.d .n{font-size:15px;font-weight:500;font-variant-numeric:tabular-nums;line-height:20px}
+.d.out{visibility:hidden}
+.d.we .n,.d.past .n{color:var(--faint)}
+.d.busy{background:var(--busy-soft)}
+.d.busy2{background:var(--busy-soft2)}
+.d.busy .n,.d.busy2 .n{color:var(--ink)}
+.d.past.busy,.d.past.busy2{opacity:.5}
+.d.today{box-shadow:inset 0 0 0 1.5px var(--ink)}
+.d.today .n{font-weight:600;color:var(--ink)}
+.d.sel{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.d.today.sel{box-shadow:inset 0 0 0 1.5px var(--ink),inset 0 0 0 3px var(--accent)}
+.d:disabled{cursor:default}
+@media (hover:hover) and (pointer:fine){ .d:not(:disabled):not(.busy):not(.busy2):hover{background:var(--cell)} }
 .d:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.pill{display:flex;align-items:center;gap:0;min-width:0;height:18px;padding:0 5px;border-radius:6px;font-size:11.5px;font-weight:500;line-height:1;
-  background:color-mix(in srgb,var(--c) var(--pill-mix),transparent);transition:box-shadow 140ms ease,background-color 140ms ease}
-.pill i{display:none;font-style:normal}
-.pill b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pill.hl{background:var(--c);color:#fff}
-
-.more-n{font-size:11px;font-weight:500;color:var(--muted);padding-left:4px}
-.legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding:12px 4px 0;font-size:12px;color:var(--muted)}
-.legend span{display:inline-flex;align-items:center;gap:6px}
-.legend i{width:8px;height:8px;border-radius:50%;background:var(--c)}
-.hint{margin:0;padding:10px 4px 0;font-size:12px;color:var(--muted)}
-.hint kbd{font:500 11px var(--mono);padding:1px 5px;border-radius:5px;background:var(--press);color:var(--ink)}
+.ini{display:flex}
+.ini span{width:18px;height:18px;border-radius:50%;background:var(--c);color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;box-shadow:0 0 0 1.5px var(--ring)}
+.ini span + span{margin-left:-5px}
 
 /* Nederst: liste + skjema */
-.lower{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr);gap:16px;align-items:start}
+.lower{display:flex;flex-direction:column;gap:20px}
 .section{display:flex;flex-direction:column;gap:10px;min-width:0}
 .section .head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:0 4px}
 .count{font-size:13px;color:var(--muted)}
 .list{list-style:none;margin:0;padding:0;overflow:hidden}
-.item{position:relative;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;transition:background-color 140ms ease}
-.item + .item::before{content:"";position:absolute;top:0;left:38px;right:0;height:1px;background:var(--line);transform:scaleY(.5);transform-origin:top}
+.item{position:relative;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;transition:background-color 140ms ease}
+.item + .item::before{content:"";position:absolute;top:0;left:34px;right:0;height:1px;background:var(--line);transform:scaleY(.5);transform-origin:top}
 @media (hover:hover) and (pointer:fine){.item:hover{background:var(--cell)}}
 .item .dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--c)}
 .item .who{flex:none;font-weight:600;font-size:15px}
@@ -124,7 +111,7 @@ h2{margin:0;font-size:16px;font-weight:600;letter-spacing:-.02em}
 .more{align-self:center;font-size:14px;font-weight:500;color:var(--accent);padding:8px 12px;border-radius:10px;transition:opacity 120ms ease}
 .more:active{opacity:.55}
 
-.form{display:flex;flex-direction:column;gap:16px;padding:16px;position:sticky;top:16px;transition:box-shadow 300ms ease}
+.form{display:flex;flex-direction:column;gap:16px;padding:16px;transition:box-shadow 300ms ease}
 .form.flash{box-shadow:0 0 0 2px var(--accent),0 1px 2px var(--shadow)}
 .field{display:flex;flex-direction:column;gap:8px}
 .field > span{font-size:13px;font-weight:500;color:var(--muted)}
@@ -163,28 +150,11 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
 .sync i{width:6px;height:6px;border-radius:50%;background:var(--free)}
 .sync.off i{background:var(--busy)}
 
-/* Smal skjerm (telefon) */
-@media (max-width: 1000px){
-  .lower{grid-template-columns:1fr}
-  .form{position:static}
-}
-@media (max-width: 760px){
-  .wrap{padding-left:calc(env(safe-area-inset-left,0px) + 14px);padding-right:calc(env(safe-area-inset-right,0px) + 14px);padding-top:calc(env(safe-area-inset-top,0px) + 28px);gap:18px}
-  h1{font-size:34px}
+/* Telefon: månedene under hverandre */
+@media (max-width: 720px){
+  .wrap{padding-top:calc(env(safe-area-inset-top,0px) + 44px);padding-left:calc(env(safe-area-inset-left,0px) + 16px);padding-right:calc(env(safe-area-inset-right,0px) + 16px)}
   .months{grid-template-columns:1fr}
-  .month{padding:12px 8px 10px}
-  .grid{grid-template-columns:18px repeat(7,minmax(0,1fr));gap:3px}
-  .d{min-height:52px;padding:4px 2px;align-items:center;gap:3px}
-  .d .n{align-self:center;font-size:12px}
-  .d .stack{display:flex;justify-content:center}
-  .pill{width:16px;height:16px;padding:0;border-radius:50%;justify-content:center;background:var(--c);box-shadow:0 0 0 1.5px var(--cell)}
-  .pill + .pill{margin-left:-5px}
-  .pill i{display:block;font-size:9px;font-weight:600;color:#fff}
-  .pill b{display:none}
-  .more-n{display:none}
-  .hint{display:none}
 }
-@media (min-width: 761px){ .d .stack{display:flex;flex-direction:column;gap:3px} }
 @media (prefers-reduced-motion: reduce){
   *{transition-duration:120ms!important}
   .item.enter{animation:fade 200ms ease both}
@@ -197,32 +167,21 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
 </head>
 <body>
 <main class="wrap">
-  <div class="top">
-    <h1>Ikke book</h1>
-    <div class="nav">
-      <span class="lbl" id="range"></span>
-      <button class="txtbtn" id="todayBtn" type="button" hidden>I dag</button>
-      <button class="iconbtn" id="prev" type="button" aria-label="Forrige måned"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
-      <button class="iconbtn" id="next" type="button" aria-label="Neste måned"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
-    </div>
-  </div>
+  <h1>Ikke book</h1>
 
   <div class="banner" id="banner"></div>
 
-  <section aria-label="Kalender">
-    <div class="months" id="months"></div>
-    <p class="hint">Klikk på en dag for å legge inn. <kbd>Shift</kbd>+klikk for å velge flere dager.</p>
-  </section>
+  <section class="months" id="months" aria-label="Kalender"></section>
 
   <div class="lower">
     <section class="section" aria-labelledby="h-list">
-      <div class="head"><h2 id="h-list">Alle kommende</h2><span class="count" id="count"></span></div>
+      <div class="head"><h2 id="h-list" style="font-size:14px">Alle kommende</h2><span class="count" id="count"></span></div>
       <ul class="list card" id="list"></ul>
       <button class="more" id="past" type="button">Vis tidligere</button>
     </section>
 
     <section class="section" aria-labelledby="h-add">
-      <div class="head"><h2 id="h-add">Legg inn</h2></div>
+      <div class="head"><h2 id="h-add" style="font-size:14px">Legg inn</h2></div>
       <form class="card form" id="form" autocomplete="off">
         <div class="field">
           <span>Hvem (velg en eller flere)</span>
@@ -295,7 +254,6 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
   // ---------- state ----------
   let rows = [];
   let showPast = false;
-  let monthOffset = 0;
   let lastJson = "";
   let firstPaint = true;
   let touched = false;   // marker valgt periode i kalenderen først når noen har valgt dato
@@ -338,42 +296,34 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
     return rows.filter(r => r.fra <= s && r.til >= s).sort((a, b) => PEOPLE.indexOf(a.person) - PEOPLE.indexOf(b.person));
   }
   function renderMonth(year, month) {
-    const first = new Date(year, month, 1);
-    const last = new Date(year, month + 1, 0);
+    const first = new Date(year, month, 1), last = new Date(year, month + 1, 0);
     const t = today(), selA = $("fra").value, selB = $("til").value;
-    let start = addDays(first, -((first.getDay() + 6) % 7));
-    let html = `<div class="grid"><span></span>${["Man","Tir","Ons","Tor","Fre","Lør","Søn"].map(x => `<span class="wd">${x}</span>`).join("")}`;
-    for (let d = start; d <= last; d = addDays(d, 7)) {
-      html += `<span class="wk" title="Uke ${isoWeek(d)}">${isoWeek(d)}</span>`;
+    const start = addDays(first, -((first.getDay() + 6) % 7));
+    const name = fmtMonth.format(first);
+    const wk1 = isoWeek(first), wk2 = isoWeek(last);
+    let html = `<div class="card month"><div class="mhead"><h2>${esc(name)}${first.getFullYear() !== new Date().getFullYear() ? " " + first.getFullYear() : ""}</h2><span>UKE ${wk1}–${wk2}</span></div>
+      <div class="row7">${["M","T","O","T","F","L","S"].map(x => `<span class="wd">${x}</span>`).join("")}</div>`;
+    for (let w = start; w <= last; w = addDays(w, 7)) {
+      html += `<div class="row7">`;
       for (let i = 0; i < 7; i++) {
-        const day = addDays(d, i), s = iso(day);
-        const out = day.getMonth() !== month;
-        if (out) { html += `<span class="d out" aria-hidden="true"></span>`; continue; }
-        const es = entriesOn(s);
-        const past = s < t;
-        const cls = ["d", i >= 5 ? "we" : "", s === t ? "today" : "", past ? "past" : "", (touched && !past && selA && selB && s >= selA && s <= selB) ? "sel" : ""].filter(Boolean).join(" ");
-        const shown = es.slice(0, 3), extra = es.length - shown.length;
+        const day = addDays(w, i), s = iso(day);
+        if (day.getMonth() !== month) { html += `<span class="d out" aria-hidden="true"></span>`; continue; }
+        const es = entriesOn(s), past = s < t;
+        const cls = ["d", i >= 5 ? "we" : "", es.length === 1 ? "busy" : es.length > 1 ? "busy2" : "", s === t ? "today" : "", past ? "past" : "",
+          (touched && !past && selA && selB && s >= selA && s <= selB) ? "sel" : ""].filter(Boolean).join(" ");
         const tip = es.map(e => e.person + (e.notat ? ": " + e.notat : "")).join("\n");
         const label = `${fmtFull.format(day)}${es.length ? ". Ikke book: " + es.map(e => e.person).join(", ") : ""}`;
-        html += `<button type="button" class="${cls}" data-d="${s}" ${past ? "disabled" : ""} aria-label="${esc(label)}"${tip ? ` title="${esc(tip)}"` : ""}>
-          <span class="n">${day.getDate()}</span>
-          <span class="stack">${shown.map(e => `<span class="pill" data-id="${esc(e.id)}" style="--c:${color(e.person)}"><i>${esc(e.person[0])}</i><b>${esc(e.person)}</b></span>`).join("")}${extra > 0 ? `<span class="more-n">+${extra} til</span>` : ""}</span>
-        </button>`;
+        html += `<button type="button" class="${cls}" data-d="${s}"${past ? " disabled" : ""} aria-label="${esc(label)}"${tip ? ` title="${esc(tip)}"` : ""}><span class="n">${day.getDate()}</span>${
+          es.length ? `<span class="ini">${es.slice(0, 3).map(e => `<span style="--c:${color(e.person)}">${esc(e.person[0])}</span>`).join("")}</span>` : ""}</button>`;
       }
+      html += `</div>`;
     }
-    return html + "</div>";
+    return html + `</div>`;
   }
   function renderCalendar() {
     const now = new Date();
-    const a = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
-    const b = new Date(a.getFullYear(), a.getMonth() + 1, 1);
-    const name = d => { const m = fmtMonth.format(d); return m.charAt(0).toUpperCase() + m.slice(1); };
-    const yr = d => d.getFullYear() !== now.getFullYear() ? " " + d.getFullYear() : "";
-    $("months").innerHTML = [a, b].map(m =>
-      `<div class="card month"><h2>${esc(name(m))}${esc(yr(m))}</h2>${renderMonth(m.getFullYear(), m.getMonth())}</div>`).join("");
-    $("range").textContent = `${name(a)} – ${name(b)}${b.getFullYear() !== now.getFullYear() ? " " + b.getFullYear() : ""}`;
-    $("todayBtn").hidden = monthOffset === 0;
-    $("prev").disabled = monthOffset <= 0; $("prev").style.opacity = monthOffset <= 0 ? .4 : 1;
+    const a = new Date(now.getFullYear(), now.getMonth(), 1), b = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    $("months").innerHTML = renderMonth(a.getFullYear(), a.getMonth()) + renderMonth(b.getFullYear(), b.getMonth());
   }
 
   // ---------- liste ----------
@@ -395,7 +345,7 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
       return `<li class="item${r.til < t ? " past" : ""}${isNew ? " enter" : ""}" data-id="${esc(r.id)}" style="--c:${color(r.person)}">
         <span class="dot" aria-hidden="true"></span><span class="who">${esc(r.person)}</span>
         <span class="note">${r.notat ? esc(r.notat) : ""}</span>
-        <span class="when">${now ? '<span class="now">NÅ</span>' : ""}${esc(fmtRange(r.fra, r.til))}</span>
+        <span class="when">${esc(fmtRange(r.fra, r.til))}</span>
         <button type="button" class="del" data-id="${esc(r.id)}" aria-label="Slett ${esc(r.person)} ${esc(fmtRange(r.fra, r.til))}">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></li>`;
     }).join("");
@@ -405,14 +355,6 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
     rows.forEach(r => seen.add(r.id));
     if (lastJson) firstPaint = false;
   }
-
-  // Hold over en rad i lista: marker dagene i kalenderen
-  $("list").addEventListener("mouseover", e => {
-    const li = e.target.closest(".item"); if (!li) return;
-    document.querySelectorAll(".pill.hl").forEach(p => p.classList.remove("hl"));
-    document.querySelectorAll(`.pill[data-id="${CSS.escape(li.dataset.id)}"]`).forEach(p => p.classList.add("hl"));
-  });
-  $("list").addEventListener("mouseleave", () => document.querySelectorAll(".pill.hl").forEach(p => p.classList.remove("hl")));
 
   // ---------- skjema ----------
   function validate() {
@@ -509,11 +451,6 @@ input:focus-visible{box-shadow:0 0 0 2px var(--accent)}
     load();
   });
   $("past").addEventListener("click", () => { showPast = !showPast; renderList(); });
-
-  // ---------- månedsnavigasjon ----------
-  $("prev").addEventListener("click", () => { if (monthOffset > 0) { monthOffset--; renderCalendar(); } });
-  $("next").addEventListener("click", () => { monthOffset++; renderCalendar(); });
-  $("todayBtn").addEventListener("click", () => { monthOffset = 0; renderCalendar(); });
 
   // ---------- start ----------
   const t0 = today(); $("fra").value = t0; $("til").value = t0;
