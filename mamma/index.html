@@ -29,20 +29,26 @@
   --accent:#F08A45; --accent-soft:#3A2618; --chip:#2B231E; color-scheme:dark;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;scroll-padding-top:72px}
+html{scroll-padding-top:16px}
 body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
 .wrap{max-width:760px;margin:0 auto;padding:0 16px}
-header{padding:56px 0 28px}
+header{padding:48px 0 24px}
 .kicker{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
 h1{font:600 clamp(34px,8vw,52px)/1.05 var(--serif);margin:10px 0 14px;letter-spacing:-.01em}
 .lead{color:var(--muted);font-size:17px;max-width:56ch}
-nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 0}
-nav .wrap{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
-nav .wrap::-webkit-scrollbar{display:none}
-nav a{flex:none;text-decoration:none;color:var(--ink);background:var(--chip);padding:7px 13px;border-radius:999px;font-size:14px;font-weight:500}
-nav a:active{background:var(--accent-soft)}
-.note{margin:24px 0 8px;background:var(--accent-soft);border-radius:14px;padding:14px 16px;font-size:15px}
-.note b{color:var(--accent)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (min-width:620px){.grid{grid-template-columns:repeat(3,1fr)}}
+.tile{display:flex;flex-direction:column;gap:2px;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;transition:transform .15s}
+.tile:active{transform:scale(.97)}
+.emo{font-size:34px;line-height:1;margin-bottom:8px}
+.tile b{font:600 18px/1.2 var(--serif)}
+.tile small{color:var(--muted);font-size:13px}
+.note{margin:20px 0 0;color:var(--muted);font-size:14px;text-align:center}
+article{display:none}
+article:target{display:block}
+body:has(article:target) .home{display:none}
+.recipes{padding-top:8px}
+.back{display:inline-block;margin-bottom:14px;color:var(--accent);text-decoration:none;font-weight:600;font-size:15px}
 article{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px 20px;margin:20px 0}
 article h2{font:600 28px/1.15 var(--serif)}
 .desc{color:var(--muted);margin:6px 0 12px}
@@ -66,27 +72,31 @@ footer{color:var(--muted);font-size:14px;text-align:center;padding:24px 0 56px}
 </style>
 </head>
 <body>
+<div class="home">
 <header class="wrap">
   <div class="kicker">Til mamma</div>
-  <h1>Glutenfrie desserter fra Fà Fümme</h1>
-  <p class="lead">Sju desserter fra kvelden i Italia, skrevet om til oppskrifter du kan lage hjemme. Alle gir ca. 4 porsjoner med mindre noe annet står.</p>
+  <h1>Glutenfrie desserter</h1>
+  <p class="lead">Fra Fà Fümme. Trykk på en dessert.</p>
 </header>
-
-<nav><div class="wrap">
-  <a href="#vasetto">Il Vasetto</a>
-  <a href="#cocoloco">Coco Loco</a>
-  <a href="#berrywhite">Berry White</a>
-  <a href="#nutellotto">Il Nutellotto</a>
-  <a href="#sunnyblue">Sunny Blue</a>
-  <a href="#strawberry">Strawberry Pie</a>
-  <a href="#redcrunch">Red Crunch</a>
-</div></nav>
-
 <main class="wrap">
-  <p class="note"><b>Om gluten:</b> Dette er hjemmeversjoner, ikke restaurantens egne oppskrifter. Sjekk at amaretti, kjeks, havregryn og vaniljesukker er merket glutenfri; det er der gluten oftest sniker seg inn.</p>
+  <div class="grid">
+    <a class="tile" href="#vasetto"><span class="emo">🍑</span><b>Il Vasetto</b><small>Fersken, crumble og is</small></a>
+    <a class="tile" href="#cocoloco"><span class="emo">🥥</span><b>Coco Loco</b><small>Kokos og saltkaramell</small></a>
+    <a class="tile" href="#berrywhite"><span class="emo">🍦</span><b>Berry White</b><small>Pistasj-is på pinne</small></a>
+    <a class="tile" href="#nutellotto"><span class="emo">🍫</span><b>Il Nutellotto</b><small>Nutella og mascarpone</small></a>
+    <a class="tile" href="#sunnyblue"><span class="emo">🫐</span><b>Sunny Blue</b><small>Cheesecake med mango</small></a>
+    <a class="tile" href="#strawberry"><span class="emo">🍓</span><b>Strawberry Pie</b><small>Bærpai med sitruskrem</small></a>
+    <a class="tile" href="#redcrunch"><span class="emo">🍮</span><b>Red Crunch</b><small>Panna cotta og bringebær</small></a>
+  </div>
+  <p class="note">Sjekk at kjeks, amaretti og havregryn er merket glutenfri.</p>
+</main>
+<footer>Hilsen Jeppe</footer>
+</div>
 
+<div class="wrap recipes">
   <!-- 1 -->
   <article id="vasetto">
+    <a class="back" href="#">‹ Alle desserter</a>
     <h2>Il Vasetto</h2>
     <p class="desc">Karamelliserte fersken, crumble av valnøtter og amaretti, fløteis og kanel. Restaurantens bestselger.</p>
     <div class="meta"><span>4 glass</span><span>20 min</span><span class="gf">Glutenfri</span></div>
@@ -124,6 +134,7 @@ footer{color:var(--muted);font-size:14px;text-align:center;padding:24px 0 56px}
 
   <!-- 2 -->
   <article id="cocoloco">
+    <a class="back" href="#">‹ Alle desserter</a>
     <h2>Coco Loco</h2>
     <p class="desc">Kokoskrem, saltkaramell, mandelcrumble og mørk sjokolade.</p>
     <div class="meta"><span>4 glass</span><span>30 min + 2 t i kjøleskap</span><span class="gf">Glutenfri</span></div>
@@ -168,6 +179,7 @@ footer{color:var(--muted);font-size:14px;text-align:center;padding:24px 0 56px}
 
   <!-- 3 -->
   <article id="berrywhite">
+    <a class="back" href="#">‹ Alle desserter</a>
     <h2>Berry White</h2>
     <p class="desc">Pistasj-semifreddo på pinne med sprø hvit sjokolade og bringebærsaus. Den andre bestselgeren.</p>
     <div class="meta"><span>6 stk</span><span>40 min + 6 t i fryseren</span><span class="gf">Glutenfri</span></div>
@@ -213,6 +225,7 @@ footer{color:var(--muted);font-size:14px;text-align:center;padding:24px 0 56px}
 
   <!-- 4 -->
   <article id="nutellotto">
+    <a class="back" href="#">‹ Alle desserter</a>
     <h2>Il Nutellotto</h2>
     <p class="desc">Sjokoladekjeks, mascarponekrem og Nutella i lag.</p>
     <div class="meta"><span>4 glass</span><span>15 min + 1 t i kjøleskap</span><span class="gf">Glutenfri med riktige kjeks</span></div>
@@ -244,6 +257,7 @@ footer{color:var(--muted);font-size:14px;text-align:center;padding:24px 0 56px}
 
   <!-- 5 -->
   <article id="sunnyblue">
+    <a class="back" href="#">‹ Alle desserter</a>
     <h2>Sunny Blue</h2>
     <p class="desc">Cheesecake i glass med mangosaus, blåbær og mynte. Ingen steking.</p>
     <div class="meta"><span>4 glass</span><span>20 min + 3 t i kjøleskap</span><span class="gf">Glutenfri</span></div>
@@ -286,6 +300,7 @@ footer{color:var(--muted);font-size:14px;text-align:center;padding:24px 0 56px}
 
   <!-- 6 -->
   <article id="strawberry">
+    <a class="back" href="#">‹ Alle desserter</a>
     <h2>The Strawberry Pie</h2>
     <p class="desc">Sprø mørdeig, sitruskrem, skogsbær og basilikum.</p>
     <div class="meta"><span>1 pai (22 cm) eller 6 små</span><span>1 t 15 min + avkjøling</span><span class="gf">Glutenfri</span></div>
@@ -334,6 +349,7 @@ footer{color:var(--muted);font-size:14px;text-align:center;padding:24px 0 56px}
 
   <!-- 7 -->
   <article id="redcrunch">
+    <a class="back" href="#">‹ Alle desserter</a>
     <h2>The Red Crunch</h2>
     <p class="desc">Panna cotta med bringebærsaus, bærcrumble og sprø karamell.</p>
     <div class="meta"><span>4 glass</span><span>40 min + 4 t i kjøleskap</span><span class="gf">Glutenfri</span></div>
@@ -379,8 +395,6 @@ footer{color:var(--muted);font-size:14px;text-align:center;padding:24px 0 56px}
       </div>
     </div>
   </article>
-</main>
-
-<footer>God fornøyelse på kjøkkenet! Hilsen Jeppe</footer>
+</div>
 </body>
 </html>
