@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="description" content="Tre ruter fra Albenga via fjellandsbyer og en stranddag, hjem til Marseille søndag.">
+<link rel="icon" href="../vin/icon-192.png">
+<link rel="apple-touch-icon" href="../vin/icon-180.png">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}*,*::before,*::after{box-sizing:border-box}</style>
+<title>Fjellandsbyer fra Albenga</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow reading column; route jump-list on top, four stacked routes, each a run of day blocks with a timeline */
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --fg:#1f2a26; --muted:#5d6b65; --line:#d8dfda;
+  --accent:#2f6b57; --accent-ink:#ffffff; --sea:#2b5f80;
+  --sun:#9a6a12; --sun-bg:#f7ecd4; --rain:#2b5f80; --rain-bg:#e1ecf3; --dry:#3d6b3a; --dry-bg:#e3eedf; --var:#5d6b65; --var-bg:#e8ece9;
+  --display:"Young Serif", Georgia, "Times New Roman", serif;
+  --body:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a18; --surface:#1c2421; --fg:#e4ebe7; --muted:#9aa8a2; --line:#2e3935;
+  --accent:#7cc0a6; --accent-ink:#0f1a16; --sea:#8bbbd8;
+  --sun:#e6bf6e; --sun-bg:#3a3020; --rain:#9cc6e3; --rain-bg:#1f2d38; --dry:#a5cf9c; --dry-bg:#22301f; --var:#b3bfb9; --var-bg:#262f2b;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a18; --surface:#1c2421; --fg:#e4ebe7; --muted:#9aa8a2; --line:#2e3935;
+  --accent:#7cc0a6; --accent-ink:#0f1a16; --sea:#8bbbd8;
+  --sun:#e6bf6e; --sun-bg:#3a3020; --rain:#9cc6e3; --rain-bg:#1f2d38; --dry:#a5cf9c; --dry-bg:#22301f; --var:#b3bfb9; --var-bg:#262f2b;
+  color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.55}
+.wrap{max-width:680px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;gap:36px}
+h1,h2,h3{font-family:var(--display);font-weight:400;text-wrap:balance;margin:0}
+h1{font-size:2.1rem;line-height:1.15}
+h2{font-size:1.6rem;line-height:1.2}
+h3{font-size:1.15rem}
+p{margin:0}
+.lede{color:var(--muted);margin-top:10px;max-width:60ch}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:18px}
+.facts div{border-top:2px solid var(--accent);padding-top:6px}
+.facts dt,.rh dt{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.facts dd,.rh dd{margin:2px 0 0;font-weight:600}
+dl{margin:0}
+.note{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.note h3{font-size:1rem}
+.note ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.nav{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.nav a{display:flex;gap:10px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);text-decoration:none;font-weight:600;font-size:.95rem;min-width:0}
+.nav a span{font-family:var(--display);color:var(--accent);font-size:1.3rem;line-height:1}
+.nav a:hover,.nav a:focus-visible{border-color:var(--accent)}
+.route{display:flex;flex-direction:column;gap:18px;scroll-margin-top:16px}
+.rh{display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--line);padding-bottom:16px}
+.num{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);font-weight:600}
+.fit{color:var(--sea);font-weight:500}
+.rh dl{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:6px}
+.intro{color:var(--muted);margin-top:6px}
+.day{display:flex;flex-direction:column;gap:12px}
+.dh{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 10px}
+.wx,.sleep{font-size:.75rem;font-weight:600;padding:2px 8px;border-radius:99px}
+.wx-sun{color:var(--sun);background:var(--sun-bg)}
+.wx-rain{color:var(--rain);background:var(--rain-bg)}
+.wx-dry{color:var(--dry);background:var(--dry-bg)}
+.wx-var{color:var(--var);background:var(--var-bg)}
+.sleep{color:var(--muted);border:1px solid var(--line);margin-left:auto}
+ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+li{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:10px 0;border-left:2px solid var(--line);margin-left:6px;padding-left:14px;position:relative}
+li::before{content:"";position:absolute;left:-6px;top:16px;width:10px;height:10px;border-radius:50%;background:var(--bg);border:2px solid var(--accent)}
+.t{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem;padding-top:2px}
+.s{min-width:0;display:flex;flex-direction:column;gap:3px}
+.sh{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;justify-content:space-between}
+.drv{font-size:.78rem;color:var(--sea);white-space:nowrap}
+.s p{color:var(--muted);font-size:.93rem}
+.map{align-self:flex-start;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-weight:600;font-size:.9rem;padding:10px 14px;border-radius:8px}
+.map:focus-visible,.nav a:focus-visible{outline:2px solid var(--sea);outline-offset:2px}
+footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padding-top:14px}
+@media (max-width:420px){.nav{grid-template-columns:1fr} li{grid-template-columns:52px 1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>Tre ruter innover i landet fra Albenga</h1>
+<p class="lede">Fredag morgen fra Albenga, hjemme i Marseille søndag. Steinlandsbyer i fjellsiden à la Apricale og Perinaldo, og en stranddag lørdag når sola kommer.</p>
+<dl class="facts">
+<div><dt>Fredag</dt><dd>Skyet, byger ca. 14–16</dd></div>
+<div><dt>Lørdag</dt><dd>Sol, ca. 18–20°</dd></div>
+<div><dt>Søndag</dt><dd>Overskyet, klokka 1 t tilbake</dd></div>
+</dl>
+</header>
+<nav class="nav" aria-label="Rutene"><a href="#streghe"><span>1</span>Heksebyen og Val Nervia</a><a href="#dorer"><span>2</span>Malte dører og olivendaler</a><a href="#savona"><span>3</span>Klippelandsbyene bak Albenga</a></nav>
+<div class="note">
+<h3>Godt å vite</h3>
+<ul>
+<li><strong>Lørdag er stranddagen.</strong> Ca. 18–20° og sol: fint å ligge, men havet er rundt 20°, så badingen blir kort.</li>
+<li><strong>Fredag ettermiddag</strong> kommer en regnbyge rundt 14–16. Derfor ligger lunsj og innendørsting der i alle rutene.</li>
+<li><strong>Bestill begge nettene i kveld.</strong> Landsbyene har få senger, og flere stenger i lavsesong.</li>
+<li>Kartknappene åpner én dag om gangen. Google Maps på mobil tar bare tre mellomstopp.</li>
+</ul>
+</div>
+<section class="route" id="streghe">
+<div class="rh"><span class="num">Rute 1</span><h2>Heksebyen og Val Nervia</h2><p class="fit">Mest lik Apricale og Perinaldo</p>
+<dl><div><dt>Kjøring totalt</dt><dd>ca. 6 t 30</dd></div><div><dt>Netter</dt><dd>Triora, Pigna</dd></div></dl>
+<p class="intro">Dette er ruta som ligner mest på det dere likte: mørke steinlandsbyer som klistrer seg til fjellet, nesten uten turister i oktober. Triora fredag passer fint med regnbygen, fordi heksemuseet åpner 14:30. Lørdag tar dere stranda ved Arma di Taggia og sover i Pigna, ca. 3 timer fra Marseille.</p></div>
+<div class="day"><div class="dh"><h3>Fredag</h3><span class="wx wx-rain">Byger 14–16</span><span class="sleep">Sov i Triora</span></div>
+<ol><li><span class="t">10:00</span><div class="s"><div class="sh"><strong>Avreise Albenga</strong></div></div></li><li><span class="t">11:00</span><div class="s"><div class="sh"><strong>Badalucco</strong><span class="drv">55 min</span></div><p>Landsby ved elva Argentina med gamle steinbuer og bruer.</p></div></li><li><span class="t">12:00</span><div class="s"><div class="sh"><strong>Montalto Ligure</strong><span class="drv">10 min</span></div><p>Bitteliten landsby på en åsrygg. Tar 30 min.</p></div></li><li><span class="t">13:00</span><div class="s"><div class="sh"><strong>Triora</strong><span class="drv">20 min</span></div><p>«Heksebyen» med Europas best dokumenterte hekseprosesser. Lunsj, så museet fra 14:30 mens bygen går over. Overnatting.</p></div></li></ol>
+<a class="map" href="https://www.google.com/maps/dir/?api=1&amp;origin=Albenga+SV&amp;destination=Triora+IM&amp;waypoints=Badalucco+IM%7CMontalto+Ligure+IM&amp;travelmode=driving" target="_blank" rel="noopener">Åpne fredag i Google Maps</a></div><div class="day"><div class="dh"><h3>Lørdag</h3><span class="wx wx-sun">Sol</span><span class="sleep">Sov i Pigna</span></div>
+<ol><li><span class="t">10:30</span><div class="s"><div class="sh"><strong>Stranda i Arma di Taggia</strong><span class="drv">40 min</span></div><p>Lang sandstrand. Ligg i sola fram til ca. 14.</p></div></li><li><span class="t">15:30</span><div class="s"><div class="sh"><strong>Bajardo</strong><span class="drv">45 min</span></div><p>Den høyeste landsbyen i Imperia (900 moh), med en kirkeruin uten tak og utsikt mot Alpene.</p></div></li><li><span class="t">17:00</span><div class="s"><div class="sh"><strong>Castel Vittorio</strong><span class="drv">30 min</span></div><p>Steinlandsby i solnedgangen, nesten helt uten turister.</p></div></li><li><span class="t">18:00</span><div class="s"><div class="sh"><strong>Pigna</strong><span class="drv">10 min</span></div><p>Middelalderlandsby kjent for San Michele-kirken og sine hvite bønner. Overnatting.</p></div></li></ol>
+<a class="map" href="https://www.google.com/maps/dir/?api=1&amp;origin=Triora+IM&amp;destination=Pigna+IM&amp;waypoints=Arma+di+Taggia+IM%7CBajardo+IM%7CCastel+Vittorio+IM&amp;travelmode=driving" target="_blank" rel="noopener">Åpne lørdag i Google Maps</a></div><div class="day"><div class="dh"><h3>Søndag</h3><span class="wx wx-var">Skiftende</span><span class="sleep">Hjem</span></div>
+<ol><li><span class="t">Når dere vil</span><div class="s"><div class="sh"><strong>Pigna → Marseille</strong><span class="drv">ca. 3 t</span></div><p>Ned dalen til Ventimiglia, så motorvei.</p></div></li></ol>
+<a class="map" href="https://www.google.com/maps/dir/?api=1&amp;origin=Pigna+IM&amp;destination=Marseille%2C+France&amp;travelmode=driving" target="_blank" rel="noopener">Åpne søndag i Google Maps</a></div></section>
+<section class="route" id="dorer">
+<div class="rh"><span class="num">Rute 2</span><h2>Malte dører og olivendaler</h2><p class="fit">Minst kjent, mest autentisk</p>
+<dl><div><dt>Kjøring totalt</dt><dd>ca. 6 t</dd></div><div><dt>Netter</dt><dd>Dolcedo, Dolceacqua</dd></div></dl>
+<p class="intro">Valle Impero og dalene bak Imperia har oliven, steinbruer og landsbyer der folk bor. Det er nesten ingen turister. Lørdag gir dere stranda i Porto Maurizio, og natt til søndag sover dere i Dolceacqua. Det er et bevisst gjensyn: den ligger perfekt til for hjemturen, og om kvelden er den noe helt annet.</p></div>
+<div class="day"><div class="dh"><h3>Fredag</h3><span class="wx wx-rain">Byger 14–16</span><span class="sleep">Sov i Dolcedo</span></div>
+<ol><li><span class="t">10:00</span><div class="s"><div class="sh"><strong>Avreise Albenga</strong></div></div></li><li><span class="t">10:45</span><div class="s"><div class="sh"><strong>Pieve di Teco</strong><span class="drv">45 min</span></div><p>Lang gate med buegang (portici) og håndverksbutikker. En av de vakreste landsbyene i Italia, og tørt under buene.</p></div></li><li><span class="t">12:30</span><div class="s"><div class="sh"><strong>Lucinasco</strong><span class="drv">30 min</span></div><p>Landsby med en liten innsjø og et kapell i stein. Lunsj mens bygen går over.</p></div></li><li><span class="t">16:00</span><div class="s"><div class="sh"><strong>Valloria</strong><span class="drv">35 min</span></div><p>«Landsbyen med malte dører»: over 100 dører er malt av kunstnere.</p></div></li><li><span class="t">17:00</span><div class="s"><div class="sh"><strong>Dolcedo</strong><span class="drv">10 min</span></div><p>Landsby der to elver møtes, med middelalderbroer. Overnatting.</p></div></li></ol>
+<a class="map" href="https://www.google.com/maps/dir/?api=1&amp;origin=Albenga+SV&amp;destination=Dolcedo+IM&amp;waypoints=Pieve+di+Teco+IM%7CLucinasco+IM%7CValloria%2C+Prel%C3%A0+IM&amp;travelmode=driving" target="_blank" rel="noopener">Åpne fredag i Google Maps</a></div><div class="day"><div class="dh"><h3>Lørdag</h3><span class="wx wx-sun">Sol</span><span class="sleep">Sov i Dolceacqua</span></div>
+<ol><li><span class="t">10:00</span><div class="s"><div class="sh"><strong>Porto Maurizio</strong><span class="drv">15 min</span></div><p>Gamlebyen Parasio på klippen, så stranda rett nedenfor til ca. 14.</p></div></li><li><span class="t">15:00</span><div class="s"><div class="sh"><strong>Lingueglietta</strong><span class="drv">20 min</span></div><p>Ørliten landsby med en befestet kirke og havutsikt.</p></div></li><li><span class="t">16:30</span><div class="s"><div class="sh"><strong>Seborga</strong><span class="drv">40 min</span></div><p>Bitteliten landsby som kaller seg et eget fyrstedømme, med egen mynt.</p></div></li><li><span class="t">18:00</span><div class="s"><div class="sh"><strong>Dolceacqua</strong><span class="drv">35 min</span></div><p>Gjensyn: broen og borgen i kveldslys. Overnatting.</p></div></li></ol>
+<a class="map" href="https://www.google.com/maps/dir/?api=1&amp;origin=Dolcedo+IM&amp;destination=Dolceacqua+IM&amp;waypoints=Parasio%2C+Imperia%7CLingueglietta%2C+Cipressa+IM%7CSeborga+IM&amp;travelmode=driving" target="_blank" rel="noopener">Åpne lørdag i Google Maps</a></div><div class="day"><div class="dh"><h3>Søndag</h3><span class="wx wx-var">Skiftende</span><span class="sleep">Hjem</span></div>
+<ol><li><span class="t">Når dere vil</span><div class="s"><div class="sh"><strong>Dolceacqua → Marseille</strong><span class="drv">ca. 2 t 50</span></div><p>Kortest hjemtur av de tre rutene.</p></div></li></ol>
+<a class="map" href="https://www.google.com/maps/dir/?api=1&amp;origin=Dolceacqua+IM&amp;destination=Marseille%2C+France&amp;travelmode=driving" target="_blank" rel="noopener">Åpne søndag i Google Maps</a></div></section>
+<section class="route" id="savona">
+<div class="rh"><span class="num">Rute 3</span><h2>Klippelandsbyene bak Albenga</h2><p class="fit">Minst kjøring, mest tid i landsbyene</p>
+<dl><div><dt>Kjøring totalt</dt><dd>ca. 5 t 30</dd></div><div><dt>Netter</dt><dd>Colletta di Castelbianco, Verezzi</dd></div></dl>
+<p class="intro">Alt ligger under en halvtime fra Albenga, så dere bruker tiden i landsbyene og ikke i bilen. Colletta er en hel middelalderlandsby som er restaurert og leies ut som rom og leiligheter. Lørdag kan dere ligge på Baia dei Saraceni, den fineste stranda i området. Ulempen er en litt lengre hjemtur søndag.</p></div>
+<div class="day"><div class="dh"><h3>Fredag</h3><span class="wx wx-rain">Byger 14–16</span><span class="sleep">Sov i Colletta di Castelbianco</span></div>
+<ol><li><span class="t">10:00</span><div class="s"><div class="sh"><strong>Avreise Albenga</strong></div></div></li><li><span class="t">10:30</span><div class="s"><div class="sh"><strong>Zuccarello</strong><span class="drv">20 min</span></div><p>Middelalderlandsby med buegater og en ruinborg.</p></div></li><li><span class="t">12:00</span><div class="s"><div class="sh"><strong>Castelvecchio di Rocca Barbena</strong><span class="drv">10 min</span></div><p>Landsby bygget rett på en klippe, med borg på toppen. Lunsj mens bygen går over.</p></div></li><li><span class="t">16:00</span><div class="s"><div class="sh"><strong>Colletta di Castelbianco</strong><span class="drv">30 min</span></div><p>Landsby forlatt etter jordskjelvet i 1887 og restaurert av arkitekten Giancarlo De Carlo. Overnatting i steinhusene.</p></div></li></ol>
+<a class="map" href="https://www.google.com/maps/dir/?api=1&amp;origin=Albenga+SV&amp;destination=Colletta+di+Castelbianco+SV&amp;waypoints=Zuccarello+SV%7CCastelvecchio+di+Rocca+Barbena+SV&amp;travelmode=driving" target="_blank" rel="noopener">Åpne fredag i Google Maps</a></div><div class="day"><div class="dh"><h3>Lørdag</h3><span class="wx wx-sun">Sol</span><span class="sleep">Sov i Verezzi</span></div>
+<ol><li><span class="t">09:30</span><div class="s"><div class="sh"><strong>Grotte di Toirano</strong><span class="drv">30 min</span></div><p>Drypsteinshuler med hulebjørnben og fotspor fra steinalderen, ca. 70 min. Må bestilles (ring fredag).</p></div></li><li><span class="t">11:30</span><div class="s"><div class="sh"><strong>Balestrino</strong><span class="drv">10 min</span></div><p>Forlatt landsby med borg, sett fra veien.</p></div></li><li><span class="t">12:30</span><div class="s"><div class="sh"><strong>Baia dei Saraceni</strong><span class="drv">35 min</span></div><p>Liten bukt med klart vann ved Varigotti. Strand til ca. 16.</p></div></li><li><span class="t">17:00</span><div class="s"><div class="sh"><strong>Verezzi</strong><span class="drv">15 min</span></div><p>Små steinhamlets i åssiden med havutsikt. Solnedgang og overnatting.</p></div></li></ol>
+<a class="map" href="https://www.google.com/maps/dir/?api=1&amp;origin=Colletta+di+Castelbianco+SV&amp;destination=Verezzi%2C+Borgio+Verezzi+SV&amp;waypoints=Toirano+SV%7CBalestrino+SV%7CBaia+dei+Saraceni%2C+Varigotti+SV&amp;travelmode=driving" target="_blank" rel="noopener">Åpne lørdag i Google Maps</a></div><div class="day"><div class="dh"><h3>Søndag</h3><span class="wx wx-var">Skiftende</span><span class="sleep">Hjem</span></div>
+<ol><li><span class="t">Når dere vil</span><div class="s"><div class="sh"><strong>Verezzi → Marseille</strong><span class="drv">ca. 3 t 45</span></div><p>Motorvei hele veien.</p></div></li></ol>
+<a class="map" href="https://www.google.com/maps/dir/?api=1&amp;origin=Verezzi%2C+Borgio+Verezzi+SV&amp;destination=Marseille%2C+France&amp;travelmode=driving" target="_blank" rel="noopener">Åpne søndag i Google Maps</a></div></section>
+<footer>Kjøretider er omtrentlige og uten pauser. Vær sjekket torsdag kveld 22. oktober. Ring gjerne Triora-museet og hulene før dere drar.</footer>
+</div>
+
+</body>
+</html>
