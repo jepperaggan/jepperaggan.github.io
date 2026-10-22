@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mammas desserter</title>
+<meta name="description" content="Sju glutenfrie desserter inspirert av Fà Fümme, til å lage hjemme.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#FAF5EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16120F" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../vin/icon-192.png">
+<link rel="apple-touch-icon" href="../vin/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF5EE; --card:#FFFFFF; --ink:#211A15; --muted:#7A6E66; --line:rgba(33,26,21,.10);
+  --accent:#D9661F; --accent-soft:#FBE7D8; --chip:#F2EAE0;
+  --serif:"Fraunces",Georgia,serif; --sans:"Geist",-apple-system,"Helvetica Neue",Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#16120F; --card:#211B17; --ink:#F3ECE4; --muted:#A99D93; --line:rgba(243,236,228,.10);
+  --accent:#F08A45; --accent-soft:#3A2618; --chip:#2B231E; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#16120F; --card:#211B17; --ink:#F3ECE4; --muted:#A99D93; --line:rgba(243,236,228,.10);
+  --accent:#F08A45; --accent-soft:#3A2618; --chip:#2B231E; color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+header{padding:56px 0 28px}
+.kicker{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font:600 clamp(34px,8vw,52px)/1.05 var(--serif);margin:10px 0 14px;letter-spacing:-.01em}
+.lead{color:var(--muted);font-size:17px;max-width:56ch}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 0}
+nav .wrap{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+nav .wrap::-webkit-scrollbar{display:none}
+nav a{flex:none;text-decoration:none;color:var(--ink);background:var(--chip);padding:7px 13px;border-radius:999px;font-size:14px;font-weight:500}
+nav a:active{background:var(--accent-soft)}
+.note{margin:24px 0 8px;background:var(--accent-soft);border-radius:14px;padding:14px 16px;font-size:15px}
+.note b{color:var(--accent)}
+article{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px 20px;margin:20px 0}
+article h2{font:600 28px/1.15 var(--serif)}
+.desc{color:var(--muted);margin:6px 0 12px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.meta span{font-size:13px;background:var(--chip);border-radius:999px;padding:4px 10px}
+.meta .gf{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.cols{display:grid;gap:22px}
+@media (min-width:680px){.cols{grid-template-columns:5fr 7fr}}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin:0 0 8px}
+h4{font-size:15px;font-weight:600;margin:14px 0 4px}
+h4:first-of-type{margin-top:0}
+ul{list-style:none}
+ul li{padding:5px 0;border-bottom:1px dashed var(--line);font-size:15px}
+ul li:last-child{border-bottom:0}
+ol{counter-reset:s;list-style:none}
+ol li{counter-increment:s;position:relative;padding:0 0 12px 34px;font-size:15px}
+ol li::before{content:counter(s);position:absolute;left:0;top:1px;width:23px;height:23px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center}
+.tip{margin-top:6px;font-size:14px;color:var(--muted);border-left:3px solid var(--accent);padding-left:10px}
+footer{color:var(--muted);font-size:14px;text-align:center;padding:24px 0 56px}
+@media print{nav{display:none}article{break-inside:avoid;border:0;padding:0}body{background:#fff}}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="kicker">Til mamma</div>
+  <h1>Glutenfrie desserter fra Fà Fümme</h1>
+  <p class="lead">Sju desserter fra kvelden i Italia, skrevet om til oppskrifter du kan lage hjemme. Alle gir ca. 4 porsjoner med mindre noe annet står.</p>
+</header>
+
+<nav><div class="wrap">
+  <a href="#vasetto">Il Vasetto</a>
+  <a href="#cocoloco">Coco Loco</a>
+  <a href="#berrywhite">Berry White</a>
+  <a href="#nutellotto">Il Nutellotto</a>
+  <a href="#sunnyblue">Sunny Blue</a>
+  <a href="#strawberry">Strawberry Pie</a>
+  <a href="#redcrunch">Red Crunch</a>
+</div></nav>
+
+<main class="wrap">
+  <p class="note"><b>Om gluten:</b> Dette er hjemmeversjoner, ikke restaurantens egne oppskrifter. Sjekk at amaretti, kjeks, havregryn og vaniljesukker er merket glutenfri; det er der gluten oftest sniker seg inn.</p>
+
+  <!-- 1 -->
+  <article id="vasetto">
+    <h2>Il Vasetto</h2>
+    <p class="desc">Karamelliserte fersken, crumble av valnøtter og amaretti, fløteis og kanel. Restaurantens bestselger.</p>
+    <div class="meta"><span>4 glass</span><span>20 min</span><span class="gf">Glutenfri</span></div>
+    <div class="cols">
+      <div>
+        <h3>Ingredienser</h3>
+        <h4>Fersken</h4>
+        <ul>
+          <li>4 modne fersken (eller 1 boks fersken, avrent)</li>
+          <li>40 g smør</li>
+          <li>50 g brunt sukker</li>
+          <li>1 ts kanel</li>
+        </ul>
+        <h4>Crumble</h4>
+        <ul>
+          <li>60 g valnøtter</li>
+          <li>6 amaretti (glutenfrie)</li>
+          <li>20 g smør, smeltet</li>
+        </ul>
+        <h4>Til servering</h4>
+        <ul><li>4 kuler vaniljeis eller fløteis</li></ul>
+      </div>
+      <div>
+        <h3>Slik gjør du</h3>
+        <ol>
+          <li>Skjær ferskenene i båter.</li>
+          <li>Smelt smør og brunt sukker i en panne på middels varme til det bobler og blir karamellaktig, ca. 3 min.</li>
+          <li>Legg i ferskenene og stek 4–5 min til de er myke og blanke. Rør inn kanelen.</li>
+          <li>Grovhakk valnøttene og rist dem i en tørr panne i 3 min. Smuldre amarettiene og bland alt med det smeltede smøret.</li>
+          <li>Bygg opp i glass: lune fersken i bunnen, så crumble, så en kule is. Dryss over litt kanel og server med en gang.</li>
+        </ol>
+      </div>
+    </div>
+  </article>
+
+  <!-- 2 -->
+  <article id="cocoloco">
+    <h2>Coco Loco</h2>
+    <p class="desc">Kokoskrem, saltkaramell, mandelcrumble og mørk sjokolade.</p>
+    <div class="meta"><span>4 glass</span><span>30 min + 2 t i kjøleskap</span><span class="gf">Glutenfri</span></div>
+    <div class="cols">
+      <div>
+        <h3>Ingredienser</h3>
+        <h4>Kokoskrem</h4>
+        <ul>
+          <li>400 ml kokosmelk (den fete)</li>
+          <li>3 ss sukker</li>
+          <li>3 ss maisstivelse (Maizena)</li>
+          <li>1 ss revet kokos</li>
+        </ul>
+        <h4>Saltkaramell</h4>
+        <ul>
+          <li>100 g sukker</li>
+          <li>60 g smør</li>
+          <li>80 ml kremfløte, varm</li>
+          <li>½ ts flaksalt</li>
+        </ul>
+        <h4>Crumble og topp</h4>
+        <ul>
+          <li>50 g mandelmel</li>
+          <li>30 g hakkede mandler</li>
+          <li>30 g sukker</li>
+          <li>30 g smør</li>
+          <li>40 g mørk sjokolade, hakket</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Slik gjør du</h3>
+        <ol>
+          <li>Rør maisstivelsen ut i en skvett kald kokosmelk. Varm resten av kokosmelken med sukkeret.</li>
+          <li>Rør inn stivelsesblandingen og kok under omrøring i 2–3 min til kremen tykner. Rør inn revet kokos, fordel i glass og sett kaldt i minst 2 timer.</li>
+          <li>Saltkaramell: smelt sukkeret tørt i en kjele på middels varme til det er gyllent. Rør inn smøret, så den varme fløten (det spruter). Kok 1 min, rør inn salt og la den bli lunken.</li>
+          <li>Crumble: klem sammen mandelmel, mandler, sukker og smør, smuldre utover et brett og stek på 180 °C i 10–12 min til gyllent.</li>
+          <li>Rett før servering: karamell over kokoskremen, så crumble og hakket sjokolade.</li>
+        </ol>
+      </div>
+    </div>
+  </article>
+
+  <!-- 3 -->
+  <article id="berrywhite">
+    <h2>Berry White</h2>
+    <p class="desc">Pistasj-semifreddo på pinne med sprø hvit sjokolade og bringebærsaus. Den andre bestselgeren.</p>
+    <div class="meta"><span>6 stk</span><span>40 min + 6 t i fryseren</span><span class="gf">Glutenfri</span></div>
+    <div class="cols">
+      <div>
+        <h3>Ingredienser</h3>
+        <h4>Semifreddo</h4>
+        <ul>
+          <li>3 eggeplommer</li>
+          <li>70 g sukker</li>
+          <li>80 g pistasjpasta (eller 100 g usaltede pistasjnøtter, malt helt fint)</li>
+          <li>250 ml kremfløte</li>
+        </ul>
+        <h4>Sprø hvit sjokolade</h4>
+        <ul>
+          <li>150 g hvit sjokolade</li>
+          <li>30 g hakkede pistasjnøtter eller frysetørkede bringebær</li>
+        </ul>
+        <h4>Bringebærsaus</h4>
+        <ul>
+          <li>200 g bringebær (frosne går fint)</li>
+          <li>30 g melis</li>
+          <li>1 ts sitronsaft</li>
+        </ul>
+        <h4>Utstyr</h4>
+        <ul><li>Silikonformer eller små begre, og ispinner</li></ul>
+      </div>
+      <div>
+        <h3>Slik gjør du</h3>
+        <ol>
+          <li>Visp eggeplommer og sukker i en bolle over et vannbad med småkokende vann til blandingen er tykk, lys og varm, ca. 5 min. Ta av og visp til den er avkjølt.</li>
+          <li>Rør inn pistasjpastaen.</li>
+          <li>Pisk fløten til myk krem og vend den forsiktig inn i pistasjblandingen.</li>
+          <li>Fyll formene, stikk i ispinner og frys i minst 6 timer.</li>
+          <li>Bringebærsaus: kok bær og melis i 5 min, sil bort kjernene og rør inn sitronsaft. Avkjøl.</li>
+          <li>Smelt den hvite sjokoladen forsiktig. Dypp de frosne semifreddoene, og dryss over nøtter eller bær mens sjokoladen ennå er myk. Den stivner på sekunder.</li>
+          <li>Server på et speil av bringebærsaus.</li>
+        </ol>
+        <p class="tip">Kan lages flere dager i forveien. Dypp i sjokolade samme dag som du serverer.</p>
+      </div>
+    </div>
+  </article>
+
+  <!-- 4 -->
+  <article id="nutellotto">
+    <h2>Il Nutellotto</h2>
+    <p class="desc">Sjokoladekjeks, mascarponekrem og Nutella i lag.</p>
+    <div class="meta"><span>4 glass</span><span>15 min + 1 t i kjøleskap</span><span class="gf">Glutenfri med riktige kjeks</span></div>
+    <div class="cols">
+      <div>
+        <h3>Ingredienser</h3>
+        <ul>
+          <li>120 g glutenfrie sjokoladekjeks (vanlige Pan di Stelle inneholder hvete)</li>
+          <li>30 g smør, smeltet</li>
+          <li>250 g mascarpone</li>
+          <li>150 ml kremfløte</li>
+          <li>40 g melis</li>
+          <li>1 ts vaniljesukker</li>
+          <li>150 g Nutella</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Slik gjør du</h3>
+        <ol>
+          <li>Knus kjeksene. Bland to tredjedeler med smeltet smør og trykk ned i bunnen av glassene. Spar resten til toppen.</li>
+          <li>Pisk mascarpone, fløte, melis og vaniljesukker til en fast krem.</li>
+          <li>Varm Nutellaen lett (10 sek i mikro), så blir den lettere å legge i lag.</li>
+          <li>Lag i glassene: krem, Nutella, krem.</li>
+          <li>Strø over resten av kjeksene og sett kaldt i minst 1 time.</li>
+        </ol>
+      </div>
+    </div>
+  </article>
+
+  <!-- 5 -->
+  <article id="sunnyblue">
+    <h2>Sunny Blue</h2>
+    <p class="desc">Cheesecake i glass med mangosaus, blåbær og mynte. Ingen steking.</p>
+    <div class="meta"><span>4 glass</span><span>20 min + 3 t i kjøleskap</span><span class="gf">Glutenfri</span></div>
+    <div class="cols">
+      <div>
+        <h3>Ingredienser</h3>
+        <h4>Bunn</h4>
+        <ul>
+          <li>100 g glutenfrie kjeks (digestive-type)</li>
+          <li>40 g smør, smeltet</li>
+        </ul>
+        <h4>Krem</h4>
+        <ul>
+          <li>300 g Philadelphia naturell</li>
+          <li>200 ml kremfløte</li>
+          <li>60 g melis</li>
+          <li>Revet skall og saft av ½ sitron</li>
+        </ul>
+        <h4>Mangosaus og topp</h4>
+        <ul>
+          <li>1 moden mango (eller 250 g frossen)</li>
+          <li>1 ss sukker</li>
+          <li>Saft av ½ lime</li>
+          <li>100 g blåbær</li>
+          <li>Noen mynteblader</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Slik gjør du</h3>
+        <ol>
+          <li>Knus kjeksene, bland med smøret og trykk ned i bunnen av glassene.</li>
+          <li>Rør Philadelphia, melis, sitronskall og sitronsaft glatt. Pisk fløten til krem og vend den inn.</li>
+          <li>Fordel kremen over bunnene og sett kaldt i minst 3 timer.</li>
+          <li>Kjør mango, sukker og limesaft glatt med en stavmikser.</li>
+          <li>Rett før servering: mangosaus på toppen, så blåbær og mynte.</li>
+        </ol>
+      </div>
+    </div>
+  </article>
+
+  <!-- 6 -->
+  <article id="strawberry">
+    <h2>The Strawberry Pie</h2>
+    <p class="desc">Sprø mørdeig, sitruskrem, skogsbær og basilikum.</p>
+    <div class="meta"><span>1 pai (22 cm) eller 6 små</span><span>1 t 15 min + avkjøling</span><span class="gf">Glutenfri</span></div>
+    <div class="cols">
+      <div>
+        <h3>Ingredienser</h3>
+        <h4>Glutenfri mørdeig</h4>
+        <ul>
+          <li>150 g glutenfri melblanding (f.eks. Toro eller Semper)</li>
+          <li>50 g mandelmel</li>
+          <li>70 g melis</li>
+          <li>Klype salt</li>
+          <li>100 g kaldt smør i terninger</li>
+          <li>1 egg</li>
+        </ul>
+        <h4>Sitruskrem</h4>
+        <ul>
+          <li>400 ml melk</li>
+          <li>Revet skall av 1 sitron og 1 appelsin</li>
+          <li>3 eggeplommer</li>
+          <li>70 g sukker</li>
+          <li>25 g maisstivelse</li>
+        </ul>
+        <h4>Topp</h4>
+        <ul>
+          <li>300 g jordbær</li>
+          <li>150 g blåbær og/eller bringebær</li>
+          <li>Små basilikumblader</li>
+          <li>Melis til dryss</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Slik gjør du</h3>
+        <ol>
+          <li>Kjør mel, mandelmel, melis, salt og smør til grove smuler. Tilsett egget og klem raskt sammen til en deig. Pakk inn og kjøl i 30 min.</li>
+          <li>Kjevle ut mellom to ark bakepapir (glutenfri deig er skjør). Legg i formen, lapp sammen eventuelle sprekker og prikk bunnen med en gaffel.</li>
+          <li>Stek på 175 °C i 10 min med bakepapir og tørre bønner oppå, fjern dem og stek 8–10 min til, til bunnen er gyllen. Avkjøl helt.</li>
+          <li>Sitruskrem: varm melk med sitrus- og appelsinskall. Visp eggeplommer, sukker og maisstivelse, og spe med den varme melken mens du visper.</li>
+          <li>Hell alt tilbake i kjelen og kok under omrøring i 1–2 min til kremen er tykk. Legg plastfolie rett på overflaten og avkjøl.</li>
+          <li>Fyll paibunnen med kremen, legg bærene tett på toppen og pynt med basilikum og litt melis.</li>
+        </ol>
+        <p class="tip">Fyll paien maks et par timer før servering, så holder bunnen seg sprø.</p>
+      </div>
+    </div>
+  </article>
+
+  <!-- 7 -->
+  <article id="redcrunch">
+    <h2>The Red Crunch</h2>
+    <p class="desc">Panna cotta med bringebærsaus, bærcrumble og sprø karamell.</p>
+    <div class="meta"><span>4 glass</span><span>40 min + 4 t i kjøleskap</span><span class="gf">Glutenfri</span></div>
+    <div class="cols">
+      <div>
+        <h3>Ingredienser</h3>
+        <h4>Panna cotta</h4>
+        <ul>
+          <li>400 ml kremfløte</li>
+          <li>100 ml melk</li>
+          <li>60 g sukker</li>
+          <li>1 ts vaniljeekstrakt</li>
+          <li>3 plater gelatin</li>
+        </ul>
+        <h4>Bringebærsaus</h4>
+        <ul>
+          <li>200 g bringebær</li>
+          <li>30 g melis</li>
+          <li>1 ts sitronsaft</li>
+        </ul>
+        <h4>Bærcrumble</h4>
+        <ul>
+          <li>50 g mandelmel</li>
+          <li>30 g glutenfrie havregryn</li>
+          <li>30 g sukker</li>
+          <li>30 g smør</li>
+          <li>1 ss frysetørkede bringebær (valgfritt)</li>
+        </ul>
+        <h4>Sprø karamell</h4>
+        <ul><li>80 g sukker</li></ul>
+      </div>
+      <div>
+        <h3>Slik gjør du</h3>
+        <ol>
+          <li>Legg gelatinen i kaldt vann i 5 min.</li>
+          <li>Varm fløte, melk, sukker og vanilje til det nesten koker. Ta kjelen av platen, klem vannet ut av gelatinen og rør den inn til den er smeltet.</li>
+          <li>Fordel i glass og sett kaldt i minst 4 timer.</li>
+          <li>Bringebærsaus: kok bær og melis i 5 min, sil og rør inn sitronsaft. Avkjøl.</li>
+          <li>Crumble: klem sammen mandelmel, havregryn, sukker og smør, smuldre utover et brett og stek på 180 °C i 10–12 min. Bland inn de frysetørkede bringebærene når den er avkjølt.</li>
+          <li>Sprø karamell: smelt sukkeret tørt i en kjele til det er gyllent, hell det tynt ut på bakepapir og la det stivne. Knus i biter.</li>
+          <li>Rett før servering: saus over panna cottaen, så crumble og karamellbiter (karamellen blir myk hvis den står lenge).</li>
+        </ol>
+      </div>
+    </div>
+  </article>
+</main>
+
+<footer>God fornøyelse på kjøkkenet! Hilsen Jeppe</footer>
+</body>
+</html>
