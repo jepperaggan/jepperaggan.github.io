@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Voi-statistikk</title>
+<meta name="description" content="Sparkesykkel i Marseille, september og oktober 2026: turer, minutter, kostnader og rekorder.">
+<meta name="theme-color" content="#F5F5F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E0D10" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* Samme uttrykk som raggan.no: én smal kolonne, Geist, rolige flater. Én aksentfarge for data. */
+:root{
+  --bg:#F5F5F3; --surface:#FFFFFF; --ink:#151417; --muted:#6E6C72; --faint:#A3A1A6;
+  --line:rgba(21,20,23,.09); --shadow:rgba(21,20,23,.08); --press:#EFEEEB;
+  --accent:#0A8A72; --accent-soft:rgba(10,138,114,.12); --bar:#D9D8D4; --grid:rgba(21,20,23,.07);
+  --font:"Geist",-apple-system,"Helvetica Neue",Arial,sans-serif; --mono:"Geist Mono",ui-monospace,Menlo,monospace;
+  --ease:cubic-bezier(0.23,1,0.32,1);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E0D10; --surface:#1A191D; --ink:#F3F1F4; --muted:#A19EA6; --faint:#6D6A72;
+  --line:rgba(255,255,255,.09); --shadow:rgba(0,0,0,.4); --press:#232227;
+  --accent:#1FA88D; --accent-soft:rgba(31,168,141,.16); --bar:#3A383E; --grid:rgba(255,255,255,.07); color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0E0D10; --surface:#1A191D; --ink:#F3F1F4; --muted:#A19EA6; --faint:#6D6A72;
+  --line:rgba(255,255,255,.09); --shadow:rgba(0,0,0,.4); --press:#232227;
+  --accent:#1FA88D; --accent-soft:rgba(31,168,141,.16); --bar:#3A383E; --grid:rgba(255,255,255,.07); color-scheme:dark }
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;min-height:100dvh;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--font);letter-spacing:-.01em;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+a{color:inherit}
+.wrap{width:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:40px;
+  padding:calc(env(safe-area-inset-top,0px) + 56px) calc(env(safe-area-inset-right,0px) + 16px) calc(env(safe-area-inset-bottom,0px) + 28px) calc(env(safe-area-inset-left,0px) + 16px)}
+.eyebrow{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0}
+header{display:flex;flex-direction:column;gap:10px}
+.back{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;margin-bottom:8px}
+h1{margin:0;font-size:clamp(38px,11vw,50px);line-height:1;font-weight:600;letter-spacing:-.045em;text-wrap:balance}
+.lede{margin:0;color:var(--muted);font-size:17px;line-height:1.45;max-width:36ch}
+h2{margin:0;font-size:22px;font-weight:600;letter-spacing:-.03em;line-height:1.15}
+section{display:flex;flex-direction:column;gap:14px}
+.sub{margin:-6px 0 0;color:var(--muted);font-size:15px;line-height:1.45}
+.card{background:var(--surface);border-radius:20px;box-shadow:0 0 0 .5px var(--line),0 1px 2px var(--shadow);padding:18px}
+.note{margin:0;font-size:13px;color:var(--muted);line-height:1.45}
+
+/* Nøkkeltall */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--surface);border-radius:18px;box-shadow:0 0 0 .5px var(--line),0 1px 2px var(--shadow);padding:16px 16px 14px;display:flex;flex-direction:column;gap:4px}
+.stat .v{font-size:34px;font-weight:600;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums}
+.stat .k{font-size:14px;color:var(--muted);line-height:1.3}
+.stat.hl{background:radial-gradient(120% 120% at 100% 0%,var(--accent-soft),transparent 70%),var(--surface)}
+
+/* Horisontale stolper */
+.hbars{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+.hbar .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:15px;margin-bottom:6px}
+.hbar .lab{min-width:0}
+.hbar .lab small{display:block;font-size:13px;color:var(--muted);margin-top:1px}
+.hbar .val{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.track{height:10px;border-radius:0 4px 4px 0;background:transparent;position:relative}
+.fill{height:100%;border-radius:0 4px 4px 0;background:var(--bar);width:0;transition:width 700ms var(--ease)}
+.hbar.me .fill{background:var(--accent)}
+.hbar.me .val{color:var(--ink)}
+.hbar.ghost .fill{background:transparent;box-shadow:inset 0 0 0 1.5px var(--faint)}
+.tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-left:6px;vertical-align:1px}
+
+/* Søyler per time */
+.cols{position:relative;height:150px;display:grid;grid-template-columns:repeat(24,1fr);gap:2px;align-items:end;border-bottom:1px solid var(--grid);padding-top:22px}
+.col{position:relative;height:100%;display:flex;align-items:flex-end;cursor:default;outline:none}
+.col span{display:block;width:100%;border-radius:4px 4px 0 0;background:var(--bar);min-height:0;transition:height 700ms var(--ease)}
+.col.peak span{background:var(--accent)}
+.col:hover span,.col:focus-visible span{background:var(--accent)}
+.tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--ink);color:var(--bg);font-size:12px;font-weight:500;padding:5px 8px;border-radius:8px;pointer-events:none;opacity:0;transition:opacity 120ms ease;z-index:2}
+.col:hover .tip,.col:focus-visible .tip,.col.show .tip{opacity:1}
+.col:first-child .tip{left:0;transform:none}.col:last-child .tip,.col:nth-last-child(2) .tip,.col:nth-last-child(3) .tip{left:auto;right:0;transform:none}
+.axis{display:grid;grid-template-columns:repeat(24,1fr);gap:2px;font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:6px}
+.axis span{text-align:center}
+.peaklab{position:absolute;top:0;font-size:12px;color:var(--muted);white-space:nowrap}
+
+/* Lister */
+.list{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:20px;box-shadow:0 0 0 .5px var(--line),0 1px 2px var(--shadow);overflow:hidden}
+.list li{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:13px 16px;position:relative}
+.list li + li::before{content:"";position:absolute;top:0;left:16px;right:0;height:1px;background:var(--line);transform:scaleY(.5);transform-origin:top}
+.list .l{color:var(--muted);font-size:15px}
+.list .r{font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.list .r small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+
+.facts{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.fact{background:var(--surface);border-radius:18px;box-shadow:0 0 0 .5px var(--line),0 1px 2px var(--shadow);padding:16px;display:flex;gap:14px;align-items:flex-start}
+.fact .n{font-size:26px;font-weight:600;letter-spacing:-.04em;line-height:1;min-width:64px;font-variant-numeric:tabular-nums;color:var(--accent)}
+.fact p{margin:0;font-size:15px;line-height:1.45}
+.fact p b{font-weight:500}
+
+table{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:10px 0 10px 12px;vertical-align:baseline}
+th:first-child,td:first-child{padding-left:0}
+td small{display:block;color:var(--muted);font-size:13px;margin-top:1px}
+th:first-child,td:first-child{text-align:left}
+thead th{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
+tbody tr + tr td{border-top:1px solid var(--line)}
+details{margin-top:4px}
+summary{cursor:pointer;font-size:13px;color:var(--muted);list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+ "}
+details[open] summary::before{content:"– "}
+details table{margin-top:8px;font-size:13px}
+details td,details th{padding:5px 0}
+
+.foot{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--muted);padding-top:4px}
+.credit{display:flex;align-items:center;gap:10px}
+.mark{width:28px;height:28px;flex:none;color:var(--ink)}
+.credit-txt{display:flex;flex-direction:column;line-height:1.15}
+.credit-txt small{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.credit-txt span{font-size:14px;font-weight:500;color:var(--ink);letter-spacing:-.01em}
+.domain{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--faint);text-align:right}
+
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.rise{animation:rise 420ms var(--ease) both}
+.d1{animation-delay:50ms}.d2{animation-delay:100ms}.d3{animation-delay:150ms}
+@media (prefers-reduced-motion: reduce){ .rise{animation:none} .fill,.col span{transition:none} }
+@media (prefers-contrast: more){ .card,.stat,.list,.fact{box-shadow:0 0 0 1.5px var(--ink)} .lede,.sub,.note,.list .l,.stat .k{color:var(--ink)} }
+@media (min-width:480px){ .stats{grid-template-columns:repeat(2,1fr)} }
+</style>
+</head>
+<body ontouchstart="">
+<main class="wrap">
+
+  <header class="rise">
+    <a class="back" href="../">← raggan.no</a>
+    <p class="eyebrow">Voi · Marseille</p>
+    <h1>To måneder på sparkesykkel</h1>
+    <p class="lede">1. september til 31. oktober 2026, regnet ut fra 200 kvitteringer.</p>
+  </header>
+
+  <section class="rise d1" aria-labelledby="h-tall">
+    <h2 id="h-tall" class="eyebrow">Nøkkeltall</h2>
+    <div class="stats">
+      <div class="stat"><span class="v">200</span><span class="k">turer</span></div>
+      <div class="stat"><span class="v">46,8 t</span><span class="k">på sykkelen, nesten to døgn</span></div>
+      <div class="stat"><span class="v">~560 km</span><span class="k">anslag, lenger enn Marseille–Barcelona</span></div>
+      <div class="stat hl"><span class="v">€279</span><span class="k">brukt totalt, ca. €0,10 per minutt</span></div>
+    </div>
+    <p class="note">Distansen er et anslag: 2 810 minutter med 12 km/t i snitt, inkludert lyskryss og stopp. Kvitteringene viser ikke kilometer.</p>
+  </section>
+
+  <section class="rise d2" aria-labelledby="h-kost">
+    <h2 id="h-kost">Hva det kunne kostet</h2>
+    <p class="sub">De samme 2 810 minuttene, priset med hvert alternativ.</p>
+    <div class="card">
+      <ul class="hbars" id="cost"></ul>
+    </div>
+    <p class="note">Fasiten er beste mulige valg i etterkant: fire 750-minuttspakker fra første dag. Du havnet €19 unna.</p>
+  </section>
+
+  <section aria-labelledby="h-plan">
+    <h2 id="h-plan">Pris per minutt, plan for plan</h2>
+    <div class="card">
+      <table>
+        <thead><tr><th>Plan</th><th>Min</th><th>Betalt</th><th>€/min</th></tr></thead>
+        <tbody>
+          <tr><td>Betal per tur <small>1. sep</small></td><td>22</td><td>€7,94</td><td>€0,36</td></tr>
+          <tr><td>Fixed Price <small>2.–23. sep</small></td><td>1&nbsp;059</td><td>€135,12</td><td>€0,13</td></tr>
+          <tr><td><b style="font-weight:500">750-pakke + Voi+</b> <small>fra 24. sep</small></td><td>1&nbsp;729</td><td>€135,96</td><td><b style="font-weight:600;color:var(--accent)">€0,08</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Pakkeperioden inkluderer to pakker og to måneder Voi+. Omtrent 30 minutter står fortsatt igjen på pakke nummer to.</p>
+  </section>
+
+  <section aria-labelledby="h-tid">
+    <h2 id="h-tid">Når du kjører</h2>
+    <p class="sub">Turer etter starttidspunkt. Kveldsrushet klokken 18–19 vinner.</p>
+    <div class="card">
+      <div class="cols" id="hours" role="img" aria-label="Antall turer per time på døgnet. Flest klokken 18 med 25 turer og klokken 19 med 24."></div>
+      <div class="axis" aria-hidden="true" id="axis"></div>
+      <details>
+        <summary>Vis som tabell</summary>
+        <table id="hours-table"><thead><tr><th>Time</th><th>Turer</th></tr></thead><tbody></tbody></table>
+      </details>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-uke">
+    <h2 id="h-uke">Ukedager</h2>
+    <p class="sub">Mandag har flest turer, onsdag flest minutter. Lørdag er roligst.</p>
+    <div class="card">
+      <ul class="hbars" id="week"></ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-lengde">
+    <h2 id="h-lengde">Hvor lange turene er</h2>
+    <p class="sub">Median 12 minutter. De fleste turene ligger mellom 6 og 15.</p>
+    <div class="card">
+      <ul class="hbars" id="len"></ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-rek">
+    <h2 id="h-rek">Rekorder</h2>
+    <ul class="list">
+      <li><span class="l">Lengste tur</span><span class="r">58 min<small>25. september</small></span></li>
+      <li><span class="l">Flest minutter på én dag</span><span class="r">150 min<small>25. september</small></span></li>
+      <li><span class="l">Flest turer på én dag</span><span class="r">10 turer<small>21. september</small></span></li>
+      <li><span class="l">Lengste streak</span><span class="r">12 dager på rad<small>5.–16. oktober</small></span></li>
+      <li><span class="l">Seneste start</span><span class="r">03:53<small>10. oktober</small></span></li>
+      <li><span class="l">Tidligste start</span><span class="r">07:45<small>28. oktober</small></span></li>
+      <li><span class="l">Dager med minst én tur</span><span class="r">46 av 61</span></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="h-fun">
+    <h2 id="h-fun">Fun facts</h2>
+    <ul class="facts">
+      <li class="fact"><span class="n">265</span><p><b>Gratis minutter fra Voi+-pausen.</b> Spredt over 45 turer. Det er ca. €23 i pakketid, for €5,98 i abonnement.</p></li>
+      <li class="fact"><span class="n">12</span><p><b>Nattturer</b> som startet mellom midnatt og klokken fem. Tre av dem natt til 31. oktober.</p></li>
+      <li class="fact"><span class="n">19</span><p><b>Sykkelbytter</b>, der en ny tur startet innen tre minutter etter den forrige. På Fixed Price kostet hvert bytte €1,50.</p></li>
+      <li class="fact"><span class="n">2</span><p><b>Gruppeturer</b>, begge 5. oktober: to sykler, samme start og slutt.</p></li>
+      <li class="fact"><span class="n">€19</span><p><b>Fra perfekt.</b> Med full fasit i etterkant kunne to måneder kostet €260. Du betalte €279.</p></li>
+      <li class="fact"><span class="n">−6</span><p><b>Minutter i Voi-regnskapet.</b> 36 minutter ble trukket fra pakken uten noen kvittering, men én 30-minutterstur ble aldri trukket.</p></li>
+      <li class="fact"><span class="n">€5</span><p><b>Én parkeringsbot</b>, 10. oktober. Den eneste på 200 turer.</p></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="h-atf">
+    <h2 id="h-atf">Lengre turer når minuttene er forhåndsbetalt</h2>
+    <p class="sub">På Fixed Price kostet hver tur €1,50 uansett. Med pakke føles hvert minutt gratis.</p>
+    <div class="card">
+      <table>
+        <thead><tr><th></th><th>Fixed</th><th>Pakke</th></tr></thead>
+        <tbody>
+          <tr><td>Antall turer</td><td>78</td><td>120</td></tr>
+          <tr><td>Snittlengde</td><td>13,6 min</td><td>14,4 min</td></tr>
+          <tr><td>Andel over 20 min</td><td>12 %</td><td><b style="font-weight:600;color:var(--accent)">25 %</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Andelen lange turer er doblet. Et besøk i slutten av september trekker noe opp, så ikke alt skyldes prisen.</p>
+  </section>
+
+  <section aria-labelledby="h-mnd">
+    <h2 id="h-mnd">Måned for måned</h2>
+    <div class="card">
+      <table>
+        <thead><tr><th></th><th>Turer</th><th>Minutter</th><th>Dager</th></tr></thead>
+        <tbody>
+          <tr><td>September</td><td>113</td><td>1&nbsp;601</td><td>24</td></tr>
+          <tr><td>Oktober</td><td>87</td><td>1&nbsp;209</td><td>22</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Ingen turer 30. september til 4. oktober. Oktober er telt til og med 31. oktober klokken 11.</p>
+  </section>
+
+  <footer class="foot">
+    <div class="credit" aria-label="Utviklet av JayPee Designs">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="1" y="1" width="30" height="30" rx="9" fill="none" stroke="currentColor" stroke-opacity=".35" stroke-width="1.25"/>
+        <text x="16" y="20.5" text-anchor="middle" font-family="Geist, -apple-system, Arial, sans-serif" font-weight="600" font-size="12" fill="currentColor" letter-spacing="-.3">JP</text>
+      </svg>
+      <span class="credit-txt"><small>Utviklet av</small><span>JayPee Designs</span></span>
+    </div>
+    <span class="domain">Oppdatert<br>31. okt 2026</span>
+  </footer>
+</main>
+
+<script>
+(function(){
+  var nf=function(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g," ");};
+  var eur=function(n){return "€"+n.toFixed(0);};
+
+  function hbars(el,rows,max,fmt){
+    el.innerHTML=rows.map(function(r){
+      return '<li class="hbar'+(r.cls?' '+r.cls:'')+'"><div class="top"><span class="lab">'+r.label+(r.tag?'<span class="tag">'+r.tag+'</span>':'')+(r.sub?'<small>'+r.sub+'</small>':'')+'</span><span class="val">'+fmt(r)+'</span></div>'+
+        '<div class="track"><div class="fill" data-w="'+(100*r.v/max).toFixed(2)+'"></div></div></li>';
+    }).join("");
+  }
+
+  hbars(document.getElementById("cost"),[
+    {label:"Betal per tur",sub:"€1 per opplåsing + €0,27/min",v:958.70},
+    {label:"Bare Voi+",sub:"Ingen opplåsing, €0,27/min",v:764.68},
+    {label:"Fixed Price hele tiden",sub:"€1,50 per tur, maks 20 min",v:397.73},
+    {label:"Det du betalte",tag:"faktisk",v:279.02,cls:"me"},
+    {label:"Fasit",sub:"750-pakker fra dag én",v:259.96,cls:"ghost"}
+  ],958.70,function(r){return eur(r.v);});
+
+  var wd=[["Mandag",35,472],["Tirsdag",29,462],["Onsdag",32,534],["Torsdag",29,312],["Fredag",23,365],["Lørdag",22,266],["Søndag",30,399]];
+  hbars(document.getElementById("week"),wd.map(function(d){return {label:d[0],v:d[2],n:d[1],cls:d[0]==="Onsdag"?"me":""};}),534,
+    function(r){return nf(r.v)+" min · "+r.n+" turer";});
+
+  var len=[["0–5 min",30],["6–10 min",46],["11–15 min",58],["16–20 min",27],["21–30 min",29],["Over 30 min",10]];
+  hbars(document.getElementById("len"),len.map(function(d){return {label:d[0],v:d[1],cls:d[1]===58?"me":""};}),58,
+    function(r){return r.v+" turer";});
+
+  var hours=[2,7,1,2,0,0,0,3,10,8,16,6,14,18,3,9,12,17,25,24,10,4,3,6], hmax=25;
+  var cols=document.getElementById("hours"), ax=document.getElementById("axis"), tb=document.querySelector("#hours-table tbody");
+  cols.innerHTML=hours.map(function(n,h){
+    var hh=(h<10?"0":"")+h;
+    return '<div class="col'+(n===hmax?' peak':'')+'" tabindex="0" aria-label="Klokken '+hh+': '+n+' turer"><span data-h="'+(100*n/hmax).toFixed(1)+'"></span><div class="tip">'+hh+':00 · '+n+' turer</div></div>';
+  }).join("");
+  ax.innerHTML=hours.map(function(_,h){return '<span>'+(h%6===0?(h<10?"0":"")+h:"")+'</span>';}).join("");
+  tb.innerHTML=hours.map(function(n,h){return '<tr><td>'+(h<10?"0":"")+h+':00</td><td>'+n+'</td></tr>';}).join("");
+  cols.addEventListener("click",function(e){
+    var c=e.target.closest(".col"); if(!c) return;
+    cols.querySelectorAll(".col.show").forEach(function(x){if(x!==c)x.classList.remove("show");});
+    c.classList.toggle("show");
+  });
+
+  var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function grow(){
+    document.querySelectorAll(".fill").forEach(function(f){f.style.width=f.dataset.w+"%";});
+    document.querySelectorAll(".col span").forEach(function(s){s.style.height=s.dataset.h+"%";});
+  }
+  if(reduce) grow(); else requestAnimationFrame(function(){requestAnimationFrame(grow);});
+})();
+</script>
+</body>
+</html>
