@@ -222,3 +222,9 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 .toast button{color:inherit;font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .toast.has-action{pointer-events:auto}
 @media (prefers-reduced-motion: reduce){.btn:active,.chip:active,.value-btn:active,.seg button:active,.skin:active,.card-link:active{transform:none;opacity:.7}}
+
+/* long place names wrap instead of pushing the page sideways */
+h1,.place-btn{overflow-wrap:anywhere;min-width:0}
+.title-row>div{min-width:0}
+.place-btn{text-align:left;max-width:100%}
+.place-row .grow span,.row .grow{overflow-wrap:anywhere}

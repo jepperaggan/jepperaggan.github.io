@@ -129,7 +129,7 @@ function viewHud() {
         <header><h2 id="h-soltid">Soltid i dag</h2><span class="meta">${session ? `Pågår siden ${clock(localNow(c.fc, session.start).min)}` : "Ikke aktiv"}</span></header>
         <p class="lead">${nb(Math.round(c.minutes))}<small>min i sola</small></p>
         ${vdDose < lim ? `<div class="plan-top"><span style="left:${Math.min(88, Math.max(12, (vdDose / lim) * 100)).toFixed(1)}%">Vitamin D-mål</span></div>` : ""}
-        <div class="plan" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(Math.min(frac, 1) * 100)}" aria-valuetext="${Math.round(frac * 100)} % av grensen for solbrenthet">
+        <div class="plan" role="meter" aria-label="Soltid mot grensen for solbrenthet" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(Math.min(frac, 1) * 100)}" aria-valuetext="${Math.round(frac * 100)} % av grensen for solbrenthet">
           <span class="done${frac >= 1 ? " over" : ""}" style="width:${Math.min(100, frac * 100).toFixed(1)}%"></span>
           ${vdDose < lim ? `<span class="goal" style="left:${((vdDose / lim) * 100).toFixed(1)}%" title="Vitamin D-mål"></span>` : ""}</div>
         <div class="plan-l"><span>0</span><span>Solbrent</span></div>
@@ -378,14 +378,25 @@ function sheetDay(i) {
 
 // ---------- tracking ----------
 function finishTotals(s) {
-  const fc = S.fc, d = fc.days[todayIndex(fc, s.start)] || fc.days[0], uvAt = curve(d, fc.lat, fc.lon);
-  const a = localNow(fc, s.start).min, b = localNow(fc, s.end).min, sp = sunscreen && localNow(fc, sunscreen.at).date === localNow(fc, s.start).date ? sunscreen : null;
-  const t = sessionTotals({ uvAt, fromMin: Math.floor(a), toMin: Math.floor(b), skin: skin.type, env: s.env ?? skin.env, spf: sp?.spf || 0, appliedAtMin: sp ? localNow(fc, sp.at).min : null });
-  return { start: s.start, end: s.end, minutes: Math.round(t.minutes), dose: t.dose, iu: Math.round(t.iu) };
+  // split the session at local midnights, so a session from 23:30 to 00:30 keeps all its minutes
+  const fc = S.fc; let dose = 0, iu = 0, t = s.start;
+  while (t < s.end) {
+    const ln = localNow(fc, t), dayEnd = t + (1440 - ln.min) * 60000, segEnd = Math.min(s.end, dayEnd);
+    const d = fc.days.find((x) => x.date === ln.date);
+    if (d) {
+      const uvAt = curve(d, fc.lat, fc.lon), sp = sunscreen && localNow(fc, sunscreen.at).date === ln.date ? sunscreen : null;
+      const r = sessionTotals({ uvAt, fromMin: Math.floor(ln.min), toMin: Math.floor(ln.min + (segEnd - t) / 60000), skin: skin.type, env: s.env ?? skin.env, spf: sp?.spf || 0, appliedAtMin: sp ? localNow(fc, sp.at).min : null });
+      dose += r.dose; iu += r.iu;
+    }
+    t = segEnd;
+  }
+  return { start: s.start, end: s.end, minutes: Math.round((s.end - s.start) / 60000), dose, iu: Math.round(iu) };
 }
-function startSession() { if (!S.fc) return; session = { id: crypto.randomUUID?.() || String(Date.now()), start: Date.now(), env: skin.env }; set("session", session); S.reminded = {}; haptic(); render(); toast("Soltid startet"); askNotify(); }
+let lastToggle = -Infinity;
+const tooSoon = () => { const t = performance.now(); if (t - lastToggle < 800) return true; lastToggle = t; return false; };
+function startSession() { if (!S.fc || session || tooSoon()) return; session = { id: crypto.randomUUID?.() || String(Date.now()), start: Date.now(), env: skin.env }; set("session", session); S.reminded = {}; haptic(); render(); toast("Soltid startet"); askNotify(); }
 function stopSession() {
-  if (!session) return; const done = { id: session.id, env: session.env, ...finishTotals({ ...session, end: Date.now() }) };
+  if (!session || tooSoon()) return; const done = { id: session.id, env: session.env, ...finishTotals({ ...session, end: Date.now() }) };
   if (done.minutes >= 1) { log = [...log, done].slice(-200); set("log", log); }
   const was = session; session = null; set("session", null); haptic(); render();
   toast(done.minutes >= 1 ? `Lagret: ${dur(done.minutes)} i sola` : "Økten var under ett minutt", { label: "Angre", run: () => {
@@ -470,6 +481,12 @@ async function load(force = false) {
   S.loading = false; render();
 }
 
+addEventListener("storage", (e) => {
+  if (!e.key || !e.key.startsWith("uv:") || e.key.startsWith("uv:fc:") || e.key.startsWith("uv:rg:")) return;
+  const prevPlace = place && `${place.lat},${place.lon}`;
+  skin = get("skin"); settings = get("settings"); place = get("place"); session = get("session"); log = get("log"); sunscreen = get("sunscreen") || null;
+  applyTheme(); if (place && `${place.lat},${place.lon}` !== prevPlace) { S.fc = null; load(); } else render();
+});
 applyTheme(); route(false); load();
 setInterval(() => { if (!document.hidden && S.fc && !$(".daychart.scrub")) { if (S.view === "uv" || S.view === "hud") render(); checkReminders(); } }, 30000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden && S.fc && Date.now() - S.fc.fetchedAt > 15 * 60000) load(); });
