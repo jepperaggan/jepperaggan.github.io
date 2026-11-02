@@ -11,6 +11,33 @@ export const bandOf = (uv) => BANDS.find((b) => r1(uv) < b.to) || BANDS[4];
 export const fmt1 = (v) => r1(v).toLocaleString("nb-NO", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 export const clock = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(Math.round(m % 60)).padStart(2, "0")}`; // taste-skill-ignore: a clock
 export const dur = (min) => { const h = Math.floor(min / 60), m = Math.round(min % 60); return h ? `${h} t ${m} min` : `${m} min`; };
+
+// ---------- motion: one spring, Apple-style parameters ----------
+// damping ratio (1 = no overshoot, <1 = bounce) and response (seconds to get there; not a duration).
+// Always starts from the current value and velocity, so any motion can be grabbed and redirected mid-flight.
+export const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+export function spring({ from, to, velocity = 0, damping = 1, response = 0.4, precision = 0.01, onUpdate, onDone }) {
+  const k = (2 * Math.PI / response) ** 2, c = (4 * Math.PI * damping) / response;
+  let x = from, v = velocity, last = performance.now(), raf = 0, done = false;
+  const finish = () => { done = true; x = to; v = 0; onUpdate?.(x, v); onDone?.(); };
+  if (reducedMotion()) { finish(); return { stop: () => ({ x, v }), get value() { return x; } }; }
+  const step = (t) => {
+    const dt = Math.min(0.064, (t - last) / 1000); last = t;
+    const n = Math.max(1, Math.ceil(dt / 0.004)), h = dt / n;
+    for (let i = 0; i < n; i++) { const a = -k * (x - to) - c * v; v += a * h; x += v * h; }
+    if (Math.abs(x - to) < precision && Math.abs(v) < precision * 10) return finish();
+    onUpdate?.(x, v); raf = requestAnimationFrame(step);
+  };
+  raf = requestAnimationFrame(step);
+  return { stop() { cancelAnimationFrame(raf); return { x, v }; }, get value() { return x; }, get velocity() { return v; }, get done() { return done; } };
+}
+/** Where a flick would come to rest (Apple's projection; d ≈ 0.998 is scroll-like). */
+export const project = (v, d = 0.998) => ((v / 1000) * d) / (1 - d);
+/** Progressive resistance past an edge. */
+export const rubberband = (over, dim, c = 0.55) => (over * dim * c) / (dim + c * Math.abs(over));
+/** A short, meaningful tick (Android); silently nothing elsewhere. */
+export const haptic = (ms = 8) => { try { navigator.vibrate?.(ms); } catch {} };
+
 const NS = "http://www.w3.org/2000/svg";
 const el = (tag, attrs = {}, parent) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); parent?.appendChild(n); return n; };
 const txt = (parent, s, attrs) => { const t = el("text", attrs, parent); t.textContent = s; return t; };
@@ -33,20 +60,17 @@ export function gauge(host) {
     txt(svg, String(b.from), { class: "tl", x: lx, y: ly + 4, "text-anchor": "middle" });
   }
   const [zx, zy] = pt(134, ang(0)); txt(svg, "0", { class: "tl", x: zx, y: zy + 4, "text-anchor": "middle" });
-  let shown = 0, raf = 0;
-  const draw = (v) => { fill.setAttribute("d", v > 0.05 ? arc(112, A0, ang(v)) : ""); host.querySelector(".val").textContent = fmt1(v); };
+  let shown = 0, anim = null;
+  const draw = (v) => { fill.setAttribute("d", v > 0.05 ? arc(112, A0, ang(v)) : ""); host.querySelector(".val").textContent = fmt1(Math.max(0, v)); };
   return {
     set(v, { instant = false } = {}) {
       const b = bandOf(v);
       document.documentElement.dataset.band = b.id;
       host.querySelector(".word").textContent = b.nb;
       host.setAttribute("role", "img"); host.setAttribute("aria-label", `UV-indeks ${fmt1(v)}, ${b.nb.toLowerCase()}`);
-      cancelAnimationFrame(raf);
-      if (instant || matchMedia("(prefers-reduced-motion: reduce)").matches) { shown = v; draw(v); return; }
-      let vel = 0, last = performance.now();
-      const step = (t) => { const dt = Math.min(0.032, (t - last) / 1000); last = t; vel += (160 * (v - shown) - 24 * vel) * dt; shown += vel * dt;
-        if (Math.abs(v - shown) < 0.004 && Math.abs(vel) < 0.01) shown = v; draw(Math.max(0, shown)); if (shown !== v) raf = requestAnimationFrame(step); };
-      raf = requestAnimationFrame(step);
+      const vel = anim ? anim.stop().v : 0;          // interrupt: keep the live value and its velocity
+      if (instant) { anim = null; shown = v; draw(v); return; }
+      anim = spring({ from: shown, to: v, velocity: vel, damping: 1, response: 0.4, precision: 0.005, onUpdate: (x) => { shown = x; draw(Math.min(MAX, x)); } });
     },
   };
 }
@@ -102,15 +126,18 @@ export function dayChart(host, day, { height = 200, onScrub, onRelease, uvAt: uv
     let drag = false;
     svg.addEventListener("pointerdown", (e) => { drag = true; svg.setPointerCapture(e.pointerId); host.classList.add("scrub"); clearTimeout(back); place(toMin(e.clientX)); });
     svg.addEventListener("pointermove", (e) => { if (drag) place(toMin(e.clientX)); });
-    const up = () => { if (!drag) return; drag = false; back = setTimeout(() => { host.classList.remove("scrub"); place(day.now); onRelease?.(); }, 1500); };
+    const up = () => { if (!drag) return; drag = false; back = setTimeout(goHome, 1500); };
     svg.addEventListener("pointerup", up); svg.addEventListener("pointercancel", up);
-    host.api = { place };
+    let home = null;
+    const goHome = () => { home?.stop(); home = spring({ from: cur, to: day.now, damping: 1, response: 0.45, precision: 0.5, onUpdate: (m) => place(m), onDone: () => { host.classList.remove("scrub"); onRelease?.(); } }); };
+    svg.addEventListener("pointerdown", () => home?.stop(), { capture: true });   // grab it mid-flight
+    host.api = { place, goHome };
     place(cur);
   }
   host.addEventListener("keydown", (e) => {
     const step = { ArrowLeft: -15, ArrowRight: 15 }[e.key];
     if (step) { host.classList.add("scrub"); host.api.place(cur + step); e.preventDefault(); }
-    if (e.key === "Escape") { host.classList.remove("scrub"); host.api.place(day.now); onRelease?.(); }
+    if (e.key === "Escape") host.api.goHome();
   });
   const ro = new ResizeObserver(() => { if (host.clientWidth !== W) render(); }); ro.observe(host);
   document.fonts?.ready.then(render);

@@ -17,12 +17,14 @@
   --chart-3:var(--uv);
 
   --font:Geist,-apple-system,"Helvetica Neue",Arial,sans-serif;
-  --fs-small:12px; --fs-body:14px; --fs-section:16px; --fs-title:24px; --fs-kpi:30px; --fs-reading:64px;
+  --fs-small:.75rem; --fs-note:.8125rem; --fs-body:.875rem; --fs-section:1rem; --fs-title:1.5rem; --fs-kpi:1.875rem; --fs-reading:4rem;
 
   --radius-card:8px; --radius-control:6px; --radius-sheet:12px;
   --gap:12px; --pad:24px; --card-pad:20px; --control-height:36px; --row-height:44px; --nav-row:34px;
   --sidebar-width:240px; --bottombar:60px;
   --t-hover:120ms; --t-press:100ms; --t-sheet:280ms; --ease:cubic-bezier(.23,1,.32,1);
+  /* springs (Apple: damping ratio + response in seconds); JS reads these */
+  --spring-ui:1 .35; --spring-flick:.8 .3; --spring-value:1 .4;
   --sb:env(safe-area-inset-bottom,0px); --st:env(safe-area-inset-top,0px);
   --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Cpath d='m9 6 6 6-6 6'/%3E%3C/svg%3E");
   color-scheme:light;
@@ -48,3 +50,6 @@
   --uv-low:#4cc23a; --uv-moderate:#f2c230; --uv-high:#ff7a3d; --uv-veryhigh:#ff5468; --uv-extreme:#d46bd0;
   color-scheme:dark }
 @media (prefers-reduced-motion: reduce){:root{--t-hover:0ms;--t-press:0ms;--t-sheet:0ms}}
+
+/* more contrast when asked for: firmer lines, darker secondary text */
+@media (prefers-contrast: more){:root{--border:#8a8a8a;--rule:#bdbdbd;--control:#6b6b6b;--muted:#3d3d3d;--faint:#4a4a4a}}

@@ -1,5 +1,5 @@
 // UV: app shell, views and state. Data in forecast.js, maths in exposure.js, drawing in ui.js.
-import { gauge, dayChart, bandOf, fmt1, clock, dur, BANDS } from "./ui.js";
+import { gauge, dayChart, bandOf, fmt1, clock, dur, BANDS, spring, project, rubberband, haptic, reducedMotion } from "./ui.js";
 import { getForecast, curve, localNow, todayIndex, searchPlaces, placeName, locate, r1 } from "./forecast.js";
 import { minutesToBurn, minutesToVitaminD, sessionTotals, spfFactor, recommendedSpf, SPF_HOURS, MED } from "./exposure.js";
 import { get, set, clearAll } from "./store.js";
@@ -229,30 +229,68 @@ function installHint() {
 }
 
 // ---------- sheets ----------
+// Phone: a bottom sheet you can drag. It follows the finger 1:1 from where it was grabbed, resists past the top,
+// projects the flick on release and keeps the finger's speed, and can be grabbed again while it moves.
+// Desktop: a centred dialog that scales in from 96 %. Reduced motion: no travel, it simply appears.
+const SH = { y: 1, anim: null, open: false };          // y: 0 = open … 1 = closed (fraction of the sheet's height)
+const sheetEl = $("#sheet"), scrimEl = $("#scrim"), wideMQ = matchMedia("(min-width: 900px)");
+function paintSheet(y) {
+  SH.y = y; const h = sheetEl.offsetHeight || 1;
+  if (wideMQ.matches) { sheetEl.style.transform = `translate(-50%,-50%) scale(${0.96 + 0.04 * (1 - y)})`; sheetEl.style.opacity = String(1 - y); }
+  else { sheetEl.style.transform = `translate(-50%, ${(y < 0 ? rubberband(y * h, h) : y * h).toFixed(1)}px)`; sheetEl.style.opacity = ""; }
+  scrimEl.style.opacity = String(Math.max(0, Math.min(1, 1 - y)));
+}
+function moveSheet(to, { velocity = 0, damping = 1, response = 0.35, onDone } = {}) {
+  const from = SH.anim ? SH.anim.stop().x : SH.y;
+  SH.anim = spring({ from, to, velocity, damping, response, precision: 0.001, onUpdate: paintSheet, onDone: () => { SH.anim = null; onDone?.(); } });
+}
 let lastFocus = null;
 function openSheet(title, html, onMount) {
-  lastFocus = document.activeElement;
-  $("#sheet-title").textContent = title; $("#sheet-body").innerHTML = html;
-  const sh = $("#sheet"), sc = $("#scrim"); sh.hidden = false; sc.hidden = false;
-  $(".app").inert = true;
-  requestAnimationFrame(() => { sh.classList.add("on"); sc.classList.add("on"); sh.focus(); });
+  if (!SH.open) lastFocus = document.activeElement;
+  $("#sheet-title").textContent = title; $("#sheet-body").innerHTML = html; $("#sheet-body").scrollTop = 0;
+  sheetEl.hidden = false; scrimEl.hidden = false; $(".app").inert = true; SH.open = true;
+  if (!SH.anim) paintSheet(SH.open && SH.y < 1 ? SH.y : 1);
+  moveSheet(0, { damping: 1, response: 0.35 });   // opened by a tap: no momentum, so no bounce
+  sheetEl.focus({ preventScroll: true });
   onMount?.($("#sheet-body"));
 }
-function closeSheet() {
-  const sh = $("#sheet"), sc = $("#scrim"); sh.classList.remove("on"); sc.classList.remove("on"); $(".app").inert = false;
-  setTimeout(() => { sh.hidden = true; sc.hidden = true; }, 300); lastFocus?.focus?.();
+function closeSheet({ velocity = 0 } = {}) {
+  if (!SH.open) return; SH.open = false; $(".app").inert = false;
+  moveSheet(1, { velocity, damping: 1, response: 0.3, onDone: () => { if (!SH.open) { sheetEl.hidden = true; scrimEl.hidden = true; } } });
+  lastFocus?.focus?.({ preventScroll: true });
 }
-$("#sheet-close").onclick = closeSheet; $("#scrim").onclick = closeSheet;
-$("#sheet").addEventListener("keydown", (e) => {
+$("#sheet-close").onclick = () => closeSheet(); scrimEl.onclick = () => closeSheet();
+sheetEl.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeSheet();
-  if (e.key === "Tab") { const f = [...$("#sheet").querySelectorAll("button,input,a[href],[tabindex='0']")].filter((x) => !x.disabled && x.offsetParent); if (!f.length) return;
+  if (e.key === "Tab") { const f = [...sheetEl.querySelectorAll("button,input,a[href],[tabindex='0']")].filter((x) => !x.disabled && x.offsetParent); if (!f.length) return;
     if (e.shiftKey && document.activeElement === f[0]) { f.at(-1).focus(); e.preventDefault(); } else if (!e.shiftKey && document.activeElement === f.at(-1)) { f[0].focus(); e.preventDefault(); } }
 });
-// drag down to close (phone)
-{ let y0 = null, dy = 0; const sh = $("#sheet");
-  sh.addEventListener("pointerdown", (e) => { if (e.target.closest(".body") && $("#sheet-body").scrollTop > 0) return; if (!e.target.closest(".grab,header")) return; y0 = e.clientY; sh.style.transition = "none"; });
-  addEventListener("pointermove", (e) => { if (y0 == null) return; dy = Math.max(0, e.clientY - y0); sh.style.transform = `translate(-50%, ${dy}px)`; });
-  addEventListener("pointerup", () => { if (y0 == null) return; sh.style.transition = ""; sh.style.transform = ""; if (dy > 90) closeSheet(); y0 = null; dy = 0; }); }
+{ // drag to dismiss (phone)
+  const zone = $("#sheet-drag"); let g = null;
+  zone.addEventListener("pointerdown", (e) => {
+    if (wideMQ.matches || e.target.closest("button")) return;
+    const from = SH.anim ? SH.anim.stop().x : SH.y; SH.anim = null;          // grab it mid-flight, from where it is
+    g = { id: e.pointerId, y0: e.clientY, from, h: sheetEl.offsetHeight, live: false, hist: [{ y: e.clientY, t: e.timeStamp }] };
+    zone.setPointerCapture(e.pointerId);
+  });
+  zone.addEventListener("pointermove", (e) => {
+    if (!g || e.pointerId !== g.id) return;
+    const dy = e.clientY - g.y0;
+    if (!g.live && Math.abs(dy) < 10 && g.from === 0) return;                  // 10 px before it commits
+    g.live = true; g.hist.push({ y: e.clientY, t: e.timeStamp }); if (g.hist.length > 6) g.hist.shift();
+    paintSheet(g.from + dy / g.h);
+  });
+  const end = (e) => {
+    if (!g || e.pointerId !== g.id) return;
+    const a = g.hist[0], b = g.hist.at(-1), v = b.t > a.t ? ((b.y - a.y) / (b.t - a.t)) * 1000 : 0;   // px/s
+    const landing = SH.y * g.h + project(v);                                 // where the flick is heading
+    const vel = v / g.h;                                                     // in sheet-heights per second
+    if (g.live && landing > g.h * 0.45) { haptic(); closeSheet({ velocity: vel }); }
+    else moveSheet(0, { velocity: vel, damping: g.live && Math.abs(v) > 300 ? 0.8 : 1, response: 0.3 }); // a flick earns a little bounce
+    g = null;
+  };
+  zone.addEventListener("pointerup", end); zone.addEventListener("pointercancel", end);
+}
 
 function sheetPlaces() {
   const recent = get("recent");
@@ -308,7 +346,7 @@ function sheetSunscreen() {
     <button class="btn primary" id="spf-now">Smurt på nå</button>${sunscreen ? `<button class="btn text" id="spf-off">Fjern solkrem for i dag</button>` : ""}`, (body) => {
     body.addEventListener("click", (e) => { const b = e.target.closest("[data-spf]"); if (!b) return; pick = +b.dataset.spf; body.querySelectorAll("[data-spf]").forEach((x) => x.setAttribute("aria-checked", +x.dataset.spf === pick)); });
     $("#spf-now", body).onclick = () => { sunscreen = { spf: pick, at: Date.now() }; set("sunscreen", sunscreen); S.reminded = {}; closeSheet(); render(); toast(`SPF ${pick} registrert`); askNotify(); };
-    const off = $("#spf-off", body); if (off) off.onclick = () => { sunscreen = null; set("sunscreen", null); closeSheet(); render(); };
+    const off = $("#spf-off", body); if (off) off.onclick = () => { const was = sunscreen; sunscreen = null; set("sunscreen", null); closeSheet(); render(); toast("Solkrem fjernet", { label: "Angre", run: () => { sunscreen = was; set("sunscreen", was); render(); } }); };
   });
 }
 function timeToMs(hhmm, refMs) { // a local time today at the place → UTC ms
@@ -327,7 +365,8 @@ function sheetEditLog(id) {
     <label class="stack s6" style="gap:8px"><span>Slutt</span><input class="field" type="time" id="le" value="${clock(localNow(S.fc, s.end).min)}"></label></div>
     <button class="btn primary" id="l-save">Lagre</button><button class="btn text danger-text" id="l-del">Slett økten</button>`, (body) => {
     $("#l-save", body).onclick = () => { const a = timeToMs($("#ls", body).value, s.start), b = timeToMs($("#le", body).value, s.end); if (b > a) Object.assign(s, finishTotals({ ...s, start: a, end: b })); set("log", log); closeSheet(); render(); };
-    $("#l-del", body).onclick = () => { log = log.filter((x) => x.id !== id); set("log", log); closeSheet(); render(); toast("Økten er slettet"); };
+    $("#l-del", body).onclick = () => { const i = log.findIndex((x) => x.id === id), gone = log[i]; log = log.filter((x) => x.id !== id); set("log", log); closeSheet(); render();
+      toast("Økten er slettet", { label: "Angre", run: () => { log.splice(i, 0, gone); set("log", log); render(); } }); };
   });
 }
 function sheetDay(i) {
@@ -344,11 +383,13 @@ function finishTotals(s) {
   const t = sessionTotals({ uvAt, fromMin: Math.floor(a), toMin: Math.floor(b), skin: skin.type, env: s.env ?? skin.env, spf: sp?.spf || 0, appliedAtMin: sp ? localNow(fc, sp.at).min : null });
   return { start: s.start, end: s.end, minutes: Math.round(t.minutes), dose: t.dose, iu: Math.round(t.iu) };
 }
-function startSession() { if (!S.fc) return; session = { id: crypto.randomUUID?.() || String(Date.now()), start: Date.now(), env: skin.env }; set("session", session); S.reminded = {}; render(); toast("Soltid startet"); askNotify(); }
+function startSession() { if (!S.fc) return; session = { id: crypto.randomUUID?.() || String(Date.now()), start: Date.now(), env: skin.env }; set("session", session); S.reminded = {}; haptic(); render(); toast("Soltid startet"); askNotify(); }
 function stopSession() {
   if (!session) return; const done = { id: session.id, env: session.env, ...finishTotals({ ...session, end: Date.now() }) };
   if (done.minutes >= 1) { log = [...log, done].slice(-200); set("log", log); }
-  session = null; set("session", null); render(); toast(done.minutes >= 1 ? `Lagret: ${dur(done.minutes)} i sola` : "Økten var under ett minutt");
+  const was = session; session = null; set("session", null); haptic(); render();
+  toast(done.minutes >= 1 ? `Lagret: ${dur(done.minutes)} i sola` : "Økten var under ett minutt", { label: "Angre", run: () => {
+    session = was; set("session", session); log = log.filter((x) => x.id !== done.id); set("log", log); render(); } });
 }
 
 // ---------- reminders (while the app is open) ----------
@@ -384,7 +425,7 @@ addEventListener("hashchange", () => { if (document.startViewTransition && !matc
 document.addEventListener("click", async (e) => {
   const b = e.target.closest("[data-act],[data-env],[data-theme-set]"); if (!b) return;
   if (b.dataset.env) { skin = { ...skin, env: b.dataset.env }; set("skin", skin); render(); return; }
-  if (b.dataset.themeSet) { settings = { ...settings, theme: b.dataset.themeSet }; set("settings", settings); applyTheme(); render(); return; }
+  if (b.dataset.themeSet) { settings = { ...settings, theme: b.dataset.themeSet }; set("settings", settings); applyTheme(true); render(); return; }
   const a = b.dataset.act;
   if (a === "start") startSession(); else if (a === "stop") stopSession();
   else if (a === "places") sheetPlaces(); else if (a === "skin") sheetSkin(); else if (a === "vitd") sheetVitD(); else if (a === "sunscreen") sheetSunscreen();
@@ -402,8 +443,16 @@ document.addEventListener("click", async (e) => {
 addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); S.installEvt = e; if (S.view === "uv") render(); });
 
 let toastT = 0;
-function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on"), 2600); }
-function applyTheme() { if (settings.theme === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = settings.theme; }
+function toast(t, action) {
+  const el = $("#toast"); el.innerHTML = ""; el.append(document.createTextNode(t));
+  if (action) { const b = document.createElement("button"); b.textContent = action.label; b.onclick = () => { el.classList.remove("on", "has-action"); action.run(); }; el.append(b); }
+  el.classList.toggle("has-action", !!action); el.classList.add("on");
+  clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on", "has-action"), action ? 5000 : 2600);
+}
+function applyTheme(fade = false) {
+  const go = () => { if (settings.theme === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = settings.theme; };
+  if (fade && document.startViewTransition && !reducedMotion()) { const t = document.startViewTransition(go); t.ready.catch(() => {}); t.finished.catch(() => {}); } else go();
+}
 
 // ---------- data ----------
 async function useLocation(explicit = false) {
