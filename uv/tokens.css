@@ -1,0 +1,50 @@
+/* UV app tokens (raggan.no/uv/). Style: tasteskill "achromatic ledger" (seed 1059357077), type kept (Geist).
+   Face: the raggan.no stone ground (#f5f5f3) and the current UV band's colour on the main data element.
+   The chrome is ink; colour appears only on UV data. */
+:root{
+  --ground:#f5f5f3; --surface:#ffffff; --raised:#eeeeee; --active:#e9e9e9;
+  --border:#e6e6e6; --rule:#f0f0f0; --control:#d4d4d4;
+  --text:#0a0a0a; --muted:#5f5e62; --faint:#6b6b6b;
+  --primary:#141414; --on-primary:#ffffff;
+  --positive:#2e7d32; --negative:#c4242a; --warning:#92400e;
+  --pill-neutral-bg:#eeeeee; --pill-neutral-ink:#3d3d3d;
+  --pill-warning-bg:#fffbeb; --pill-warning-ink:#92400e;
+  --grid:#e5e5e5; --axis-ink:#5f5e62; --chart-1:#141414; --chart-2:#8a8a8a; --chart-muted:#b5b5b5; --chart-span:.06;
+
+  /* UV bands (WHO scale), as data marks: ≥3:1 on white. Text stays ink. */
+  --uv-low:#289500; --uv-moderate:#a67c00; --uv-high:#d24e00; --uv-veryhigh:#d8001d; --uv-extreme:#8e2a8b;
+  --uv:var(--uv-low);  /* the current band, set via <html data-band> */
+  --chart-3:var(--uv);
+
+  --font:Geist,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --fs-small:12px; --fs-body:14px; --fs-section:16px; --fs-title:24px; --fs-kpi:30px; --fs-reading:64px;
+
+  --radius-card:8px; --radius-control:6px; --radius-sheet:12px;
+  --gap:12px; --pad:24px; --card-pad:20px; --control-height:36px; --row-height:44px; --nav-row:34px;
+  --sidebar-width:240px; --bottombar:60px;
+  --t-hover:120ms; --t-press:100ms; --t-sheet:280ms; --ease:cubic-bezier(.23,1,.32,1);
+  --sb:env(safe-area-inset-bottom,0px); --st:env(safe-area-inset-top,0px);
+  --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Cpath d='m9 6 6 6-6 6'/%3E%3C/svg%3E");
+  color-scheme:light;
+}
+:root[data-band="moderate"]{--uv:var(--uv-moderate)}
+:root[data-band="high"]{--uv:var(--uv-high)}
+:root[data-band="veryhigh"]{--uv:var(--uv-veryhigh)}
+:root[data-band="extreme"]{--uv:var(--uv-extreme)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ground:#0f0e10; --surface:#1b1a1d; --raised:#262428; --active:#2c2a2f;
+  --border:#2c2a2f; --rule:#232226; --control:#4a484e;
+  --text:#f3f2f4; --muted:#b4b4b4; --faint:#949494; --primary:#f3f2f4; --on-primary:#0f0e10;
+  --positive:#3fc07a; --negative:#e5566f; --grid:#2b2b2b; --axis-ink:#b4b4b4; --chart-1:#f3f2f4; --chart-2:#8a8a8a; --chart-muted:#5a585e; --chart-span:.12;
+  --pill-neutral-bg:#262428; --pill-neutral-ink:#d6d3d9; --pill-warning-bg:#2a2214; --pill-warning-ink:#f2c230;
+  --uv-low:#4cc23a; --uv-moderate:#f2c230; --uv-high:#ff7a3d; --uv-veryhigh:#ff5468; --uv-extreme:#d46bd0;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --ground:#0f0e10; --surface:#1b1a1d; --raised:#262428; --active:#2c2a2f;
+  --border:#2c2a2f; --rule:#232226; --control:#4a484e;
+  --text:#f3f2f4; --muted:#b4b4b4; --faint:#949494; --primary:#f3f2f4; --on-primary:#0f0e10;
+  --positive:#3fc07a; --negative:#e5566f; --grid:#2b2b2b; --axis-ink:#b4b4b4; --chart-1:#f3f2f4; --chart-2:#8a8a8a; --chart-muted:#5a585e; --chart-span:.12;
+  --pill-neutral-bg:#262428; --pill-neutral-ink:#d6d3d9; --pill-warning-bg:#2a2214; --pill-warning-ink:#f2c230;
+  --uv-low:#4cc23a; --uv-moderate:#f2c230; --uv-high:#ff7a3d; --uv-veryhigh:#ff5468; --uv-extreme:#d46bd0;
+  color-scheme:dark }
+@media (prefers-reduced-motion: reduce){:root{--t-hover:0ms;--t-press:0ms;--t-sheet:0ms}}
