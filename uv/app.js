@@ -1,7 +1,7 @@
 // UV: app shell, views and state. Data in forecast.js, maths in exposure.js, drawing in ui.js.
 import { gauge, dayChart, bandOf, fmt1, clock, dur, BANDS, spring, project, rubberband, haptic, reducedMotion } from "./ui.js";
-import { getForecast, curve, localNow, todayIndex, searchPlaces, placeName, locate, r1 } from "./forecast.js";
-import { minutesToBurn, minutesToVitaminD, sessionTotals, spfFactor, recommendedSpf, SPF_HOURS, MED } from "./exposure.js";
+import { getForecast, curve, dayStats, localNow, todayIndex, searchPlaces, placeName, locate, r1 } from "./forecast.js";
+import { minutesToBurn, minutesToVitaminD, sessionTotals, spfFactor, recommendedSpf, SPF_HOURS, MED, ENV } from "./exposure.js";
 import { get, set, clearAll } from "./store.js";
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -20,12 +20,35 @@ const ENV_LONG = { none: "Vanlig underlag", city: "By (+10 % UV)", sand: "Sand e
 const S = { fc: null, error: null, loading: true, view: "uv", g: null, chart: null, locating: false };
 let skin = get("skin"), settings = get("settings"), place = get("place"), session = get("session"), log = get("log"), sunscreen = get("sunscreen") || null;
 
+// ---------- conditions: clouds on/off and the surface ----------
+// base(m): UV from the forecast (with or without clouds); uvAt(m): what the screen shows, with the surface's reflection.
+// Burn time and vitamin D take base + the surface separately (exposure.js applies the surface once).
+const condMemo = new Map();
+function cond(d) {
+  if (!d) return d;
+  const key = `${S.fc.fetchedAt}|${d.date}|${settings.weather ? 1 : 0}|${skin.env}`;
+  if (condMemo.has(key)) return condMemo.get(key);
+  const base = curve(d, S.fc.lat, S.fc.lon, !settings.weather), k = ENV[skin.env] ?? 1, uvAt = (m) => base(m) * k;
+  const c = { ...d, base, uvAt, k, ...dayStats(uvAt) };
+  if (condMemo.size > 64) condMemo.clear();
+  condMemo.set(key, c); return c;
+}
+const hourUv = (h, k) => ((settings.weather ? h.uv : h.clear ?? h.uv) || 0) * k;
+const ENV_SHORT = { city: "By +10 %", sand: "Sand +20 %", snow: "Snø +60 %" };
+const condText = () => [settings.weather ? "" : "Uten skyer", ENV_SHORT[skin.env] || ""].filter(Boolean).join(" · ");
+function conditionsRow() {
+  return `<div class="filters" role="group" aria-label="Forhold">
+    <div class="seg" role="radiogroup" aria-label="Skyer">${[["on", "Med skyer"], ["off", "Uten skyer"]].map(([k, l]) => `<button role="radio" aria-checked="${settings.weather === (k === "on")}" data-weather="${k}">${l}</button>`).join("")}</div>
+    <div class="seg" role="radiogroup" aria-label="Underlag">${ENVS.map(([k, l]) => `<button role="radio" aria-checked="${skin.env === k}" data-env="${k}">${l}</button>`).join("")}</div>
+  </div>`;
+}
+
 // ---------- derived values ----------
 function ctx() {
   const fc = S.fc; if (!fc) return null;
-  const now = localNow(fc), ti = todayIndex(fc), day = fc.days[ti], uvAt = curve(day, fc.lat, fc.lon);
+  const now = localNow(fc), ti = todayIndex(fc), day = cond(fc.days[ti]), uvAt = day.base;
   const night = day.polar === "night" || (day.set != null && now.min > day.set) || (day.rise != null && now.min < day.rise - 20);
-  const uv = night ? 0 : uvAt(now.min);
+  const uv = night ? 0 : day.uvAt(now.min);
   const msToMin = (ms) => localNow(fc, ms).min;
   const sameDay = (ms) => localNow(fc, ms).date === now.date;
   // today's exposure: finished sessions plus the running one
@@ -43,7 +66,7 @@ function ctx() {
   const vdIn = night ? null : minutesToVitaminD({ uvAt, fromMin: Math.floor(now.min), skin: skin.type, env: skin.env, iuSoFar: iu, goalIU: skin.vitaminDGoal, spf: spfNow.spf, appliedAtMin: spfNow.at, endMin: day.set ?? 1440 });
   const reapplyAt = spfNow.spf ? spfNow.at + SPF_HOURS * 60 : null;
   const over = dose >= MED[skin.type];
-  return { over, fc, now, ti, day, uvAt, uv, night, dose, iu, minutes, live, burnIn, burnFresh, vdIn, spfNow, reapplyAt, todays, tomorrow: fc.days[ti + 1] };
+  return { over, fc, now, ti, day, uvAt, uv, night, dose, iu, minutes, live, burnIn, burnFresh, vdIn, spfNow, reapplyAt, todays, tomorrow: cond(fc.days[ti + 1]) };
 }
 const winText = (w) => (w ? `${clock(w.from)}–${clock(w.to)}` : null);
 function finding(c) {
@@ -74,13 +97,13 @@ function viewUV() {
   const c = ctx(), wide = matchMedia("(min-width: 900px)").matches;
   const chartDay = c.night && c.tomorrow && (c.now.min > (c.day.set ?? 0)) ? c.tomorrow : c.day, chartIsToday = chartDay === c.day;
   const t = c.tomorrow;
-  v.innerHTML = titleRow("uv", placeTitle(), esc(finding(c))) + installHint() + `
+  v.innerHTML = titleRow("uv", placeTitle(), esc(finding(c))) + conditionsRow() + installHint() + `
     <div class="grid">
       <section class="panel s5 stretch" aria-labelledby="h-now">
         <header><h2 id="h-now">Nå</h2><span class="meta num">${stamp()}</span></header>
-        <div class="reading"><div id="gauge"></div>
+        <div class="reading"><div id="gauge"></div>${condText() ? `<p class="cond">${esc(condText())}</p>` : ""}
           <p class="burn">${c.night ? `<span class="muted">Sola er nede</span><b class="num">${c.tomorrow?.rise != null ? `Opp ${clock(c.tomorrow.rise)}` : "–"}</b><span class="muted">Ingen UV før i morgen</span>`
-            : `<span class="muted">${c.over ? "Grensen for solbrenthet" : c.spfNow.spf ? `Solbrent om, med SPF ${c.spfNow.spf}` : "Solbrent om, uten solkrem"}</span><b class="num">${c.over ? "Nådd" : burnText(c.burnIn)}</b><span class="muted">Hudtype ${ROMAN[skin.type]}${skin.env !== "none" ? ` · ${ENVS.find((e) => e[0] === skin.env)[1].toLowerCase()}` : ""}</span>`}</p>
+            : `<span class="muted">${c.over ? "Grensen for solbrenthet" : c.spfNow.spf ? `Solbrent om, med SPF ${c.spfNow.spf}` : "Solbrent om, uten solkrem"}</span><b class="num">${c.over ? "Nådd" : burnText(c.burnIn)}</b><span class="muted">Hudtype ${ROMAN[skin.type]}</span>`}</p>
         </div>
       </section>
       <section class="panel s7 stretch" aria-labelledby="h-day">
@@ -103,7 +126,7 @@ function viewUV() {
     </div>`;
   S.g = gauge($("#gauge"));
   S.g.set(c.uv, { instant: true });
-  S.chart = dayChart($("#day"), { ...chartDay, now: c.now.min }, { uvAt: curve(chartDay, c.fc.lat, c.fc.lon), isToday: chartIsToday, height: wide ? 300 : 200,
+  S.chart = dayChart($("#day"), { ...chartDay, now: c.now.min }, { uvAt: chartDay.uvAt, isToday: chartIsToday, height: wide ? 300 : 200,
     onScrub: (uv) => S.g.set(uv), onRelease: () => S.g.set(ctx().uv) });
 }
 const sunLine = (d) => d.polar === "night" ? "Sola står ikke opp i dag." : d.polar === "day" ? "Sola går ikke ned i dag." : `Sola står opp ${clock(d.rise)} og går ned ${clock(d.set)}.`;
@@ -169,10 +192,10 @@ function logRows(c) {
 function viewPrognose() {
   const v = $("#v-prognose");
   if (!S.fc) { v.innerHTML = titleRow("prognose", "Prognose", "", false) + emptyOrError(); return; }
-  const c = ctx(), days = c.fc.days.slice(c.ti);
+  const c = ctx(), days = c.fc.days.slice(c.ti).map(cond);
   const next = days.find((d, i) => i > 0 && d.window);
   const sub = next ? `Neste dag med UV over 3: ${dayName(next.date, days.indexOf(next)).toLowerCase()} (${fmt1(next.peak.uv)}).` : `Ingen dager med UV over 3 de neste ${days.length - 1} dagene.`;
-  v.innerHTML = titleRow("prognose", `Prognose · ${esc(place?.name ?? "")}`, esc(sub), false) + `
+  v.innerHTML = titleRow("prognose", `Prognose · ${esc(place?.name ?? "")}`, esc(sub), false) + conditionsRow() + `
     <div class="grid">
       ${days.slice(0, 2).map((d, i) => `<section class="panel s6" aria-labelledby="h-d${i}">
         <header><h2 id="h-d${i}">${dayName(d.date, i)}</h2><span class="meta num">Høyest ${fmt1(d.peak.uv)} kl. ${clock(d.peak.min)}</span></header>
@@ -192,7 +215,8 @@ function drawBars(el, d) {
   const hrs = d.hours.filter((h) => h.min >= Math.floor(((d.rise ?? 360) - 30) / 60) * 60 && h.min <= Math.ceil(((d.set ?? 1260) + 30) / 60) * 60);
   if (!hrs.length || !window.Charts) return;
   const colour = getComputedStyle(document.documentElement).getPropertyValue(`--uv-${bandOf(Math.max(3, d.peak.uv)).id}`).trim();
-  window.Charts.bars(el, { labels: hrs.map((h) => clock(h.min)), values: hrs.map((h) => r1(h.uv)), highlight: hrs.map((h, i) => (r1(h.uv) >= 3 ? i : -1)).filter((i) => i >= 0),
+  const vals = hrs.map((h) => r1(hourUv(h, d.k ?? 1)));
+  window.Charts.bars(el, { labels: hrs.map((h) => clock(h.min)), values: vals, highlight: vals.map((v, i) => (v >= 3 ? i : -1)).filter((i) => i >= 0),
     colour, format: (v) => nb(v, 1), tickFormat: (v) => nb(v, Number.isInteger(v) ? 0 : 1), height: 160, reference: { value: 3, label: "UV 3" } });
 }
 
@@ -370,9 +394,9 @@ function sheetEditLog(id) {
   });
 }
 function sheetDay(i) {
-  const d = S.fc.days[i];
+  const d = cond(S.fc.days[i]);
   openSheet(dayName(d.date, i - todayIndex(S.fc)), `<p>${d.window ? `Beskytt deg <span class="nw">${winText(d.window)}</span>. ` : "Lav UV hele dagen. "}Høyest ${fmt1(d.peak.uv)} kl. ${clock(d.peak.min)}.</p><div id="dd"></div><p class="muted">${sunLine(d)}</p>`, (body) => {
-    dayChart($("#dd", body), { ...d, now: 0 }, { uvAt: curve(d, S.fc.lat, S.fc.lon), isToday: false, height: 200 });
+    dayChart($("#dd", body), { ...d, now: 0 }, { uvAt: d.uvAt, isToday: false, height: 200 });
   });
 }
 
@@ -384,7 +408,7 @@ function finishTotals(s) {
     const ln = localNow(fc, t), dayEnd = t + (1440 - ln.min) * 60000, segEnd = Math.min(s.end, dayEnd);
     const d = fc.days.find((x) => x.date === ln.date);
     if (d) {
-      const uvAt = curve(d, fc.lat, fc.lon), sp = sunscreen && localNow(fc, sunscreen.at).date === ln.date ? sunscreen : null;
+      const uvAt = cond(d).base, sp = sunscreen && localNow(fc, sunscreen.at).date === ln.date ? sunscreen : null;
       const r = sessionTotals({ uvAt, fromMin: Math.floor(ln.min), toMin: Math.floor(ln.min + (segEnd - t) / 60000), skin: skin.type, env: s.env ?? skin.env, spf: sp?.spf || 0, appliedAtMin: sp ? localNow(fc, sp.at).min : null });
       dose += r.dose; iu += r.iu;
     }
@@ -434,8 +458,9 @@ function render() { const y = scrollY; VIEWS[S.view](); if (y) scrollTo(0, y); }
 addEventListener("hashchange", () => { if (document.startViewTransition && !matchMedia("(prefers-reduced-motion: reduce)").matches) { const t = document.startViewTransition(() => route()); t.ready.catch(() => {}); t.finished.catch(() => {}); } else route(); scrollTo(0, 0); });
 
 document.addEventListener("click", async (e) => {
-  const b = e.target.closest("[data-act],[data-env],[data-theme-set]"); if (!b) return;
+  const b = e.target.closest("[data-act],[data-env],[data-weather],[data-theme-set]"); if (!b) return;
   if (b.dataset.env) { skin = { ...skin, env: b.dataset.env }; set("skin", skin); render(); return; }
+  if (b.dataset.weather) { settings = { ...settings, weather: b.dataset.weather === "on" }; set("settings", settings); render(); return; }
   if (b.dataset.themeSet) { settings = { ...settings, theme: b.dataset.themeSet }; set("settings", settings); applyTheme(true); render(); return; }
   const a = b.dataset.act;
   if (a === "start") startSession(); else if (a === "stop") stopSession();

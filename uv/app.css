@@ -228,3 +228,10 @@ h1,.place-btn{overflow-wrap:anywhere;min-width:0}
 .title-row>div{min-width:0}
 .place-btn{text-align:left;max-width:100%}
 .place-row .grow span,.row .grow{overflow-wrap:anywhere}
+
+/* conditions: clouds and surface, one row that scrolls sideways on narrow phones */
+.filters{display:flex;gap:8px;margin:-4px 0 var(--gap);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.filters::-webkit-scrollbar{display:none}
+.filters .seg{flex:none}
+.reading .cond{margin-top:-4px;font-size:var(--fs-note);color:var(--muted)}
+@media (max-width:899px){.filters{flex-direction:column;overflow:visible}.filters .seg{display:flex}.filters .seg button{flex:1}}

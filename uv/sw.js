@@ -1,7 +1,7 @@
 // UV service worker. Raise VERSION when files change.
 // Own files: network first (updates land at once), cached copy offline. Fonts: cache first.
 // Forecast and place lookups are not cached here; the app keeps its own last forecast.
-const VERSION = "uv-v3";
+const VERSION = "uv-v4";
 const SHELL = ["./", "./index.html", "./app.js", "./ui.js", "./forecast.js", "./exposure.js", "./solar.js", "./store.js", "./charts.js", "./tokens.css", "./app.css", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 const FONT_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });

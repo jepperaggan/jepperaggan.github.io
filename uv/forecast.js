@@ -54,12 +54,13 @@ export function shape({ tz, offsetMin, source, rows }, lat, lon) {
  * UV at any minute of a day. Hourly values are interpolated against the sun's height, so the curve
  * follows the sun minute by minute and is zero at sunrise and sunset (no "20 minutes off").
  */
-export function curve(day, lat, lon) {
-  if (day._uvAt) return day._uvAt;
+export function curve(day, lat, lon, clear = false) {
+  const key = clear ? "_uvClear" : "_uvAt";
+  if (day[key]) return day[key];
   const f = (m) => { const e = elevation(day.startMs + m * 60000, lat, lon); return e <= 0 ? 0 : Math.pow(Math.sin(e * Math.PI / 180), 1.3); };
-  const pts = day.hours.map((h) => ({ min: h.min, uv: h.uv, f: f(h.min) }));
+  // clear = true: the UV a cloudless sky would give (weather off). Falls back to the cloudy value when a source has none.
+  const pts = day.hours.map((h) => ({ min: h.min, uv: clear ? (h.clear ?? h.uv) : h.uv, f: f(h.min) }));
   const k = pts.map((p) => (p.f > 0.03 ? p.uv / p.f : null));
-  // fill ratios near the horizon from the nearest usable neighbour
   for (let i = 0; i < k.length; i++) if (k[i] == null) { let j = 1; while (j < k.length) { const a = k[i - j], b = k[i + j]; if (a != null || b != null) { k[i] = a ?? b; break; } j++; } k[i] ??= 0; }
   const fn = (m) => {
     if (m <= pts[0].min) return k[0] * f(m);
@@ -69,8 +70,14 @@ export function curve(day, lat, lon) {
     }
     return k.at(-1) * f(m);
   };
-  Object.defineProperty(day, "_uvAt", { value: fn, enumerable: false });
+  Object.defineProperty(day, key, { value: fn, enumerable: false });
   return fn;
+}
+/** Peak and protection window (UV ≥ 3) for any UV function over a day. */
+export function dayStats(uvAt) {
+  let peak = { min: 0, uv: 0 }, from = null, to = null;
+  for (let m = 0; m < 1440; m += 5) { const v = uvAt(m); if (v > peak.uv) peak = { min: m, uv: v }; if (r1(v) >= 3) { if (from == null) from = m; to = m; } }
+  return { peak: { min: peak.min, uv: r1(peak.uv) }, window: from == null ? null : { from: Math.floor(from / 5) * 5, to: Math.ceil(to / 5) * 5 } };
 }
 /** Local minutes after midnight and the local date string, now, at a place. */
 export function localNow(fc, now = Date.now()) {
