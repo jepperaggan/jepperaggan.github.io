@@ -1,7 +1,7 @@
 // UV: app shell, views and state. Data in forecast.js, maths in exposure.js, drawing in ui.js.
 import { gauge, dayChart, bandOf, fmt1, clock, dur, BANDS, spring, project, rubberband, haptic, reducedMotion } from "./ui.js";
 import { getForecast, curve, dayStats, localNow, todayIndex, searchPlaces, placeName, locate, r1 } from "./forecast.js";
-import { minutesToBurn, minutesToVitaminD, sessionTotals, spfFactor, recommendedSpf, SPF_HOURS, MED, ENV } from "./exposure.js";
+import { minutesToBurn, minutesToVitaminD, sessionTotals, spfFactor, recommendedSpf, SPF_HOURS, MED, ENV, altitudeFactor } from "./exposure.js";
 import { get, set, clearAll } from "./store.js";
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -26,20 +26,25 @@ let skin = get("skin"), settings = get("settings"), place = get("place"), sessio
 const condMemo = new Map();
 function cond(d) {
   if (!d) return d;
-  const key = `${S.fc.fetchedAt}|${d.date}|${settings.weather ? 1 : 0}|${skin.env}`;
+  const key = `${S.fc.fetchedAt}|${d.date}|${settings.weather ? 1 : 0}|${skin.env}|${settings.altitude}`;
   if (condMemo.has(key)) return condMemo.get(key);
-  const base = curve(d, S.fc.lat, S.fc.lon, !settings.weather), k = ENV[skin.env] ?? 1, uvAt = (m) => base(m) * k;
+  const raw = curve(d, S.fc.lat, S.fc.lon, !settings.weather), a = altFactor(), base = a === 1 ? raw : (m) => raw(m) * a;
+  const e = ENV[skin.env] ?? 1, k = e * a, uvAt = (m) => base(m) * e;
   const c = { ...d, base, uvAt, k, ...dayStats(uvAt) };
   if (condMemo.size > 64) condMemo.clear();
   condMemo.set(key, c); return c;
 }
+const altFactor = () => altitudeFactor(settings.altitude, S.fc?.elevation ?? (settings.altitude != null ? 0 : null));
+const pct = (f) => `${f >= 1 ? "+" : "−"}${nb(Math.abs(Math.round((f - 1) * 100)))} %`;
 const hourUv = (h, k) => ((settings.weather ? h.uv : h.clear ?? h.uv) || 0) * k;
 const ENV_SHORT = { city: "By +10 %", sand: "Sand +20 %", snow: "Snø +60 %" };
-const condText = () => [settings.weather ? "" : "Uten skyer", ENV_SHORT[skin.env] || ""].filter(Boolean).join(" · ");
+const condText = () => [settings.weather ? "" : "Uten skyer", ENV_SHORT[skin.env] || "", settings.altitude != null ? `${nb(settings.altitude)} moh ${pct(altFactor())}` : ""].filter(Boolean).join(" · ");
+const altLabel = () => settings.altitude != null ? `${nb(settings.altitude)} moh` : S.fc?.elevation != null ? `${nb(Math.round(S.fc.elevation))} moh` : "Høyde";
 function conditionsRow() {
   return `<div class="filters" role="group" aria-label="Forhold">
     <div class="seg" role="radiogroup" aria-label="Skyer">${[["on", "Med skyer"], ["off", "Uten skyer"]].map(([k, l]) => `<button role="radio" aria-checked="${settings.weather === (k === "on")}" data-weather="${k}">${l}</button>`).join("")}</div>
     <div class="seg" role="radiogroup" aria-label="Underlag">${ENVS.map(([k, l]) => `<button role="radio" aria-checked="${skin.env === k}" data-env="${k}">${l}</button>`).join("")}</div>
+    <button class="value-btn alt-btn num" data-act="altitude" aria-label="Høyde over havet: ${altLabel()}${settings.altitude == null ? ", stedets egen" : ""}">${icon("i-mountain")}${altLabel()}</button>
   </div>`;
 }
 
@@ -338,7 +343,11 @@ function sheetPlaces() {
 }
 const placeRow = (p, key) => `<button class="place-row" data-act="pick" data-key="${key}">${icon("i-map")}<span class="grow"><span>${esc(p.name)}</span><small>${esc(p.region)}</small></span></button>`;
 function choosePlace(p, current = false) {
+  const prev = place;
   place = { name: p.name, region: p.region, lat: p.lat, lon: p.lon, current }; set("place", place);
+  // a custom height belonged to the last place: drop it when the new one is more than ~5 km away
+  const moved = prev && (Math.abs(prev.lat - p.lat) > 0.045 || Math.abs(prev.lon - p.lon) > 0.045 / Math.max(0.2, Math.cos((p.lat * Math.PI) / 180)));
+  if (moved && settings.altitude != null) { settings = { ...settings, altitude: null }; set("settings", settings); }
   if (!current) { const r = [place, ...get("recent").filter((x) => !(x.name === place.name && Math.abs(x.lat - place.lat) < 0.01))].slice(0, 10); set("recent", r); }
   S.fc = null; S.error = null; render(); load();
 }
@@ -351,6 +360,30 @@ function sheetSkin() {
     body.addEventListener("click", (e) => { const b = e.target.closest("[data-skin]"); if (!b) return; pick = +b.dataset.skin;
       body.querySelectorAll("[data-skin]").forEach((x) => x.setAttribute("aria-checked", +x.dataset.skin === pick)); $("#use-skin", body).textContent = `Bruk hudtype ${ROMAN[pick]}`; });
     $("#use-skin", body).onclick = () => { skin = { ...skin, type: pick, chosen: true }; set("skin", skin); closeSheet(); render(); toast(`Hudtype ${ROMAN[pick]} er lagret`); };
+  });
+}
+function sheetAltitude() {
+  const baseH = S.fc?.elevation != null ? Math.round(S.fc.elevation) : null;
+  let h = settings.altitude ?? baseH ?? 0, gps = null;
+  openSheet("Høyde over havet", `<p class="muted">${baseH != null ? `Prognosen gjelder ${esc(place?.name ?? "stedet")} (${nb(baseH)} moh).` : "Prognosen gjelder stedet du har valgt."} Er du høyere opp, for eksempel på fjellet, øker UV med omtrent 10 % per 1 000 meter.</p>
+    <p class="big-value" id="alt-v"></p><p class="muted" style="text-align:center" id="alt-u"></p>
+    <input type="range" id="alt-r" min="0" max="5000" step="10" value="${h}" aria-label="Høyde over havet i meter">
+    <div class="plan-l"><span>0 moh</span><span>5 000 moh</span></div>
+    <button class="btn secondary" id="alt-gps" hidden></button>
+    <button class="btn primary" id="alt-save">Bruk denne høyden</button>
+    <button class="btn text" id="alt-auto">Bruk stedets høyde</button>`, (body) => {
+    const show = () => { $("#alt-v", body).textContent = `${nb(h)} moh`; const f = altitudeFactor(h, baseH ?? 0);
+      $("#alt-u", body).textContent = Math.abs(f - 1) < 0.005 ? "Samme UV som prognosen" : `${pct(f)} UV i forhold til prognosen`; };
+    show(); $("#alt-r", body).oninput = (e) => { h = +e.target.value; show(); };
+    const save = (v) => { settings = { ...settings, altitude: v }; set("settings", settings); closeSheet(); render(); };
+    $("#alt-save", body).onclick = () => save(baseH != null && Math.abs(h - baseH) < 25 ? null : h);
+    $("#alt-auto", body).onclick = () => save(null);
+    // phones often know their height from GPS; offer it when the place is "here"
+    if (place?.current && navigator.geolocation) navigator.geolocation.getCurrentPosition((p) => {
+      if (p.coords.altitude == null) return; gps = Math.max(0, Math.round(p.coords.altitude / 10) * 10);
+      const b = $("#alt-gps", body); if (!b) return; b.hidden = false; b.textContent = `Bruk høyden fra telefonen (${nb(gps)} moh)`;
+      b.onclick = () => { h = gps; $("#alt-r", body).value = gps; show(); };
+    }, () => {}, { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
   });
 }
 function sheetVitD() {
@@ -465,6 +498,7 @@ document.addEventListener("click", async (e) => {
   const a = b.dataset.act;
   if (a === "start") startSession(); else if (a === "stop") stopSession();
   else if (a === "places") sheetPlaces(); else if (a === "skin") sheetSkin(); else if (a === "vitd") sheetVitD(); else if (a === "sunscreen") sheetSunscreen();
+  else if (a === "altitude") sheetAltitude();
   else if (a === "edit-start") sheetEditStart(); else if (a === "edit-log") sheetEditLog(b.dataset.id); else if (a === "day") sheetDay(+b.dataset.i);
   else if (a === "pick") { const p = $("#sheet-body")._places?.[b.dataset.key]; if (p) { closeSheet(); choosePlace(p); } }
   else if (a === "locate") { closeSheet(); useLocation(true); }

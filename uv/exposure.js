@@ -5,7 +5,11 @@ export const MED = { 1: 200, 2: 250, 3: 400, 4: 500, 5: 800, 6: 1500 };
 // Vitamin D (IU per SED of exposure, typical face, arms and hands). Type III calibrated: UV 3 → 1 000 IU in about 64 min.
 export const IU_PER_SED = { 1: 400, 2: 380, 3: 347, 4: 280, 5: 200, 6: 130 };
 export const ENV = { none: 1, city: 1.1, sand: 1.2, snow: 1.6 };
-export const SPF_HOURS = 2;                                    // reapply after this
+export const SPF_HOURS = 2;
+// UV rises about 10 % per 1 000 m of altitude (WHO, Global Solar UV Index guide).
+export const ALT_PER_KM = 0.10;
+/** Factor for being at `altitude` m when the forecast is for a point at `base` m. */
+export const altitudeFactor = (altitude, base) => (altitude == null || base == null ? 1 : Math.max(0.5, 1 + (ALT_PER_KM * (altitude - base)) / 1000));                                    // reapply after this
 
 /** Effective protection factor `minutes` after applying sunscreen with this SPF. Falls to a quarter by SPF_HOURS. */
 export function spfFactor(spf, minutesSinceApplied) {

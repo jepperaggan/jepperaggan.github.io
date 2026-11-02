@@ -235,3 +235,6 @@ h1,.place-btn{overflow-wrap:anywhere;min-width:0}
 .filters .seg{flex:none}
 .reading .cond{margin-top:-4px;font-size:var(--fs-note);color:var(--muted)}
 @media (max-width:899px){.filters{flex-direction:column;overflow:visible}.filters .seg{display:flex}.filters .seg button{flex:1}}
+.alt-btn{flex:none;height:auto;min-height:32px}
+.alt-btn svg.i{width:14px;height:14px}
+@media (max-width:899px){.filters .alt-btn{justify-content:center;min-height:36px}}

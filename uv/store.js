@@ -5,7 +5,7 @@ export function save(key, value) { try { localStorage.setItem(NS + key, JSON.str
 export function clearAll() { try { Object.keys(localStorage).filter((k) => k.startsWith(NS)).forEach((k) => localStorage.removeItem(k)); } catch {} }
 
 export const DEFAULTS = {
-  settings: { theme: "auto", showTrackerHint: true, reminders: true, installHintDismissed: false, weather: true },
+  settings: { theme: "auto", showTrackerHint: true, reminders: true, installHintDismissed: false, weather: true, altitude: null },   // altitude: null = the place's own height
   skin: { type: 3, env: "none", spf: 30, vitaminDGoal: 1000, chosen: false },
   place: null,          // { name, region, lat, lon, current: true|false }
   recent: [],           // up to 10 places

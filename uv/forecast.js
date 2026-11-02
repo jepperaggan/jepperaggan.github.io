@@ -17,15 +17,15 @@ async function getJson(url, ms = 12000) {
 }
 export function fromForecastApi(j) {
   const h = j.hourly;
-  return { tz: j.timezone, offsetMin: j.utc_offset_seconds / 60, source: "Open-Meteo",
+  return { tz: j.timezone, offsetMin: j.utc_offset_seconds / 60, elevation: j.elevation ?? null, source: "Open-Meteo",
     rows: h.time.map((t, i) => ({ t, uv: h.uv_index[i], clear: h.uv_index_clear_sky?.[i], cloud: h.cloud_cover?.[i], code: h.weather_code?.[i], temp: h.temperature_2m?.[i] })) };
 }
 export function fromAirApi(j) {
   const h = j.hourly;
-  return { tz: j.timezone, offsetMin: j.utc_offset_seconds / 60, source: "Open-Meteo (CAMS)",
+  return { tz: j.timezone, offsetMin: j.utc_offset_seconds / 60, elevation: j.elevation ?? null, source: "Open-Meteo (CAMS)",
     rows: h.time.map((t, i) => ({ t, uv: h.uv_index[i], clear: h.uv_index_clear_sky?.[i] })) };
 }
-export function shape({ tz, offsetMin, source, rows }, lat, lon) {
+export function shape({ tz, offsetMin, source, rows, elevation = null }, lat, lon) {
   const byDay = new Map();
   for (const r of rows) {
     if (r.uv == null) continue;
@@ -48,7 +48,7 @@ export function shape({ tz, offsetMin, source, rows }, lat, lon) {
     day.window = from == null ? null : { from: Math.floor(from / 5) * 5, to: Math.ceil(to / 5) * 5 };
     days.push(day);
   }
-  return { lat, lon, tz, offsetMin, source, fetchedAt: Date.now(), days };
+  return { lat, lon, tz, offsetMin, elevation, source, fetchedAt: Date.now(), days };
 }
 /**
  * UV at any minute of a day. Hourly values are interpolated against the sun's height, so the curve
