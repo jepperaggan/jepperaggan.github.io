@@ -1,0 +1,68 @@
+feature,area,priority,original,clone,notes
+Search flight by flight number or route (past present future),add flights,must,both,no,S03 S04
+Confirm add as My flight or Friend's flight,add flights,must,both,no,S04
+Manual flight entry for private or charter flights,add flights,must,both,no,S05
+Unlimited flight tracking on the free plan,plans,must,Flighty,no,byAir free has limits; Flighty free is unlimited; free unlimited is the stronger hook
+Flight detail card with status times terminal gate baggage,flight detail,must,both,no,S06
+Scheduled vs estimated vs actual times with changes highlighted,flight detail,must,both,no,
+Flight timeline stages (check-in boarding taxi takeoff landing belt),flight detail,must,byAir,no,byAir lets users skip stages
+Route map and live position in the air,flight detail,must,both,no,S10; byAir admits 5 to 10 min lag
+Aircraft card (type tail age),flight detail,must,both,no,
+Where's my plane / inbound aircraft chain,flight detail,must,both,no,S07; Flighty shows 25 hours back
+Push alerts for delay gate change cancel divert,alerts,must,both,no,core of the product
+Push alerts for boarding takeoff landing baggage belt,alerts,must,Flighty,no,
+Check-in reminder with booking ref and airline check-in link,alerts,must,both,no,
+Per-type alert settings and per-flight override,alerts,must,both,no,S23
+Live Activity and Dynamic Island for the next flight,live surfaces,must,both,no,both gate it behind Pro; making it free is a differentiator
+Lock Screen and Home Screen widgets,live surfaces,must,both,no,
+Friends: invite by link or QR and follow each other's flights,friends,must,both,no,byAir links work 5 times
+Friends' flights alert levels (None Just Landed Basics Everything),friends,must,Flighty,no,
+Share one flight as a link or image,sharing,must,both,no,
+Personal flight history with stats (distance hours airports countries aircraft),history,must,both,no,S17
+Map of past flights,history,should,both,no,S18; Flighty has a heat map too
+Year-in-review share card,history,should,both,no,byAir ID can go into Apple Wallet
+Email forwarding to a personal import address,import,should,both,no,cheapest automation to build; no inbox access needed
+Calendar sync parsed on the device,import,should,both,no,Flighty parses on device; Apple Calendar only
+Import history CSV from Flighty myFlightradar24 App in the Air OpenFlights TripIt,import,should,both,no,lets users switch from either app on day one
+Screenshot / PDF / boarding pass Quick Scan,import,should,byAir,no,OCR on device with Vision framework
+Delay prediction with likely reason,prediction,should,both,no,start with rules (inbound late plus weather plus airport delay); ML later
+Delay reason shown (why is my flight late),prediction,should,Flighty,no,
+Airport status in plain words with weather reasons (METAR/TAF),airports,should,both,no,S14; METAR/TAF are public
+Airport live departures and arrivals board,airports,should,both,no,S15
+Favourite airports with airport alerts,airports,should,Flighty,no,
+Family updates over WhatsApp or Telegram for people without the app,sharing,should,byAir,no,
+Edit flight (seat class reason notes booking ref),flight detail,should,both,no,S21
+Offline cache of flight details for in-air use,flight detail,should,both,no,
+Morning-of summary push,alerts,should,Flighty,no,
+Paywall with monthly annual lifetime plans and a trial,plans,should,both,no,Flighty: free first flight; byAir: annual trial
+Family plan via Apple Family Sharing,plans,should,Flighty,no,
+Sign in with Apple plus anonymous mode with iCloud backup,account,should,Flighty,no,Flighty needs no account; byAir needs sign-in for Friends
+Cross-device sync of flights,account,should,both,no,
+Apple Watch app,live surfaces,should,both,no,
+Siri and Shortcuts (status of my flight / add flight),live surfaces,should,both,no,
+Wi-Fi / Starlink on board in aircraft card,flight detail,should,byAir,no,
+Public web page for a shared flight (no app needed),sharing,should,neither confirmed,no,gap: neither source confirms one; cheap to build on the same backend
+Departure-time advice (when to leave for the airport),alerts,should,neither,no,gap idea; unconfirmed in either app
+Connection assistant with checkpoints and typical time,assistants,could,Flighty,no,S09; Pro in Flighty
+Gate prediction before the airline assigns,prediction,could,Flighty,no,needs historical gate data
+Airport delay trend / meltdown forecast,airports,could,Flighty,no,
+Airport guide: tips lounges food security,airports,could,byAir,no,no community at launch; start with your own curated tips
+Ground transport and taxi options per airport,airports,could,byAir,no,
+Terminal maps,airports,could,byAir,no,licensing per airport
+Gmail and Outlook auto-scan,import,could,byAir,no,Gmail restricted scopes need a Google CASA assessment; ship forwarding first
+TripIt sync,import,could,Flighty,no,needs TripIt API access
+Crew mode with roster import,import,could,both,no,niche; can be a whole positioning angle
+Ground radar while taxiing and proximity radar,flight detail,could,Flighty,no,needs ADS-B data
+Travel docs attached to a flight,flight detail,could,byAir,no,
+MCP link for AI assistants,integrations,could,byAir,no,cheap once the API exists
+CarPlay,live surfaces,could,Flighty,no,
+Android app and Wear OS,platforms,could,byAir,no,byAir's main argument against Flighty
+Mac iPad and Vision apps,platforms,could,both,no,
+Referral rewards (free months for invites),plans,could,byAir,no,
+Pilot-grade FAA and Eurocontrol data feeds,data,skip,Flighty,skip,their commercial contracts; buy your own provider (AeroAPI Cirium OAG AeroDataBox) and apply for FAA SWIM
+byAir's five aviation data providers,data,skip,byAir,skip,their contracts
+Their trained delay-prediction models,prediction,skip,both,skip,build your own; byAir trained on 10M+ records
+Traveller-verified airport tips community,airports,skip,byAir,skip,the community is theirs; you start empty
+Airline logos and aircraft liveries,brand,skip,both,skip,airline trademarks; license a logo source or use IATA codes
+App names features names copy and icons (Passport byAir ID byAir Predict),brand,skip,both,skip,rebrand with /replica-brand
+Apple Design Award Editors' Choice and press quotes,brand,skip,Flighty,skip,not a feature
