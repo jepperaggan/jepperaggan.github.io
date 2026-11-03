@@ -675,7 +675,7 @@ function renderLog() {
       lead: `<span class="glass" style="background:${glass(w.type)}"></span>`,
       title: esc(cleanName(w)),
       sub: `${pend.has(w.id) ? `<i class="pending-dot" title="${tx("log.waitingNet")}"></i>` : ""}<span>${listSub(w) || esc(shortDate(w.drankAt))}</span>${w.aiPending && navigator.onLine && !enrichErr.has(w.id) ? thinkIcon("xs") : ""}`,
-      trail: `<span class="rate">${Number.isFinite(w.rating) ? w.rating : "–"}</span>`,
+      trail: `<span class="rate">${fmtRate(w.rating)}</span>`,
       actions: [{ act: "del", label: tx("c.delete"), c: "red" }],
     })).join("")}</div>`;
   }).join("");
@@ -730,7 +730,7 @@ function wineDetail(w) {
     html: `
       <div class="d-head"><span class="glass lg" style="background:${glass(w.type)}"></span>
         <div class="stack"><h2>${esc(cleanName(w))}</h2><span class="small muted" id="d_meta">${metaOf(w) || "&nbsp;"}</span><span class="small muted">${facts}</span></div></div>
-      <div class="d-score"><div style="display:flex;align-items:baseline;gap:6px"><span class="big">${Number.isFinite(w.rating) ? w.rating : "–"}</span><span class="of">/10</span></div><span class="word">${esc(WORDS[w.rating] || "")}</span></div>
+      <div class="d-score"><div style="display:flex;align-items:baseline;gap:6px"><span class="big">${fmtRate(w.rating)}</span><span class="of">/10</span></div><span class="word">${esc(rateWord(w.rating))}</span></div>
       ${w.note ? `<section class="fieldset"><h3 class="eyebrow">${tx("d.note")}</h3><p class="quote">«${esc(w.note)}»</p><div class="tags" id="d_tags">${tagsHTML(w)}</div></section>` : ""}
       <section class="fieldset" id="d_ai">${aiBlock(w)}</section>
       <div class="actions-row"><button type="button" class="btn light" data-a="edit">${tx("c.edit")}</button><button type="button" class="btn dark" data-a="cellar">${tx("d.toCellar")}</button></div>
@@ -757,15 +757,19 @@ document.addEventListener("click", e => {
   b.parentElement.dispatchEvent(new Event("change", { bubbles: true }));
 });
 const typeVal = el => el?.querySelector('[aria-checked="true"]')?.dataset.v || null;
+// Karakter 1–10 i halve steg. 19 streker: hele tall høye, halve korte. Trykk eller dra langs stripen.
+const STEPS = Array.from({ length: 19 }, (_, i) => 1 + i / 2);
+const fmtRate = v => Number.isFinite(v) ? (Number.isInteger(v) ? String(v) : fmt1(v)) : "–";
+const rateWord = v => WORDS[Math.floor(v)] || "";
 function ticksHTML(val) {
-  return `<div class="ticks" role="radiogroup" aria-label="${tx("rate.aria")}">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<button type="button" role="radio" aria-checked="${n === val}" aria-label="${tx("rate.of10", { n })}" data-v="${n}"><span class="tick${n % 5 === 0 ? " major" : ""}"></span></button>`).join("")}</div>
-    <div class="tick-nums" aria-hidden="true">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<span data-n="${n}">${n}</span>`).join("")}</div>`;
+  return `<div class="ticks" role="radiogroup" aria-label="${tx("rate.aria")}">${STEPS.map(n => `<button type="button" role="radio" tabindex="${n === (val ?? 1) ? 0 : -1}" aria-checked="${n === val}" aria-label="${tx("rate.of10", { n: fmtRate(n) })}" data-v="${n}"><span class="tick${Number.isInteger(n) ? (n % 5 === 0 ? " major" : "") : " half"}"></span></button>`).join("")}</div>
+    <div class="tick-nums" aria-hidden="true">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<span data-n="${n}" style="grid-column:${2 * n - 1}">${n}</span>`).join("")}</div>`;
 }
 function paintTicks(root, val) {
-  $$(".ticks button", root).forEach(b => { const n = +b.dataset.v, t = b.firstElementChild; b.setAttribute("aria-checked", String(n === val)); t.classList.toggle("on", n === val); t.classList.toggle("below", val != null && n < val); });
-  $$(".tick-nums span", root).forEach(s => s.classList.toggle("on", +s.dataset.n === val));
-  $("#w_big", root).textContent = val ?? "–";
-  $("#w_word", root).textContent = val ? WORDS[val] : tx("rate.pick");
+  $$(".ticks button", root).forEach(b => { const n = +b.dataset.v, t = b.firstElementChild; b.setAttribute("aria-checked", String(n === val)); b.tabIndex = n === (val ?? 1) ? 0 : -1; t.classList.toggle("on", n === val); t.classList.toggle("below", val != null && n < val); });
+  $$(".tick-nums span", root).forEach(s => s.classList.toggle("on", +s.dataset.n === Math.floor(val ?? 0)));
+  $("#w_big", root).textContent = fmtRate(val);
+  $("#w_word", root).textContent = val ? rateWord(val) : tx("rate.pick");
 }
 function wineFormHTML(f, draftNote) {
   return `
@@ -838,7 +842,20 @@ function wineForm(f, { editingId = null, draftNote = false } = {}) {
       };
       const upd = () => { $("#sheetRight").disabled = !canSave(); };
       paintTicks(b, rating); meta();
-      $(".ticks", b).addEventListener("click", e => { const t = e.target.closest("button[data-v]"); if (!t) return; rating = +t.dataset.v; paintTicks(b, rating); upd(); });
+      // Trykk eller dra langs stripen; nærmeste halve steg velges. Piltaster går et halvt steg om gangen.
+      const tk = $(".ticks", b);
+      const setRating = v => { v = Math.min(10, Math.max(1, Math.round(v * 2) / 2)); if (v === rating) return; rating = v; paintTicks(b, rating); upd(); };
+      const fromX = x => { const r = tk.getBoundingClientRect(); return 1 + Math.round(((x - r.left) / r.width) * 19 - 0.5) / 2; };
+      let dragging = false;
+      tk.addEventListener("pointerdown", e => { dragging = true; tk.setPointerCapture(e.pointerId); setRating(fromX(e.clientX)); e.stopPropagation(); });
+      tk.addEventListener("pointermove", e => { if (dragging) setRating(fromX(e.clientX)); });
+      const end = () => { dragging = false; };
+      tk.addEventListener("pointerup", end); tk.addEventListener("pointercancel", end);
+      tk.addEventListener("click", e => { const t = e.target.closest("button[data-v]"); if (t && e.detail === 0) setRating(+t.dataset.v); });   // tastatur (Enter/mellomrom)
+      tk.addEventListener("keydown", e => {
+        const d = { ArrowRight: .5, ArrowUp: .5, ArrowLeft: -.5, ArrowDown: -.5 }[e.key]; if (!d) return;
+        e.preventDefault(); setRating((rating ?? 0.5) + d); $(`button[data-v="${rating}"]`, tk)?.focus();
+      });
       $("#w_name", b).addEventListener("input", upd);
       b.addEventListener("input", e => { if (e.target.closest("#w_details")) meta(); });
       b.addEventListener("change", e => { if (e.target.closest("#w_details")) meta(); });

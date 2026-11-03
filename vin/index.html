@@ -159,14 +159,15 @@ a,button,.press{transition:transform 160ms var(--ease-out),opacity 160ms ease}
 .score{display:flex;align-items:baseline;justify-content:space-between}
 .score .big{font-size:80px;line-height:.85;font-weight:200;letter-spacing:-.06em;font-variant-numeric:tabular-nums}
 .score .word{font-size:15px;font-weight:500;color:var(--accent)}
-.ticks{display:flex;align-items:flex-end;justify-content:space-between;height:44px}
-.ticks button{width:34px;height:44px;display:flex;align-items:flex-end;justify-content:center}
+.ticks{display:grid;grid-template-columns:repeat(19,1fr);align-items:end;height:44px;touch-action:none;user-select:none;-webkit-user-select:none}
+.ticks button{height:44px;min-width:0;display:flex;align-items:flex-end;justify-content:center}
 .tick{width:3px;height:44px;border-radius:2px;background:var(--track);transform-origin:50% 100%;transform:scaleY(.4);transition:transform 200ms var(--ease-out),background-color 160ms ease}
 .tick.major{transform:scaleY(.55)}
+.tick.half{width:2px;transform:scaleY(.22)}
 .tick.below{background:var(--ink)}
 .tick.on{background:var(--accent);transform:scaleY(1)}
-.tick-nums{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--faint)}
-.tick-nums span{width:34px;text-align:center}
+.tick-nums{display:grid;grid-template-columns:repeat(19,1fr);font-family:var(--mono);font-size:11px;color:var(--faint)}
+.tick-nums span{grid-row:1;text-align:center;white-space:nowrap;overflow:visible;display:flex;justify-content:center}
 .tick-nums span.on{color:var(--ink)}
 @media (min-resolution:2dppx){.row{border-bottom-width:.5px}}
 .note{border-radius:16px;background:var(--surface);box-shadow:0 0 0 .5px var(--shadow)}
