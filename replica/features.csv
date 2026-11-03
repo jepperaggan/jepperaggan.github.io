@@ -1,0 +1,42 @@
+feature,area,priority,original,clone,notes
+Privileged helper install via SMAppService with XPC,core,must,yes,no,needed for any SMC write; inferred not documented
+Charge limiter with slider and typed percent,charge control,must,yes,no,Free in original; core loop
+Fail safe: restore normal charging on quit crash or uninstall,core,must,yes,no,original resets limit unless stop-charging-when-app-closed is on
+Menu bar status icon with four states,menu bar,must,yes,no,charging / paused / discharging / unplugged
+Main popover with battery percent and state,popover,must,yes,no,
+Manual discharge to target while plugged in,charge control,must,yes,no,Free in original
+Automatic discharge when limit is below current level,charge control,must,yes,no,Pro per overview
+Sailing mode range below the limit,charge control,must,yes,no,tier unclear; dashed band on slider
+Heat protection with max temp and 5 min hysteresis,charge control,must,yes,no,Pro per overview
+Top up to 100 percent once then restore on unplug,charge control,must,yes,no,Pro per features page
+Stop charging when sleeping,sleep,must,yes,no,Apple silicon resets inhibit on sleep
+Detect and warn about macOS Optimized Battery Charging,onboarding,must,yes,no,FAQ says it interferes
+Launch at login,app,must,yes,no,guess; standard for menu bar apps
+Settings window with General Appearance Battery Care Automations tabs,settings,must,yes,no,
+Calibration mode with four phases,calibration,should,yes,no,Pro per overview
+Schedule tasks with repeat rules and templates,automation,should,yes,no,actions: limit calibrate topup pause discharge lowpower on/off
+Catch up on missed scheduled tasks,automation,should,yes,no,
+Sleep control (keep awake 30m 1h 3h indefinite custom),sleep,should,yes,no,Pro per features page
+Disable sleep until charge limit with advanced options,sleep,should,yes,no,Apple silicon only
+Control MagSafe LED,hardware,should,yes,no,indicate limit; blink on discharge; off during sleep
+Apple Shortcuts actions via App Intents,automation,should,yes,no,Pro; set/get limit state temp; pause; discharge; top up; LED; power modes
+Low Power Mode policy (off on battery-only adapter-only),energy,should,yes,no,via pmset
+Energy mode on High Power capable MacBook Pros,energy,should,yes,no,separate for battery and adapter
+Hardware battery percentage display,menu bar,should,yes,no,informational only
+Battery specifications widget (temp cycles health watts),popover,should,yes,no,
+Menu bar icon style options including hidden,menu bar,should,yes,no,
+Discharge in clamshell mode,charge control,should,yes,no,Pro per FAQ
+Power flow sankey diagram,dashboard,could,yes,no,
+Apps using significant energy with Quit,energy,could,yes,no,no clean public API; hard
+Dashboard window,dashboard,could,yes,no,
+Popover edit mode (add remove reorder widgets),popover,could,yes,no,
+Task history log,automation,could,yes,no,
+Stop charging when app closed,charge control,could,yes,no,Apple silicon only; conflicts with fail safe so make it opt in
+Fast user switching across accounts,app,could,yes,no,
+Show dock icon toggle,settings,could,yes,no,
+Intel Mode and Intel MacBook support,hardware,could,yes,no,only if a friend has an Intel Mac
+License activation and Paddle checkout,licensing,skip,yes,skip,private free build; nothing to sell
+Setapp distribution,licensing,skip,yes,skip,partner deal
+Online license validation every 30 days,licensing,skip,yes,skip,not needed
+Analytics setting,app,skip,yes,skip,not needed for private use
+AlDente name icons and copy,brand,skip,yes,skip,owned by the original; rebrand in replica-brand
