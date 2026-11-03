@@ -7,8 +7,9 @@ history/stats. Airport intelligence and assistants are second wave.
 Platform: iOS (iPhone, Lock Screen, Live Activities, widgets, Watch) first.
 Android/Wear OS is a later option; byAir already uses it as its main pitch
 against Flighty.
-For: an independent product to sell (assumed). Change this if it is only for
-personal use or for a niche such as cabin crew or business travellers.
+For: personal use (confirmed 2026-11-03), installed from Xcode onto your own
+iPhone. Family get updates through a link or a Telegram bot. A product to sell
+may come later.
 Date: 2026-11-03
 
 Origin tags used below: **[F]** Flighty only, **[B]** byAir only, **[F+B]** both.
@@ -307,7 +308,8 @@ User 1-n Subscription; User 1-n AiConnection.
 
 ## Feature matrix
 
-See `features.csv`. Must: 20, should: 24, could: 16, skip: 7.
+See `features.csv`. Must: 18, should: 21, could: 16, skip: 12 (re-prioritised
+for personal use; see `architecture.md`).
 
 ## Out of scope (cannot or should not be cloned)
 
