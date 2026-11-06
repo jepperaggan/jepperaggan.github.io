@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pandoras eske</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Legg to anonyme spørsmål i Pandoras eske.">
+<meta name="theme-color" content="#0C0A0E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pandoras eske">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230C0A0E'/%3E%3Cpath d='M14 30h36v20a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4z' fill='%23E0B562'/%3E%3Cpath d='M12 22l38-8 2 9-38 8z' fill='%23E0B562' opacity='.75'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0C0A0E; --surface:#16131A; --surface2:#1F1B24; --press:#28232E;
+  --line:rgba(255,240,220,.08); --ink:#F2ECE3; --muted:#A39A90; --faint:#6A635C;
+  --gold:#E0B562; --gold-ink:#1A1205; --gold-soft:rgba(224,181,98,.13); --danger:#E77B67;
+  --sans:"Geist",-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif;
+  --serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --ease:cubic-bezier(0.23,1,0.32,1);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{margin:0;min-height:100dvh;color:var(--ink);font:400 16px/1.45 var(--sans);letter-spacing:-.01em;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+  background:radial-gradient(120% 60% at 50% -10%,rgba(224,181,98,.16),rgba(224,181,98,0) 60%) no-repeat,var(--bg)}
+button,input,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+button:disabled{cursor:default}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+[hidden]{display:none!important}
+
+.wrap{width:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:22px;min-height:100dvh;
+  padding:calc(env(safe-area-inset-top,0px) + 48px) calc(env(safe-area-inset-right,0px) + 20px) calc(env(safe-area-inset-bottom,0px) + 28px) calc(env(safe-area-inset-left,0px) + 20px)}
+.hero{display:flex;flex-direction:column;gap:12px;padding:0 4px}
+h1{margin:0;font:400 48px/1 var(--serif);letter-spacing:-.03em;font-variation-settings:"opsz" 144}
+h1 em{color:var(--gold);font-style:italic}
+.lead{margin:0;color:var(--muted);font-size:15px;max-width:34ch}
+.progress{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.bar{height:3px;border-radius:3px;background:var(--surface2);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--gold);border-radius:3px;transition:width 600ms var(--ease)}
+.ptxt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ptxt b{color:var(--ink);font-weight:500}
+
+.card{background:var(--surface);border-radius:22px;box-shadow:0 0 0 .5px var(--line),0 12px 30px rgba(0,0,0,.25)}
+.label{font-size:13px;font-weight:500;color:var(--muted);margin:0}
+h2{margin:0;font:500 22px/1.15 var(--serif);letter-spacing:-.02em}
+
+/* Velg navn */
+.pick{padding:18px;display:flex;flex-direction:column;gap:14px}
+.names{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.name{height:54px;border-radius:14px;background:var(--surface2);font-size:16px;font-weight:500;transition:background-color 140ms ease,transform 120ms var(--ease)}
+.name:active{transform:scale(.97);background:var(--press)}
+@media (hover:hover) and (pointer:fine){.name:hover{background:var(--press)}}
+
+/* Skriv */
+.me{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:0 4px}
+.me h2{font-size:26px}
+.link{font-size:14px;color:var(--muted);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--faint)}
+.sent{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.sq{padding:14px 14px 14px 16px;display:flex;gap:12px;align-items:flex-start}
+.sq .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.sq .to{font-size:12px;font-weight:500;color:var(--gold);letter-spacing:.02em}
+.sq .q{font-size:15px;overflow-wrap:anywhere}
+.sq.other .q{color:var(--muted);font-size:14px}
+.sq.enter{animation:rise 380ms var(--ease) both}
+.undo{flex:none;font-size:13px;font-weight:500;color:var(--muted);padding:6px 10px;border-radius:10px;background:var(--surface2);transition:background-color 140ms ease,color 140ms ease}
+.undo.arm{color:var(--danger);background:rgba(231,123,103,.12)}
+.tag{flex:none;font-size:12px;color:var(--faint);padding:6px 0}
+
+.form{padding:18px;display:flex;flex-direction:column;gap:16px}
+.formhead{display:flex;justify-content:space-between;align-items:baseline}
+.step{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
+.field{display:flex;flex-direction:column;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:8px 14px;border-radius:999px;background:var(--surface2);font-size:15px;font-weight:500;transition:background-color 140ms ease,color 140ms ease,transform 120ms var(--ease)}
+.chip:active:not(:disabled){transform:scale(.95)}
+.chip[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink)}
+.chip:disabled{opacity:.35;text-decoration:line-through}
+textarea{width:100%;min-height:110px;resize:vertical;border:0;border-radius:14px;background:var(--surface2);padding:12px 14px;font-size:16px;line-height:1.4;outline:none;box-shadow:inset 0 0 0 1px transparent;transition:box-shadow 140ms ease}
+textarea:focus{box-shadow:inset 0 0 0 1.5px var(--gold)}
+textarea::placeholder{color:var(--faint)}
+.count{align-self:flex-end;font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums;margin-top:-4px}
+.btn{height:52px;border-radius:14px;background:var(--gold);color:var(--gold-ink);font-weight:600;font-size:16px;transition:opacity 140ms ease,transform 120ms var(--ease)}
+.btn:active:not(:disabled){transform:scale(.98)}
+.btn:disabled{opacity:.35}
+.btn.ghost{background:var(--surface2);color:var(--ink)}
+.done{padding:26px 20px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center}
+.done h2{font-size:26px}
+.done p{margin:0;color:var(--muted);font-size:15px;max-width:30ch}
+.note{margin:0;font-size:13px;color:var(--muted);padding:0 4px}
+
+.banner{padding:14px 16px;border-radius:16px;background:rgba(231,123,103,.12);color:#F4C2B7;font-size:14px}
+
+.foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;padding:8px 4px 0;font-size:13px;color:var(--faint)}
+.foot a{color:var(--faint);text-decoration:none}
+.key{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;color:var(--faint);opacity:.35;transition:opacity 160ms ease}
+.key:active,.key:focus-visible{opacity:.9}
+@media (hover:hover){.key:hover{opacity:.8}}
+.key svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* Passord-ark */
+.scrim{position:fixed;inset:0;background:rgba(5,4,6,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;z-index:20;animation:fade 200ms ease both}
+.sheet{width:100%;max-width:560px;background:var(--surface);border-radius:24px 24px 0 0;padding:22px 20px calc(env(safe-area-inset-bottom,0px) + 22px);display:flex;flex-direction:column;gap:14px;animation:up 320ms var(--ease) both}
+@media (min-width:600px){.scrim{align-items:center}.sheet{border-radius:24px}}
+.sheet input{height:52px;border:0;border-radius:14px;background:var(--surface2);padding:0 16px;font-size:17px;outline:none;box-shadow:inset 0 0 0 1px transparent}
+.sheet input:focus{box-shadow:inset 0 0 0 1.5px var(--gold)}
+.sheet .err{margin:0;color:var(--danger);font-size:14px;min-height:20px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+
+/* Opplesning */
+.top{display:flex;justify-content:space-between;align-items:center;padding:0 4px}
+.top h1{font-size:36px}
+.closebtn{font-size:14px;color:var(--muted);padding:8px 12px;border-radius:10px;background:var(--surface2)}
+.filters{display:flex;gap:6px;overflow-x:auto;padding:2px 4px 4px;margin:0 -4px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filters .chip{flex:none;font-size:14px;padding:7px 12px}
+.filters .chip:disabled{text-decoration:none;opacity:.3}
+.filters .chip small{font-size:12px;opacity:.7;margin-left:4px;font-variant-numeric:tabular-nums}
+.stage{min-height:300px;padding:28px 22px;display:flex;flex-direction:column;justify-content:center;gap:18px;position:relative;overflow:hidden}
+.stage::before{content:"";position:absolute;inset:-40% -20% auto;height:70%;background:radial-gradient(closest-side,rgba(224,181,98,.12),transparent);pointer-events:none}
+.stage .to{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.stage .who{font:500 40px/1 var(--serif);color:var(--gold);letter-spacing:-.03em;margin-top:6px}
+.stage .q{font:400 26px/1.3 var(--serif);letter-spacing:-.015em;overflow-wrap:anywhere}
+.stage .empty{color:var(--muted);text-align:center;font:400 20px/1.4 var(--serif)}
+.stage .anim{display:flex;flex-direction:column;gap:18px;position:relative}
+.stage .anim.in{animation:reveal 520ms var(--ease) both}
+.left{font-size:14px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+.toggle{align-self:center;font-size:14px;color:var(--muted);padding:8px 12px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--faint)}
+.group{display:flex;flex-direction:column;gap:6px}
+.group h3{margin:6px 4px 2px;font:500 18px/1.2 var(--serif);color:var(--gold)}
+.aq{padding:12px 12px 12px 16px;display:flex;gap:10px;align-items:flex-start}
+.aq .q{flex:1;min-width:0;font-size:15px;overflow-wrap:anywhere}
+.aq.read .q{color:var(--faint)}
+.aq .acts{flex:none;display:flex;gap:6px}
+.mini{font-size:12px;font-weight:500;color:var(--muted);padding:6px 9px;border-radius:9px;background:var(--surface2)}
+.mini.arm{color:var(--danger);background:rgba(231,123,103,.12)}
+.danger{color:var(--danger)}
+
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);transform:translate(-50%,20px);opacity:0;pointer-events:none;background:rgba(40,35,46,.96);color:var(--ink);padding:11px 16px;border-radius:14px;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);transition:opacity 200ms ease,transform 300ms var(--ease);z-index:30;max-width:calc(100% - 40px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+@keyframes reveal{from{opacity:0;transform:translateY(14px) scale(.98);filter:blur(6px)}}
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- Innsamling -->
+<main class="wrap" id="main">
+  <header class="hero">
+    <h1>Pandoras <em>eske</em></h1>
+    <p class="lead">To spørsmål hver, til to forskjellige personer. Ingen får vite hvem som spurte.</p>
+    <div class="progress" aria-live="polite">
+      <div class="bar"><i id="pbar"></i></div>
+      <span class="ptxt" id="ptxt">&nbsp;</span>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <section class="card pick" id="pick" hidden>
+    <h2>Hvem er du?</h2>
+    <div class="names" id="names"></div>
+  </section>
+
+  <section id="write" hidden style="display:flex;flex-direction:column;gap:14px">
+    <div class="me">
+      <h2 id="hello"></h2>
+      <button type="button" class="link" id="swap">Ikke deg? Bytt</button>
+    </div>
+    <ul class="sent" id="sent"></ul>
+    <p class="note" id="othernote" hidden></p>
+
+    <form class="card form" id="form" hidden autocomplete="off">
+      <div class="formhead"><h2 id="formtitle">Nytt spørsmål</h2><span class="step" id="step"></span></div>
+      <div class="field">
+        <p class="label">Hvem er spørsmålet til?</p>
+        <div class="chips" id="to" role="group" aria-label="Mottaker"></div>
+      </div>
+      <div class="field">
+        <label class="label" for="q">Spørsmålet</label>
+        <textarea id="q" maxlength="500" placeholder="Skriv spørsmålet her …"></textarea>
+        <span class="count" id="qcount">0 / 500</span>
+      </div>
+      <button type="submit" class="btn" id="send" disabled>Legg i esken</button>
+    </form>
+
+    <div class="card done" id="done" hidden>
+      <h2>Esken er låst</h2>
+      <p>Begge spørsmålene dine ligger i esken. Du kan angre så lenge de ikke er lest opp.</p>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <a href="/">raggan.no</a>
+    <button type="button" class="key" id="keybtn" aria-label="Åpne esken">
+      <svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg>
+    </button>
+  </footer>
+</main>
+
+<!-- Opplesning -->
+<main class="wrap" id="reader" hidden>
+  <div class="top">
+    <h1>Esken er <em>åpen</em></h1>
+    <button type="button" class="closebtn" id="lock">Lukk</button>
+  </div>
+  <div class="filters" id="filters" aria-label="Trekk for"></div>
+  <section class="card stage" id="stage" aria-live="polite"></section>
+  <div class="row">
+    <button type="button" class="btn ghost" id="putback" hidden>Legg tilbake</button>
+    <button type="button" class="btn" id="draw">Trekk et spørsmål</button>
+  </div>
+  <p class="left" id="left"></p>
+  <button type="button" class="toggle" id="showall">Vis alle spørsmål</button>
+  <section id="all" hidden style="display:flex;flex-direction:column;gap:14px"></section>
+</main>
+
+<div class="scrim" id="pwscrim" hidden>
+  <form class="sheet" id="pwform" autocomplete="off">
+    <h2>Åpne esken</h2>
+    <input id="pw" type="password" placeholder="Passord" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
+    <p class="err" id="pwerr"></p>
+    <div class="row">
+      <button type="button" class="btn ghost" id="pwcancel">Avbryt</button>
+      <button type="submit" class="btn" id="pwgo">Åpne</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  const API = "https://qcxxtvzarpxstlmyguqi.supabase.co/rest/v1/rpc/";
+  const KEY = "sb_publishable_5m5Hsz9YfHSPK1MZhsXiHA_GjlwYQrW";
+  const NAMES = ["August","Filip","Hans","Jeppe","Mads","Marius","Sondre","Stian"];
+  const MAX = 2;
+  const MSG = {
+    maks: "Du har allerede lagt 2 spørsmål i esken.",
+    samme_mottaker: "Du har allerede spurt den personen. Velg en annen.",
+    seg_selv: "Du kan ikke spørre deg selv.",
+    ukjent_navn: "Ukjent navn.",
+    for_kort: "Skriv litt mer, minst 3 tegn.",
+    for_langt: "Maks 500 tegn.",
+    ikke_funnet: "Fant ikke spørsmålet. Kanskje det allerede er lest opp?",
+    feil_passord: "Feil passord.",
+  };
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+  // ---------- lagring (tåler privat modus) ----------
+  const mem = {};
+  const store = {
+    get(k, s = localStorage) { try { return s.getItem(k); } catch { return mem[k] ?? null; } },
+    set(k, v, s = localStorage) { mem[k] = v; try { s.setItem(k, v); } catch {} },
+    del(k, s = localStorage) { delete mem[k]; try { s.removeItem(k); } catch {} },
+  };
+  const ss = (() => { try { return sessionStorage; } catch { return undefined; } })();
+
+  let device = store.get("pandoras.enhet");
+  if (!device) {
+    device = (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join(""));
+    store.set("pandoras.enhet", device);
+  }
+
+  // ---------- API ----------
+  async function rpc(fn, args = {}) {
+    let r;
+    try {
+      r = await fetch(API + fn, { method: "POST", headers: { apikey: KEY, "Content-Type": "application/json" }, body: JSON.stringify(args) });
+    } catch { const e = new Error("Fikk ikke kontakt. Sjekk nettet og prøv igjen."); e.net = true; throw e; }
+    const txt = await r.text();
+    let body = null; try { body = txt ? JSON.parse(txt) : null; } catch {}
+    if (!r.ok) {
+      const key = body && body.message;
+      const e = new Error(MSG[key] || "Noe gikk galt. Prøv igjen.");
+      e.key = key; e.code = body && body.code;
+      if (e.code === "PGRST202" || e.code === "42883" || r.status === 404) showBanner("<b>Databasen er ikke satt opp ennå.</b> Kjør SQL-en i Supabase, så virker siden.");
+      throw e;
+    }
+    return body;
+  }
+
+  let toastT;
+  function toast(msg) {
+    const t = $("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2600);
+  }
+  function showBanner(html) { const b = $("banner"); b.innerHTML = html; b.hidden = false; }
+
+  // Knapp som må trykkes to ganger (slett/angre)
+  function armed(btn, label, armedLabel, action) {
+    btn.addEventListener("click", async () => {
+      if (!btn.classList.contains("arm")) {
+        btn.classList.add("arm"); btn.textContent = armedLabel;
+        btn._t = setTimeout(() => { btn.classList.remove("arm"); btn.textContent = label; }, 3000);
+        return;
+      }
+      clearTimeout(btn._t); btn.disabled = true;
+      try { await action(); } catch (e) { toast(e.message); btn.disabled = false; btn.classList.remove("arm"); btn.textContent = label; }
+    });
+  }
+
+  // ---------- fremdrift ----------
+  async function loadStatus() {
+    try {
+      const s = await rpc("pandoras_status");
+      const total = NAMES.length * MAX;
+      $("pbar").style.width = Math.min(100, (s.sporsmal / total) * 100) + "%";
+      $("ptxt").innerHTML = `<b>${s.ferdige} av ${NAMES.length}</b> har levert · ${s.sporsmal} av ${total} spørsmål i esken`;
+    } catch (e) { if (e.net) $("ptxt").textContent = "Frakoblet"; }
+  }
+
+  // ---------- innsamling ----------
+  let me = store.get("pandoras.navn");
+  if (me && !NAMES.includes(me)) me = null;
+  let mine = [];
+  let target = null;
+  const fresh = new Set();
+
+  function renderNames() {
+    $("names").innerHTML = NAMES.map(n => `<button type="button" class="name" data-n="${esc(n)}">${esc(n)}</button>`).join("");
+  }
+  $("names").addEventListener("click", e => {
+    const b = e.target.closest(".name"); if (!b) return;
+    me = b.dataset.n; store.set("pandoras.navn", me);
+    mine = []; target = null; $("q").value = ""; updateCount();
+    show(); loadMine();
+  });
+  $("swap").addEventListener("click", () => { me = null; store.del("pandoras.navn"); show(); });
+
+  async function loadMine() {
+    if (!me) return;
+    try { mine = await rpc("pandoras_mine", { p_fra: me, p_enhet: device }) || []; }
+    catch (e) { toast(e.message); }
+    renderWrite();
+  }
+
+  function show() {
+    $("pick").hidden = !!me;
+    $("write").hidden = !me;
+    if (me) renderWrite();
+  }
+
+  function renderWrite() {
+    if (!me) return;
+    $("hello").textContent = `Hei, ${me}`;
+    const own = mine.filter(m => m.egen);
+    const others = mine.length - own.length;
+    const used = new Set(own.map(m => m.til));
+    if (target && used.has(target)) target = null;
+
+    const ul = $("sent"); ul.innerHTML = "";
+    own.forEach(m => {
+      const li = document.createElement("li");
+      li.className = "card sq" + (fresh.has(m.id) ? " enter" : "");
+      li.innerHTML = `<div class="body"><span class="to">Til ${esc(m.til)}</span><span class="q">${esc(m.tekst)}</span></div>`;
+      if (m.lest) li.insertAdjacentHTML("beforeend", `<span class="tag">Lest opp</span>`);
+      else {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "undo"; b.textContent = "Angre";
+        armed(b, "Angre", "Slett?", async () => {
+          await rpc("pandoras_slett", { p_id: m.id, p_enhet: device });
+          toast("Spørsmålet er tatt ut av esken");
+          await loadMine(); loadStatus();
+        });
+        li.appendChild(b);
+      }
+      ul.appendChild(li);
+    });
+    fresh.clear();
+
+    const note = $("othernote");
+    note.hidden = others === 0;
+    note.textContent = others === 1
+      ? "1 spørsmål er sendt i ditt navn fra en annen telefon. Det kan bare angres der."
+      : `${others} spørsmål er sendt i ditt navn fra en annen telefon. De kan bare angres der.`;
+
+    const left = MAX - mine.length;
+    $("form").hidden = left <= 0;
+    $("done").hidden = left > 0;
+    if (left > 0) {
+      $("formtitle").textContent = mine.length === 0 ? "Første spørsmål" : "Andre spørsmål";
+      $("step").textContent = `${mine.length + 1} av ${MAX}`;
+      $("to").innerHTML = NAMES.filter(n => n !== me).map(n =>
+        `<button type="button" class="chip" data-n="${esc(n)}" aria-pressed="${n === target}" ${used.has(n) ? "disabled" : ""}>${esc(n)}</button>`).join("");
+    }
+    validate();
+  }
+
+  $("to").addEventListener("click", e => {
+    const b = e.target.closest(".chip"); if (!b || b.disabled) return;
+    target = b.dataset.n;
+    $("to").querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.n === target));
+    validate();
+  });
+  function updateCount() { $("qcount").textContent = `${$("q").value.length} / 500`; }
+  function validate() { $("send").disabled = !(target && $("q").value.trim().length >= 3); }
+  $("q").addEventListener("input", () => { updateCount(); validate(); });
+
+  $("form").addEventListener("submit", async e => {
+    e.preventDefault();
+    if ($("send").disabled) return;
+    $("send").disabled = true; $("send").textContent = "Legger i esken …";
+    try {
+      const id = await rpc("pandoras_send", { p_fra: me, p_til: target, p_tekst: $("q").value.trim(), p_enhet: device });
+      fresh.add(id);
+      $("q").value = ""; updateCount(); target = null;
+      toast("Lagt i esken");
+      await loadMine(); loadStatus();
+    } catch (err) {
+      toast(err.message);
+      if (err.key === "maks" || err.key === "samme_mottaker") loadMine();
+    } finally {
+      $("send").textContent = "Legg i esken"; validate();
+    }
+  });
+
+  // ---------- passord ----------
+  let pw = store.get("pandoras.pw", ss);
+  $("keybtn").addEventListener("click", () => {
+    if (pw) return openReader();
+    $("pwscrim").hidden = false; $("pwerr").textContent = ""; $("pw").value = "";
+    setTimeout(() => $("pw").focus(), 50);
+  });
+  $("pwcancel").addEventListener("click", () => { $("pwscrim").hidden = true; });
+  $("pwscrim").addEventListener("click", e => { if (e.target === $("pwscrim")) $("pwscrim").hidden = true; });
+  $("pwform").addEventListener("submit", async e => {
+    e.preventDefault();
+    const p = $("pw").value; if (!p) return;
+    $("pwgo").disabled = true;
+    try {
+      all = await rpc("pandoras_les", { p_passord: p }) || [];
+      pw = p; store.set("pandoras.pw", p, ss);
+      $("pwscrim").hidden = true; $("pw").blur();
+      openReader(true);
+    } catch (err) { $("pwerr").textContent = err.message; }
+    finally { $("pwgo").disabled = false; }
+  });
+
+  // ---------- opplesning ----------
+  let all = [];
+  let filter = "alle";
+  let current = null;
+  let listOpen = false;
+
+  async function loadAll() {
+    try { all = await rpc("pandoras_les", { p_passord: pw }) || []; }
+    catch (e) {
+      if (e.key === "feil_passord") { closeReader(); return false; }
+      toast(e.message);
+    }
+    return true;
+  }
+
+  async function openReader(loaded) {
+    $("main").hidden = true; $("reader").hidden = false; window.scrollTo(0, 0);
+    if (!loaded && !(await loadAll())) return;
+    renderReader();
+  }
+  function closeReader() {
+    pw = null; store.del("pandoras.pw", ss);
+    current = null; all = []; listOpen = false; filter = "alle";
+    $("reader").hidden = true; $("main").hidden = false;
+    loadStatus();
+  }
+  $("lock").addEventListener("click", closeReader);
+
+  const unread = () => all.filter(q => !q.lest && (filter === "alle" || q.til === filter));
+
+  function renderReader(animate) {
+    const counts = {};
+    NAMES.forEach(n => counts[n] = all.filter(q => q.til === n && !q.lest).length);
+    const totalUnread = all.filter(q => !q.lest).length;
+    $("filters").innerHTML =
+      `<button type="button" class="chip" data-f="alle" aria-pressed="${filter === "alle"}">Tilfeldig<small>${totalUnread}</small></button>` +
+      NAMES.map(n => `<button type="button" class="chip" data-f="${esc(n)}" aria-pressed="${filter === n}" ${counts[n] ? "" : "disabled"}>${esc(n)}<small>${counts[n]}</small></button>`).join("");
+
+    const st = $("stage");
+    if (current) {
+      st.innerHTML = `<div class="anim${animate ? " in" : ""}"><div><div class="to">Til</div><div class="who">${esc(current.til)}</div></div><div class="q">${esc(current.tekst)}</div></div>`;
+    } else if (!all.length) {
+      st.innerHTML = `<div class="empty">Esken er tom. Ingen har levert ennå.</div>`;
+    } else if (!totalUnread) {
+      st.innerHTML = `<div class="empty">Alle spørsmålene er lest opp.</div>`;
+    } else {
+      st.innerHTML = `<div class="empty">${totalUnread} spørsmål venter i esken.</div>`;
+    }
+
+    const avail = unread().length;
+    $("draw").textContent = current ? "Trekk neste" : "Trekk et spørsmål";
+    $("draw").disabled = avail === 0;
+    $("putback").hidden = !current;
+    $("left").textContent = all.length ? `${totalUnread} igjen av ${all.length}` : "";
+    $("showall").textContent = listOpen ? "Skjul liste" : "Vis alle spørsmål";
+    $("all").hidden = !listOpen;
+    if (listOpen) renderList();
+  }
+
+  $("filters").addEventListener("click", e => {
+    const b = e.target.closest(".chip"); if (!b || b.disabled) return;
+    filter = b.dataset.f; renderReader();
+  });
+
+  $("draw").addEventListener("click", async () => {
+    $("draw").disabled = true;
+    await loadAll();
+    const pool = unread();
+    if (!pool.length) { current = null; renderReader(); toast(filter === "alle" ? "Ingen uleste igjen" : `Ingen uleste til ${filter}`); return; }
+    current = pool[Math.floor(Math.random() * pool.length)];
+    current.lest = true;
+    renderReader(true);
+    rpc("pandoras_marker", { p_passord: pw, p_id: current.id, p_lest: true }).catch(e => toast(e.message));
+  });
+
+  $("putback").addEventListener("click", async () => {
+    if (!current) return;
+    const q = current; current = null; q.lest = false; renderReader();
+    try { await rpc("pandoras_marker", { p_passord: pw, p_id: q.id, p_lest: false }); toast("Lagt tilbake i esken"); }
+    catch (e) { toast(e.message); }
+  });
+
+  $("showall").addEventListener("click", () => { listOpen = !listOpen; renderReader(); });
+
+  function renderList() {
+    const box = $("all"); box.innerHTML = "";
+    if (!all.length) return;
+    NAMES.forEach(n => {
+      const qs = all.filter(q => q.til === n); if (!qs.length) return;
+      const g = document.createElement("div"); g.className = "group";
+      g.innerHTML = `<h3>Til ${esc(n)}</h3>`;
+      qs.forEach(q => {
+        const it = document.createElement("div");
+        it.className = "card aq" + (q.lest ? " read" : "");
+        it.innerHTML = `<span class="q">${esc(q.tekst)}</span><span class="acts"></span>`;
+        const acts = it.querySelector(".acts");
+        const t = document.createElement("button");
+        t.type = "button"; t.className = "mini"; t.textContent = q.lest ? "Merk ulest" : "Merk lest";
+        t.addEventListener("click", async () => {
+          q.lest = !q.lest; if (current && current.id === q.id && !q.lest) current = null; renderReader();
+          try { await rpc("pandoras_marker", { p_passord: pw, p_id: q.id, p_lest: q.lest }); } catch (e) { toast(e.message); }
+        });
+        const d = document.createElement("button");
+        d.type = "button"; d.className = "mini"; d.textContent = "Slett";
+        armed(d, "Slett", "Sikker?", async () => {
+          await rpc("pandoras_admin_slett", { p_passord: pw, p_id: q.id });
+          all = all.filter(x => x.id !== q.id); if (current && current.id === q.id) current = null;
+          toast("Slettet"); renderReader();
+        });
+        acts.append(t, d); g.appendChild(it);
+      });
+      box.appendChild(g);
+    });
+    const reset = document.createElement("button");
+    reset.type = "button"; reset.className = "toggle danger"; reset.textContent = "Legg alle tilbake i esken";
+    armed(reset, "Legg alle tilbake i esken", "Trykk igjen for å nullstille", async () => {
+      await rpc("pandoras_nullstill", { p_passord: pw });
+      all.forEach(q => q.lest = false); current = null; toast("Alle er lagt tilbake"); renderReader();
+    });
+    box.appendChild(reset);
+  }
+
+  // ---------- start ----------
+  renderNames(); show(); loadStatus(); loadMine();
+  setInterval(() => { if (!document.hidden && !$("main").hidden) loadStatus(); }, 15000);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) return;
+    if (!$("main").hidden) { loadStatus(); loadMine(); }
+  });
+  if (pw) openReader();
+})();
+</script>
+</body>
+</html>
