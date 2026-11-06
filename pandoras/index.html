@@ -145,6 +145,10 @@ textarea::placeholder{color:var(--faint)}
 .stage{min-height:340px;padding:64px 24px 30px;text-align:center;align-items:center;border-radius:260px 260px 24px 24px / 170px 170px 24px 24px;display:flex;flex-direction:column;justify-content:center;gap:18px;position:relative;overflow:hidden}
 .stage::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 45% at 50% 0%,rgba(217,101,59,.22),transparent),var(--zellige);background-size:auto,48px 48px;pointer-events:none;-webkit-mask:linear-gradient(180deg,#000,transparent 75%);mask:linear-gradient(180deg,#000,transparent 75%)}
 .stage::after{content:"";position:absolute;inset:8px;border-radius:252px 252px 18px 18px / 164px 164px 18px 18px;box-shadow:inset 0 0 0 1px rgba(240,176,74,.22);pointer-events:none}
+.reader{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 14px;border-radius:999px;background:rgba(63,181,154,.12);box-shadow:inset 0 0 0 1px rgba(63,181,154,.3);font-size:14px;color:var(--muted)}
+.reader b{font:400 18px/1 var(--display);color:var(--ink);font-weight:400}
+.reroll{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--mint);background:rgba(63,181,154,.14);font-size:15px;transition:transform 300ms var(--ease)}
+.reroll:active{transform:rotate(-180deg)}
 .stage .to{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
 .stage .who{font:400 48px/1 var(--display);color:var(--gold);margin-top:6px;text-shadow:0 2px 20px rgba(240,176,74,.3)}
 .stage .q{font:400 29px/1.3 var(--serif);max-width:22ch;overflow-wrap:anywhere}
@@ -546,7 +550,7 @@ textarea::placeholder{color:var(--faint)}
 
     const st = $("stage");
     if (current) {
-      st.innerHTML = `<div class="anim${animate ? " in" : ""}">${current.bonus ? `<span class="bonustag">✦ Bonusspørsmål</span>` : ""}<div><div class="to">Til</div><div class="who">${esc(current.til)}</div></div><div class="q">${esc(current.tekst)}</div></div>`;
+      st.innerHTML = `<div class="anim${animate ? " in" : ""}">${current.bonus ? `<span class="bonustag">✦ Bonusspørsmål</span>` : ""}<span class="reader">Leses opp av <b>${esc(current.leser)}</b><button type="button" class="reroll" id="reroll" aria-label="Trekk ny oppleser">↻</button></span><div><div class="to">Til</div><div class="who">${esc(current.til)}</div></div><div class="q">${esc(current.tekst)}</div></div>`;
     } else if (!all.length) {
       st.innerHTML = `<div class="empty">Esken er tom. Ingen har levert ennå.</div>`;
     } else if (!totalUnread) {
@@ -576,13 +580,32 @@ textarea::placeholder{color:var(--faint)}
     const pool = unread();
     if (!pool.length) { current = null; renderReader(); toast(filter === "alle" ? "Ingen uleste igjen" : `Ingen uleste til ${filter}`); return; }
     current = pool[Math.floor(Math.random() * pool.length)];
+    current.leser = pickReader(current.til);
     current.lest = true;
     renderReader(true);
     rpc("pandoras_marker", { p_passord: pw, p_id: current.id, p_lest: true }).catch(e => toast(e.message));
   });
 
+  // Tilfeldig oppleser: aldri mottakeren, og den som har lest minst går først
+  const readCount = {};
+  function pickReader(til, not) {
+    const cands = NAMES.filter(n => n !== til && n !== not);
+    const min = Math.min(...cands.map(n => readCount[n] || 0));
+    const pool = cands.filter(n => (readCount[n] || 0) === min);
+    const r = pool[Math.floor(Math.random() * pool.length)];
+    readCount[r] = (readCount[r] || 0) + 1;
+    return r;
+  }
+  $("stage").addEventListener("click", e => {
+    if (!e.target.closest("#reroll") || !current) return;
+    readCount[current.leser] = Math.max(0, (readCount[current.leser] || 1) - 1);
+    current.leser = pickReader(current.til, current.leser);
+    renderReader(true);
+  });
+
   $("putback").addEventListener("click", async () => {
     if (!current) return;
+    readCount[current.leser] = Math.max(0, (readCount[current.leser] || 1) - 1);
     const q = current; current = null; q.lest = false; renderReader();
     try { await rpc("pandoras_marker", { p_passord: pw, p_id: q.id, p_lest: false }); toast("Lagt tilbake i esken"); }
     catch (e) { toast(e.message); }
