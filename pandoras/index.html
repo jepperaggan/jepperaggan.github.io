@@ -104,6 +104,9 @@ textarea::placeholder{color:var(--faint)}
 .done{padding:40px 20px 26px;border-radius:200px 200px 22px 22px / 110px 110px 22px 22px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center}
 .done h2{font-size:26px}
 .done p{margin:0;color:var(--muted);font-size:15px;max-width:30ch}
+.bonusbtn{margin-top:8px;font-size:14px;font-weight:500;color:var(--gold);padding:10px 14px;border-radius:12px;background:var(--gold-soft);box-shadow:inset 0 0 0 1px rgba(240,176,74,.25);line-height:1.3}
+.bonustag{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);background:var(--gold-soft);padding:5px 10px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(240,176,74,.3)}
+.aq .bonustag{font-size:10px;padding:3px 7px;margin-right:6px;vertical-align:2px}
 .note{margin:0;font-size:13px;color:var(--muted);padding:0 4px}
 
 .banner{padding:14px 16px;border-radius:16px;background:rgba(231,123,103,.12);color:#F4C2B7;font-size:14px}
@@ -206,11 +209,13 @@ textarea::placeholder{color:var(--faint)}
         <span class="count" id="qcount">0 / 500</span>
       </div>
       <button type="submit" class="btn" id="send" disabled>Legg i esken</button>
+      <button type="button" class="link" id="bonuscancel" hidden style="align-self:center">Avbryt bonusspørsmål</button>
     </form>
 
     <div class="card done" id="done" hidden>
       <h2>Esken er låst</h2>
-      <p>Begge spørsmålene dine ligger i esken. Du kan angre så lenge de ikke er lest opp.</p>
+      <p id="donetxt">Begge spørsmålene dine ligger i esken. Du kan angre så lenge de ikke er lest opp.</p>
+      <button type="button" class="bonusbtn" id="bonusbtn">✦ Har du et som er veldig bra? Legg til et bonusspørsmål</button>
     </div>
   </section>
 
@@ -259,8 +264,10 @@ textarea::placeholder{color:var(--faint)}
   const KEY = "sb_publishable_5m5Hsz9YfHSPK1MZhsXiHA_GjlwYQrW";
   const NAMES = ["August","Filip","Hans","Jeppe","Mads","Marius","Sondre","Stian"];
   const MAX = 2;
+  const BONUS = 3;
+  let bonusOpen = false;
   const MSG = {
-    maks: "Du har allerede lagt 2 spørsmål i esken.",
+    maks: "Du har allerede lagt alle spørsmålene dine i esken.",
     samme_mottaker: "Du har allerede spurt den personen. Velg en annen.",
     seg_selv: "Du kan ikke spørre deg selv.",
     ukjent_navn: "Ukjent navn.",
@@ -332,7 +339,9 @@ textarea::placeholder{color:var(--faint)}
       const s = await rpc("pandoras_status");
       const total = NAMES.length * MAX;
       $("pbar").style.width = Math.min(100, (s.sporsmal / total) * 100) + "%";
-      $("ptxt").innerHTML = `<b>${s.ferdige} av ${NAMES.length}</b> har levert · ${s.sporsmal} av ${total} spørsmål i esken`;
+      const vanlige = s.sporsmal - (s.bonus || 0);
+      $("pbar").style.width = Math.min(100, (vanlige / total) * 100) + "%";
+      $("ptxt").innerHTML = `<b>${s.ferdige} av ${NAMES.length}</b> har levert · ${vanlige} av ${total} spørsmål i esken` + (s.bonus ? ` · ${s.bonus} bonus` : "");
     } catch (e) { if (e.net) $("ptxt").textContent = "Frakoblet"; }
   }
 
@@ -348,10 +357,12 @@ textarea::placeholder{color:var(--faint)}
   }
   $("names").addEventListener("click", e => {
     const b = e.target.closest(".name"); if (!b) return;
-    me = b.dataset.n; store.set("pandoras.navn", me);
+    me = b.dataset.n; store.set("pandoras.navn", me); bonusOpen = false;
     mine = []; target = null; $("q").value = ""; updateCount();
     show(); loadMine();
   });
+  $("bonusbtn").addEventListener("click", () => { bonusOpen = true; renderWrite(); $("form").scrollIntoView({ behavior: "smooth", block: "start" }); });
+  $("bonuscancel").addEventListener("click", () => { bonusOpen = false; target = null; renderWrite(); });
   $("swap").addEventListener("click", () => { me = null; store.del("pandoras.navn"); show(); });
 
   async function loadMine() {
@@ -401,12 +412,19 @@ textarea::placeholder{color:var(--faint)}
       ? "1 spørsmål er sendt i ditt navn fra en annen telefon. Det kan bare angres der."
       : `${others} spørsmål er sendt i ditt navn fra en annen telefon. De kan bare angres der.`;
 
-    const left = MAX - mine.length;
-    $("form").hidden = left <= 0;
-    $("done").hidden = left > 0;
-    if (left > 0) {
-      $("formtitle").textContent = mine.length === 0 ? "Første spørsmål" : "Andre spørsmål";
-      $("step").textContent = `${mine.length + 1} av ${MAX}`;
+    if (mine.length < MAX || mine.length >= BONUS) bonusOpen = false;
+    const writing = mine.length < MAX || (bonusOpen && mine.length < BONUS);
+    $("form").hidden = !writing;
+    $("done").hidden = writing;
+    $("bonusbtn").hidden = mine.length >= BONUS;
+    $("bonuscancel").hidden = !(writing && mine.length >= MAX);
+    $("donetxt").textContent = mine.length >= BONUS
+      ? "Alle tre spørsmålene dine ligger i esken. Du kan angre så lenge de ikke er lest opp."
+      : "Begge spørsmålene dine ligger i esken. Du kan angre så lenge de ikke er lest opp.";
+    if (writing) {
+      const bonus = mine.length >= MAX;
+      $("formtitle").textContent = bonus ? "Bonusspørsmål" : mine.length === 0 ? "Første spørsmål" : "Andre spørsmål";
+      $("step").textContent = bonus ? "Bare hvis det er veldig bra" : `${mine.length + 1} av ${MAX}`;
       $("to").innerHTML = NAMES.filter(n => n !== me).map(n =>
         `<button type="button" class="chip" data-n="${esc(n)}" aria-pressed="${n === target}" ${used.has(n) ? "disabled" : ""}>${esc(n)}</button>`).join("");
     }
@@ -503,7 +521,7 @@ textarea::placeholder{color:var(--faint)}
 
     const st = $("stage");
     if (current) {
-      st.innerHTML = `<div class="anim${animate ? " in" : ""}"><div><div class="to">Til</div><div class="who">${esc(current.til)}</div></div><div class="q">${esc(current.tekst)}</div></div>`;
+      st.innerHTML = `<div class="anim${animate ? " in" : ""}">${current.bonus ? `<span class="bonustag">✦ Bonusspørsmål</span>` : ""}<div><div class="to">Til</div><div class="who">${esc(current.til)}</div></div><div class="q">${esc(current.tekst)}</div></div>`;
     } else if (!all.length) {
       st.innerHTML = `<div class="empty">Esken er tom. Ingen har levert ennå.</div>`;
     } else if (!totalUnread) {
@@ -557,7 +575,7 @@ textarea::placeholder{color:var(--faint)}
       qs.forEach(q => {
         const it = document.createElement("div");
         it.className = "card aq" + (q.lest ? " read" : "");
-        it.innerHTML = `<span class="q">${esc(q.tekst)}</span><span class="acts"></span>`;
+        it.innerHTML = `<span class="q">${q.bonus ? `<span class="bonustag">✦ Bonus</span>` : ""}${esc(q.tekst)}</span><span class="acts"></span>`;
         const acts = it.querySelector(".acts");
         const t = document.createElement("button");
         t.type = "button"; t.className = "mini"; t.textContent = q.lest ? "Merk ulest" : "Merk lest";
