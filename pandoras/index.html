@@ -107,6 +107,12 @@ textarea::placeholder{color:var(--faint)}
 .bonusbtn{margin-top:8px;font-size:14px;font-weight:500;color:var(--gold);padding:10px 14px;border-radius:12px;background:var(--gold-soft);box-shadow:inset 0 0 0 1px rgba(240,176,74,.25);line-height:1.3}
 .bonustag{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);background:var(--gold-soft);padding:5px 10px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(240,176,74,.3)}
 .aq .bonustag{font-size:10px;padding:3px 7px;margin-right:6px;vertical-align:2px}
+.missing{padding:18px;display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.missing h2{font-size:20px}
+.mlist{display:flex;flex-wrap:wrap;gap:6px}
+.mchip{display:inline-flex;align-items:baseline;gap:6px;padding:7px 12px;border-radius:999px;background:var(--surface2);box-shadow:inset 0 0 0 1px rgba(217,101,59,.25);font-size:15px;font-weight:500}
+.mchip small{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mdone{margin:0;color:var(--muted);font-size:15px}
 .note{margin:0;font-size:13px;color:var(--muted);padding:0 4px}
 
 .banner{padding:14px 16px;border-radius:16px;background:rgba(231,123,103,.12);color:#F4C2B7;font-size:14px}
@@ -217,6 +223,11 @@ textarea::placeholder{color:var(--faint)}
       <p id="donetxt">Begge spørsmålene dine ligger i esken. Du kan angre så lenge de ikke er lest opp.</p>
       <button type="button" class="bonusbtn" id="bonusbtn">✦ Har du et som er veldig bra? Legg til et bonusspørsmål</button>
     </div>
+  </section>
+
+  <section class="card missing" id="missing" hidden>
+    <h2 id="missingtitle">Mangler fortsatt</h2>
+    <div class="mlist" id="mlist"></div>
   </section>
 
   <footer class="foot">
@@ -341,8 +352,22 @@ textarea::placeholder{color:var(--faint)}
       $("pbar").style.width = Math.min(100, (s.sporsmal / total) * 100) + "%";
       const vanlige = s.sporsmal - (s.bonus || 0);
       $("pbar").style.width = Math.min(100, (vanlige / total) * 100) + "%";
+      renderMissing(s.mangler);
       $("ptxt").innerHTML = `<b>${s.ferdige} av ${NAMES.length}</b> har levert · ${vanlige} av ${total} spørsmål i esken` + (s.bonus ? ` · ${s.bonus} bonus` : "");
     } catch (e) { if (e.net) $("ptxt").textContent = "Frakoblet"; }
+  }
+
+  function renderMissing(list) {
+    const box = $("missing");
+    if (!Array.isArray(list)) { box.hidden = true; return; }
+    box.hidden = false;
+    if (!list.length) {
+      $("missingtitle").textContent = "Alle har levert";
+      $("mlist").innerHTML = `<p class="mdone">✦ Esken er full. Bonusspørsmål kan fortsatt legges til.</p>`;
+      return;
+    }
+    $("missingtitle").textContent = "Mangler fortsatt";
+    $("mlist").innerHTML = list.map(m => `<span class="mchip">${esc(m.navn)}<small>${m.antall}/2</small></span>`).join("");
   }
 
   // ---------- innsamling ----------
