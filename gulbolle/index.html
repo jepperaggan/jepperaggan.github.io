@@ -349,12 +349,16 @@ function vSetup(){
 }
 
 /* ---------- WORD INPUTS ---------- */
+let BONUS=false;
 function wordInputs(){
-  let h='';for(let i=0;i<S.perPerson;i++)h+=`<input class="field" id="w${i}" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Lapp ${i+1}" enterkeyhint="${i<S.perPerson-1?'next':'done'}" onkeydown="wordKey(event,${i})">`;
+  const n=S.perPerson+(BONUS?1:0);
+  let h='';for(let i=0;i<n;i++)h+=`<input class="field" id="w${i}" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="${i<S.perPerson?'Lapp '+(i+1):'Bonuslapp (valgfri)'}" enterkeyhint="${i<n-1?'next':'done'}" onkeydown="wordKey(event,${i})">`;
+  if(!BONUS)h+=`<button class="btn ghost" style="margin-top:6px" onclick="addBonus()">+ Én til, jeg har en god en</button>`;
   return h;
 }
-function readWords(){const got=[];for(let i=0;i<S.perPerson;i++){const el=$('w'+i);const v=el?(el.value||'').trim().slice(0,80):'';if(v)got.push(v)}return got}
-function clearWords(){for(let i=0;i<S.perPerson;i++){const el=$('w'+i);if(el)el.value=''}}
+function addBonus(){BONUS=true;render();const el=$('w'+S.perPerson);if(el)el.focus()}
+function readWords(){const got=[];for(let i=0;i<S.perPerson+1;i++){const el=$('w'+i);const v=el?(el.value||'').trim().slice(0,80):'';if(v)got.push(v)}return got}
+function clearWords(){for(let i=0;i<S.perPerson+1;i++){const el=$('w'+i);if(el)el.value=''}BONUS=false}
 function wordKey(e,i){if(e.key==='Enter'){e.preventDefault();const nx=$('w'+(i+1));if(nx)nx.focus();else submitWords()}}
 function submitWords(){MODE==='local'?addBatch():sendWords()}
 
