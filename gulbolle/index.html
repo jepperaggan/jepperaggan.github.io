@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Gul bolle</title>
+<meta name="theme-color" content="#F7C948">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Gul bolle">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFF8E6; --card:#FFFFFF; --ink:#1E1A12; --muted:#7A715E; --hair:rgba(30,26,18,.10);
+  --yellow:#F7C948; --yellow-deep:#E8AE17; --yellow-soft:#FDEBB3;
+  --green:#1F8A4C; --green-ink:#fff; --red:#C8372D; --field:#F6EFDC;
+  --shadow:0 1px 2px rgba(60,40,0,.06),0 8px 24px rgba(60,40,0,.08);
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#17150F; --card:#221F17; --ink:#F4EEDF; --muted:#A79E89; --hair:rgba(255,255,255,.10);
+    --yellow:#F7C948; --yellow-deep:#F7C948; --yellow-soft:#3A3115;
+    --green:#2EA862; --red:#E0574C; --field:#2B271D;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Manrope,-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100dvh}
+button,input{font:inherit;color:inherit}
+.wrap{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 16px) 18px calc(env(safe-area-inset-bottom) + 24px);min-height:100dvh;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:10px;font-family:"Bricolage Grotesque",Manrope,sans-serif;font-weight:800;font-size:20px;letter-spacing:-.02em;text-decoration:none;color:inherit}
+.bowl{width:30px;height:30px;flex:none}
+.iconbtn{border:0;background:var(--card);box-shadow:var(--shadow);border-radius:12px;height:38px;padding:0 14px;font-weight:700;font-size:14px;cursor:pointer}
+h1,h2{font-family:"Bricolage Grotesque",Manrope,sans-serif;letter-spacing:-.025em;margin:0}
+h1{font-size:34px;line-height:1.05;font-weight:800}
+h2{font-size:22px;font-weight:800}
+.lede{color:var(--muted);font-size:16px;line-height:1.45;margin:10px 0 0}
+.card{background:var(--card);border-radius:22px;box-shadow:var(--shadow);padding:18px;margin-top:16px}
+.label{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.stepper{display:flex;align-items:center;justify-content:space-between}
+.stepper .ctl{display:flex;align-items:center;gap:6px}
+.stepper button{width:42px;height:42px;border-radius:12px;border:0;background:var(--field);font-size:22px;font-weight:700;cursor:pointer}
+.stepper output{min-width:34px;text-align:center;font-weight:800;font-size:20px}
+.field{width:100%;border:2px solid transparent;background:var(--field);border-radius:14px;padding:14px;font-size:17px;font-weight:600;outline:none;margin-top:8px}
+.field:focus{border-color:var(--yellow-deep);background:var(--card)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:18px;padding:18px;font-weight:800;font-size:18px;cursor:pointer;margin-top:12px;transition:transform .08s ease, opacity .2s}
+.btn:active{transform:scale(.98)}
+.btn[disabled]{opacity:.35;pointer-events:none}
+.primary{background:var(--yellow);color:#1E1A12}
+.dark{background:var(--ink);color:var(--bg)}
+.ghost{background:transparent;color:var(--muted);font-weight:700;font-size:16px;padding:12px}
+.outline{background:transparent;box-shadow:inset 0 0 0 2px var(--hair);color:var(--ink)}
+.good{background:var(--green);color:#fff}
+.bad{background:transparent;box-shadow:inset 0 0 0 2px var(--red);color:var(--red)}
+.spacer{flex:1}
+.count{display:flex;align-items:center;gap:14px;padding:16px 18px;background:var(--yellow-soft);border-radius:18px;margin-top:16px}
+.count b{font-family:"Bricolage Grotesque",sans-serif;font-size:34px;line-height:1}
+.count span{color:var(--muted);font-weight:600;line-height:1.3}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 24px);transform:translate(-50%,30px);opacity:0;background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:999px;font-weight:700;transition:.25s;pointer-events:none;z-index:9;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.pill{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;background:var(--yellow);color:#1E1A12;font-weight:800;font-size:13px;border-radius:999px;padding:6px 12px;letter-spacing:.02em}
+.rounds{display:flex;gap:6px;margin-top:14px}
+.rounds div{flex:1;border-radius:12px;padding:10px 8px;background:var(--field);text-align:center;font-size:13px;font-weight:700;color:var(--muted)}
+.rounds div.on{background:var(--yellow);color:#1E1A12}
+.rounds div.done{text-decoration:line-through;opacity:.6}
+.rule{font-size:15px;line-height:1.45;color:var(--muted);margin-top:12px}
+.scores{display:grid;gap:8px}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:14px;background:var(--field);font-weight:700}
+.srow.next{background:var(--yellow-soft);box-shadow:inset 0 0 0 2px var(--yellow-deep)}
+.srow .pts{font-family:"Bricolage Grotesque",sans-serif;font-size:22px}
+.srow small{color:var(--muted);font-weight:600;margin-left:6px}
+.big-team{font-size:40px;line-height:1.05;margin-top:6px}
+/* turn */
+.turn{display:flex;flex-direction:column;min-height:calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
+.turnhead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.turnhead .got{font-weight:800;font-size:15px}
+.word{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;background:var(--card);border-radius:28px;box-shadow:var(--shadow);margin:16px 0 4px;padding:24px;min-height:220px;font-family:"Bricolage Grotesque",sans-serif;font-weight:800;letter-spacing:-.02em;line-height:1.08;word-break:break-word;hyphens:auto;user-select:none;-webkit-user-select:none}
+.word.pop{animation:pop .22s ease}
+@keyframes pop{from{transform:scale(.94);opacity:.4}to{transform:none;opacity:1}}
+.hint{font-size:13px;color:var(--muted);text-align:center;margin-top:6px}
+.btnrow{display:grid;grid-template-columns:1fr 1.6fr;gap:10px}
+.btnrow .btn{margin-top:12px}
+.xl{padding:24px;font-size:22px;border-radius:22px}
+.list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.list li{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--field);border-radius:14px;padding:12px 8px 12px 14px;font-weight:700}
+.list li button{border:0;background:transparent;color:var(--muted);font-size:13px;font-weight:700;padding:6px 10px;border-radius:10px;cursor:pointer}
+.list li.off{opacity:.45;text-decoration:line-through}
+.empty{color:var(--muted);font-weight:600}
+.trophy{font-size:56px;line-height:1}
+table{width:100%;border-collapse:collapse;font-weight:700;font-size:15px}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:800;text-align:right;padding:6px 4px}
+th:first-child,td:first-child{text-align:left}
+td{padding:10px 4px;border-top:1px solid var(--hair);text-align:right}
+td.tot{font-family:"Bricolage Grotesque",sans-serif;font-size:20px}
+tr.win td{color:var(--yellow-deep)}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:5}
+.sheet.open{display:flex}
+.sheet .panel{background:var(--bg);width:100%;max-width:520px;border-radius:26px 26px 0 0;padding:20px 18px calc(env(safe-area-inset-bottom) + 18px)}
+.small{font-size:13px;color:var(--muted);line-height:1.4}
+.fade{animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+<div class="sheet" id="menu" onclick="if(event.target===this)closeMenu()">
+  <div class="panel">
+    <h2>Meny</h2>
+    <div id="menuScores" style="margin-top:14px"></div>
+    <button class="btn outline" onclick="closeMenu();endRoundEarly()">Avslutt denne runden nå</button>
+    <button class="btn outline" onclick="closeMenu();restartSameTeams()">Start på nytt med nye lapper</button>
+    <button class="btn bad" onclick="closeMenu();leaveGame()">Forlat spillet</button>
+    <button class="btn ghost" onclick="closeMenu()">Lukk</button>
+  </div>
+</div>
+
+<script>
+/* ===== Config ===== */
+const SB='https://qcxxtvzarpxstlmyguqi.supabase.co/rest/v1/';
+const KEY='sb_publishable_5m5Hsz9YfHSPK1MZhsXiHA_GjlwYQrW';
+const H={apikey:KEY,'Content-Type':'application/json'};
+const LKEY='gulbolle_v1';
+const ROUNDS=[
+  {name:'Forklar',short:'Forklar',verb:'forklare',rule:'Forklar ordet med ord, men uten å si selve ordet (eller deler av det).'},
+  {name:'Mime',short:'Mime',verb:'mime',rule:'Ingen ord og ingen lyder. Bare kroppsspråk og miming.'},
+  {name:'Én lyd',short:'Én lyd',verb:'lage lyden',rule:'Du får bare lage én lyd. Ingen ord.'}
+];
+const BOWL_SVG='<svg class="bowl" viewBox="0 0 32 32" aria-hidden="true"><ellipse cx="16" cy="13" rx="13" ry="3.4" fill="#E8AE17"/><path d="M3 13c0 7.5 5.8 13 13 13s13-5.5 13-13" fill="#F7C948"/><ellipse cx="16" cy="13" rx="10.5" ry="2.2" fill="#B9860A" opacity=".45"/><path d="M11 12.4l3-3.6M17 12.6l1.5-4.6M21 12.2l-.8-3.4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
+
+/* ===== Helpers ===== */
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),1800)}
+function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const DEV=(()=>{let d=ls('gb_dev');if(!d){d=Math.random().toString(36).slice(2,10);ls('gb_dev',d)}return d})();
+
+/* ===== State ===== */
+let MODE=null;      // 'online' | 'local' | null (home)
+let ROOM=null, VER=0, LCOUNT=0, DBERR=false, BUSY=false, EXTRA=false;
+let S=null;
+function freshState(teams){
+  return {phase:'words',teams:teams||['Lag 1','Lag 2','Lag 3'],perPerson:3,words:[],batches:[],parti:1,
+    round:0,bowl:[],current:null,teamIdx:0,turnGot:[],scores:[],carry:false,turnDev:null};
+}
+function total(i){return ((S.scores||[])[i]||[]).reduce((a,b)=>a+b,0)}
+function nextTeam(i){return (i+1)%S.teams.length}
+function myTurn(){return MODE==='local'||S.turnDev===DEV}
+function sentKey(){return 'gb_sent_'+ROOM+'_'+(S.parti||1)}
+
+/* ===== Supabase ===== */
+async function api(path,opt={}){
+  const r=await fetch(SB+path,{...opt,headers:{...H,...(opt.headers||{})}});
+  const txt=await r.text();let body=null;try{body=txt?JSON.parse(txt):null}catch(e){}
+  if(!r.ok){const e=new Error((body&&body.message)||('HTTP '+r.status));e.status=r.status;e.code=body&&body.code;
+    if(r.status===404||e.code==='PGRST205'||e.code==='42P01'||e.code==='42501'){DBERR=true}
+    throw e}
+  return body;
+}
+let inflight=false,dirty=false;
+async function push(){
+  if(MODE!=='online')return;
+  if(inflight){dirty=true;return}
+  inflight=true;dirty=false;
+  try{
+    const j=await api(`gulbolle_rom?kode=eq.${ROOM}&versjon=eq.${VER}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({state:S,versjon:VER+1})});
+    inflight=false;
+    if(!j||!j.length){dirty=false;await pull(true);toast('Noen andre trykket samtidig. Prøv igjen.');return}
+    VER=j[0].versjon;
+  }catch(e){
+    inflight=false;toast('Nettfeil, prøver igjen …');setTimeout(push,1500);return;
+  }
+  if(dirty){dirty=false;push()}
+}
+async function pull(force){
+  if(MODE!=='online'||(!force&&(inflight||dirty)))return;
+  try{
+    const j=await api(`gulbolle_rom?kode=eq.${ROOM}&select=state,versjon`);
+    if(!j||!j.length)return;
+    if(!force&&(inflight||dirty))return;
+    if(force||j[0].versjon>VER){VER=j[0].versjon;S=j[0].state;render()}
+  }catch(e){}
+}
+async function pullCount(){
+  if(MODE!=='online'||S.phase!=='words')return;
+  try{const j=await api(`gulbolle_lapper?rom=eq.${ROOM}&parti=eq.${S.parti||1}&select=id`);
+    if(j.length!==LCOUNT){LCOUNT=j.length;const el=$('lcount');if(el)el.textContent=LCOUNT;else render()}}catch(e){}
+}
+let tickN=0;
+setInterval(()=>{
+  if(MODE!=='online'||document.hidden)return;
+  tickN++;
+  if(S.phase==='turn'&&S.turnDev===DEV&&tickN%5)return; // active phone polls rarely
+  pull();pullCount();
+},1500);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&MODE==='online'){pull();pullCount()}if(!document.hidden&&S&&S.phase==='turn')keepAwake(true)});
+
+/* apply a change to the shared state */
+function act(fn){
+  fn(S);
+  if(MODE==='local')ls(LKEY,JSON.stringify(S));else push();
+  render();
+}
+
+/* ===== Rooms ===== */
+function genCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ';let c='';for(let i=0;i<4;i++)c+=a[Math.floor(Math.random()*a.length)];return c}
+async function createRoom(){
+  if(BUSY)return;BUSY=true;render();
+  const st=freshState();
+  try{
+    for(let k=0;k<6;k++){
+      const code=genCode();
+      try{await api('gulbolle_rom',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({kode:code,state:st,versjon:0})});
+        BUSY=false;enterRoom(code,st,0);return}
+      catch(e){if(e.status===409)continue;throw e}
+    }
+    throw new Error('Fant ingen ledig kode');
+  }catch(e){BUSY=false;render();toast(DBERR?'Databasen er ikke satt opp ennå':'Klarte ikke å lage spill: '+e.message)}
+}
+async function joinRoom(code){
+  code=(code||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(code.length<4){toast('Skriv inn koden (4 bokstaver)');return}
+  BUSY=true;render();
+  try{
+    const j=await api(`gulbolle_rom?kode=eq.${code}&select=state,versjon`);
+    BUSY=false;
+    if(!j.length){render();toast('Fant ikke spillet '+code);return}
+    enterRoom(code,j[0].state,j[0].versjon);
+  }catch(e){BUSY=false;render();toast(DBERR?'Databasen er ikke satt opp ennå':'Nettfeil: '+e.message)}
+}
+function enterRoom(code,st,ver){
+  MODE='online';ROOM=code;S=st;VER=ver;LCOUNT=0;EXTRA=false;
+  ls('gb_room',code);
+  try{history.replaceState(null,'','?r='+code)}catch(e){}
+  render();pullCount();
+}
+function leaveGame(){
+  if(!confirm('Forlate spillet på denne mobilen?'))return;
+  if(MODE==='local')ls(LKEY,null);else ls('gb_room',null);
+  MODE=null;ROOM=null;S=null;
+  try{history.replaceState(null,'','./')}catch(e){}
+  render();
+}
+function shareLink(){
+  const url=location.origin+location.pathname+'?r='+ROOM;
+  if(navigator.share){navigator.share({title:'Gul bolle',text:'Bli med i Gul bolle! Kode '+ROOM,url}).catch(()=>{})}
+  else{try{navigator.clipboard.writeText(url);toast('Lenken er kopiert')}catch(e){toast(url)}}
+}
+
+/* ===== Wake lock ===== */
+let lock=null;
+async function keepAwake(on){
+  try{
+    if(on&&'wakeLock' in navigator&&!lock){lock=await navigator.wakeLock.request('screen');lock.addEventListener('release',()=>lock=null)}
+    if(!on&&lock){await lock.release();lock=null}
+  }catch(e){}
+}
+
+/* ===== Render ===== */
+function header(menu){
+  const right=menu?'<button class="iconbtn" onclick="openMenu()">Meny</button>'
+    :(MODE==='online'&&ROOM?`<button class="iconbtn" onclick="shareLink()">Kode ${ROOM}</button>`:'<a class="iconbtn" href="../" style="display:flex;align-items:center;text-decoration:none">raggan.no</a>');
+  return `<div class="top"><span class="brand">${BOWL_SVG}Gul bolle</span>${right}</div>`;
+}
+function view(){
+  if(!MODE)return vHome();
+  if(S.phase==='setup')return vSetup();
+  if(S.phase==='words'){
+    if(MODE==='local')return vLocalWords();
+    return (ls(sentKey())&&!EXTRA)?vLobby():vWordForm();
+  }
+  if(S.phase==='ready')return vReady();
+  if(S.phase==='turn')return myTurn()?vTurn():vWatch();
+  if(S.phase==='summary')return vSummary();
+  if(S.phase==='final')return vFinal();
+  return vHome();
+}
+function render(){
+  const app=$('app');const keep={};let focusId=null,sel=null;
+  app.querySelectorAll('input[id]').forEach(i=>keep[i.id]=i.value);
+  const ae=document.activeElement;if(ae&&ae.id&&app.contains(ae)){focusId=ae.id;try{sel=ae.selectionStart}catch(e){}}
+  app.innerHTML=view();
+  for(const id in keep){const el=$(id);if(el&&(el.dataset.keep!=='0'||id===focusId))el.value=keep[id]}
+  if(focusId){const el=$(focusId);if(el){el.focus();try{el.setSelectionRange(sel,sel)}catch(e){}}}
+  if(S&&S.phase==='turn'&&myTurn())fitWord();
+  keepAwake(!!(S&&S.phase==='turn'&&myTurn()));
+}
+
+/* ---------- HOME ---------- */
+function vHome(){
+  const last=ls('gb_room');let local=null;try{local=JSON.parse(ls(LKEY))}catch(e){}
+  return header(false)+`
+  <h1>Gul bolle</h1>
+  <p class="lede">Alle skriver lappene sine på egen mobil. Etterpå spiller hvert lag med én mobil, og klokka tar dere på en annen.</p>
+  ${DBERR?'<div class="card" style="background:var(--yellow-soft)"><b>Databasen er ikke satt opp ennå.</b><p class="small" style="margin:6px 0 0">Kjør SQL-en i Supabase, eller spill på én mobil inntil videre.</p></div>':''}
+  <div class="card">
+    <p class="label">Starte et spill</p>
+    <p class="small" style="margin:0">Én person lager spillet og deler koden med resten.</p>
+    <button class="btn primary" ${BUSY?'disabled':''} onclick="createRoom()">Lag nytt spill</button>
+  </div>
+  <div class="card">
+    <p class="label">Bli med</p>
+    <input class="field" id="code" placeholder="Kode, f.eks. KQBT" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="6" style="text-transform:uppercase;letter-spacing:.15em;font-weight:800;text-align:center;font-size:22px" onkeydown="if(event.key==='Enter')joinRoom(this.value)">
+    <button class="btn dark" ${BUSY?'disabled':''} onclick="joinRoom($('code').value)">Bli med</button>
+    ${last?`<button class="btn ghost" onclick="joinRoom('${esc(last)}')">Fortsett spill ${esc(last)}</button>`:''}
+  </div>
+  <div class="spacer"></div>
+  ${local&&local.phase?'<button class="btn ghost" onclick="resumeLocal()">Fortsett spillet på denne mobilen</button>':''}
+  <button class="btn ghost" onclick="startLocal()">Spill på én mobil (uten nett)</button>`;
+}
+function startLocal(){MODE='local';S=freshState();S.phase='setup';ls(LKEY,JSON.stringify(S));render()}
+function resumeLocal(){try{S=JSON.parse(ls(LKEY))}catch(e){}if(S){MODE='local';render()}}
+
+/* ---------- TEAMS (shared by lobby and local setup) ---------- */
+function teamsCard(){
+  return `<div class="card">
+    <div class="stepper"><p class="label" style="margin:0">Antall lag</p>
+      <div class="ctl"><button onclick="setTeams(-1)">−</button><output>${S.teams.length}</output><button onclick="setTeams(1)">+</button></div></div>
+    ${S.teams.map((t,i)=>`<input class="field" id="team${i}" data-keep="0" value="${esc(t)}" placeholder="Lag ${i+1}" onchange="renameTeam(${i},this.value)" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.blur()">`).join('')}
+  </div>
+  <div class="card">
+    <div class="stepper"><p class="label" style="margin:0">Lapper per person</p>
+      <div class="ctl"><button onclick="setPer(-1)">−</button><output>${S.perPerson}</output><button onclick="setPer(1)">+</button></div></div>
+  </div>`;
+}
+function setTeams(d){act(s=>{const n=Math.min(6,Math.max(2,s.teams.length+d));while(s.teams.length<n)s.teams.push('Lag '+(s.teams.length+1));s.teams.length=n})}
+function renameTeam(i,v){act(s=>{s.teams[i]=(v||'').trim()||('Lag '+(i+1))})}
+function setPer(d){act(s=>{s.perPerson=Math.min(6,Math.max(1,s.perPerson+d))})}
+
+function vSetup(){
+  return header(false)+`
+  <h1>Lag og lapper</h1>
+  <p class="lede">Én mobil er bollen og sendes rundt. Klokka tar dere på en annen mobil.</p>
+  ${teamsCard()}
+  <div class="spacer"></div>
+  <button class="btn primary" onclick="act(s=>s.phase='words')">Neste: skriv lapper</button>
+  <button class="btn ghost" onclick="MODE=null;S=null;render()">Tilbake</button>`;
+}
+
+/* ---------- WORD INPUTS ---------- */
+function wordInputs(){
+  let h='';for(let i=0;i<S.perPerson;i++)h+=`<input class="field" id="w${i}" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Lapp ${i+1}" enterkeyhint="${i<S.perPerson-1?'next':'done'}" onkeydown="wordKey(event,${i})">`;
+  return h;
+}
+function readWords(){const got=[];for(let i=0;i<S.perPerson;i++){const el=$('w'+i);const v=el?(el.value||'').trim().slice(0,80):'';if(v)got.push(v)}return got}
+function clearWords(){for(let i=0;i<S.perPerson;i++){const el=$('w'+i);if(el)el.value=''}}
+function wordKey(e,i){if(e.key==='Enter'){e.preventDefault();const nx=$('w'+(i+1));if(nx)nx.focus();else submitWords()}}
+function submitWords(){MODE==='local'?addBatch():sendWords()}
+
+/* online: one person per phone */
+function vWordForm(){
+  return header(false)+`
+  <h1>${EXTRA?'Lapper for en til':'Skriv dine '+S.perPerson+' lapper'}</h1>
+  <p class="lede">Ting, personer, filmer, steder … alt som kan forklares, mimes og lages én lyd av. Ingen andre ser hva du skriver.</p>
+  <div class="card">${wordInputs()}
+    <button class="btn primary" ${BUSY?'disabled':''} onclick="sendWords()">Legg i bollen</button>
+  </div>
+  <div class="count"><b id="lcount">${LCOUNT}</b><span>lapper i bollen så langt</span></div>
+  <div class="spacer"></div>
+  ${EXTRA?'<button class="btn ghost" onclick="EXTRA=false;render()">Avbryt</button>':`<button class="btn ghost" onclick="ls(sentKey(),'1');render()">Jeg har allerede skrevet lapper</button>`}`;
+}
+async function sendWords(){
+  const got=readWords();
+  if(!got.length){toast('Skriv minst én lapp');return}
+  BUSY=true;render();
+  try{
+    await api('gulbolle_lapper',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(got.map(t=>({rom:ROOM,parti:S.parti||1,tekst:t})))});
+    BUSY=false;clearWords();ls(sentKey(),'1');EXTRA=false;LCOUNT+=got.length;buzz(25);
+    render();toast(got.length+' '+(got.length===1?'lapp':'lapper')+' i bollen!');pullCount();
+    document.activeElement&&document.activeElement.blur();
+  }catch(e){BUSY=false;render();toast('Klarte ikke å sende, prøv igjen')}
+}
+function vLobby(){
+  return header(false)+`
+  <span class="pill">Kode ${ROOM}</span>
+  <h1 style="margin-top:12px">Bollen fylles</h1>
+  <p class="lede">Alle går inn på <b>raggan.no/gulbolle</b>, trykker «Bli med» og skriver koden <b>${ROOM}</b>.</p>
+  <div class="count"><b id="lcount">${LCOUNT}</b><span>lapper i bollen<br>oppdateres av seg selv</span></div>
+  <button class="btn outline" onclick="shareLink()">Del lenken</button>
+  <button class="btn ghost" onclick="EXTRA=true;render()">Skriv lapper for en uten mobil</button>
+  ${teamsCard()}
+  <div class="spacer"></div>
+  <button class="btn dark" ${LCOUNT<2||BUSY?'disabled':''} onclick="startOnline()">Alle er ferdige, start spillet</button>
+  <p class="small" style="text-align:center">Under spillet: én mobil per lag. Den som forklarer holder mobilen, en annen tar tiden.</p>`;
+}
+async function startOnline(){
+  if(!confirm('Er alle ferdige med lappene? '+LCOUNT+' lapper i bollen.'))return;
+  BUSY=true;render();
+  try{
+    const j=await api(`gulbolle_lapper?rom=eq.${ROOM}&parti=eq.${S.parti||1}&select=tekst&order=laget.asc`);
+    BUSY=false;
+    if(j.length<2){render();toast('For få lapper');return}
+    act(s=>{s.words=j.map(x=>x.tekst);beginGame(s)});
+  }catch(e){BUSY=false;render();toast('Nettfeil, prøv igjen')}
+}
+
+/* local: phone passed around */
+function vLocalWords(){
+  return header(false)+`
+  <h1>Skriv lappene</h1>
+  <p class="lede">Hver person skriver ${S.perPerson} ting, trykker «Legg i bollen» og sender mobilen videre.</p>
+  <div class="card">${wordInputs()}
+    <button class="btn primary" onclick="addBatch()">Legg i bollen</button>
+  </div>
+  <div class="count"><b>${S.words.length}</b><span>lapper i bollen<br>fra ${S.batches.length} ${S.batches.length===1?'person':'personer'}</span></div>
+  ${S.batches.length?'<button class="btn ghost" onclick="undoBatch()">Angre siste person</button>':''}
+  <div class="spacer"></div>
+  <button class="btn dark" ${S.words.length<2?'disabled':''} onclick="act(beginGame)">Alle er ferdige, start spillet</button>
+  <button class="btn ghost" onclick="act(s=>s.phase='setup')">Tilbake til lag</button>`;
+}
+function addBatch(){
+  const got=readWords();if(!got.length){toast('Skriv minst én lapp');return}
+  clearWords();
+  act(s=>{s.words.push(...got);s.batches.push(got.length)});
+  buzz(20);toast(got.length+' i bollen. Send mobilen videre!');
+  document.activeElement&&document.activeElement.blur();
+}
+function undoBatch(){act(s=>{const k=s.batches.pop();if(k)s.words.splice(s.words.length-k,k)})}
+
+/* ---------- GAME ---------- */
+function fillBowl(s){s.bowl=shuffle(s.words.map((_,i)=>i));s.current=null;s.turnGot=[];s.turnDev=null}
+function beginGame(s){s.scores=s.teams.map(()=>[0,0,0]);s.round=0;s.teamIdx=0;s.carry=false;fillBowl(s);s.phase='ready'}
+function draw(s){
+  if(!s.bowl.length){s.current=null;return}
+  const pool=s.bowl.filter(i=>i!==s.current);
+  s.current=pool.length?pool[Math.floor(Math.random()*pool.length)]:s.bowl[0];
+}
+function scoreRows(hl){
+  return `<div class="scores">${S.teams.map((t,i)=>`<div class="srow ${i===hl?'next':''}"><span>${esc(t)}${i===hl?'<small>sin tur</small>':''}</span><span class="pts">${total(i)}</span></div>`).join('')}</div>`;
+}
+function roundStrip(){return `<div class="rounds">${ROUNDS.map((r,i)=>`<div class="${i===S.round?'on':i<S.round?'done':''}">${i+1}. ${r.short}</div>`).join('')}</div>`}
+
+function vReady(){
+  const r=ROUNDS[S.round];
+  return header(true)+`
+  <span class="pill">Runde ${S.round+1} av 3 · ${r.name}</span>
+  ${roundStrip()}
+  <p class="rule">${r.rule}</p>
+  <div class="card" style="text-align:center;padding:26px 18px">
+    <p class="label" style="margin:0">${S.carry?'Fortsetter med resten av tiden':'Neste lag'}</p>
+    <h1 class="big-team">${esc(S.teams[S.teamIdx])}</h1>
+    <p class="small" style="margin:10px 0 0">${MODE==='online'?'Trykk Start på mobilen til '+esc(S.teams[S.teamIdx])+'.':'Gi mobilen til den som skal '+r.verb+'.'}<br>Start klokka på den andre mobilen samtidig.</p>
+    <button class="btn primary xl" onclick="startTurn()">Start</button>
+  </div>
+  <div class="count"><b>${S.bowl.length}</b><span>lapper igjen i bollen<br>denne runden</span></div>
+  <div class="card"><p class="label">Poeng</p>${scoreRows(S.teamIdx)}</div>`;
+}
+function startTurn(){act(s=>{s.turnGot=[];s.carry=false;s.current=null;s.turnDev=DEV;draw(s);s.phase='turn'})}
+
+let lastTap=0;
+function guard(){const t=Date.now();if(t-lastTap<350)return false;lastTap=t;return myTurn()}
+
+function vTurn(){
+  const r=ROUNDS[S.round];
+  return `<div class="turn">
+    <div class="turnhead"><span class="pill">${esc(S.teams[S.teamIdx])} · ${r.short}</span><span class="got">${S.turnGot.length} tatt · ${S.bowl.length} igjen</span></div>
+    <div class="word pop" id="word">${esc(S.words[S.current]??'')}</div>
+    <p class="hint">${r.rule}</p>
+    <div class="btnrow">
+      <button class="btn outline xl" ${S.bowl.length>1?'':'disabled'} onclick="skip()">Hopp over</button>
+      <button class="btn good xl" onclick="correct()">Riktig ✓</button>
+    </div>
+    <button class="btn bad" onclick="timeUp()">Tiden er ute</button>
+    ${S.turnGot.length?'<button class="btn ghost" onclick="undoLast()">Angre siste riktig</button>':''}
+  </div>`;
+}
+function vWatch(){
+  const r=ROUNDS[S.round];
+  return header(true)+`
+  <span class="pill">Runde ${S.round+1} av 3 · ${r.name}</span>
+  <div class="card" style="text-align:center;padding:26px 18px">
+    <p class="label" style="margin:0">Spiller nå</p>
+    <h1 class="big-team">${esc(S.teams[S.teamIdx])}</h1>
+    <p class="small" style="margin:10px 0 0">${S.turnGot.length} tatt denne turen · ${S.bowl.length} igjen i bollen</p>
+  </div>
+  <div class="card"><p class="label">Poeng</p>${scoreRows(S.teamIdx)}</div>
+  <div class="spacer"></div>
+  <button class="btn ghost" onclick="takeOver()">Ta over turen på denne mobilen</button>`;
+}
+function takeOver(){if(confirm('Ta over turen her? Bruk dette bare hvis den andre mobilen har problemer.'))act(s=>{s.turnDev=DEV;if(s.current==null)draw(s)})}
+function fitWord(){
+  const el=$('word');if(!el)return;const n=(el.textContent||'').length;
+  el.style.fontSize=(n<=8?58:n<=14?48:n<=22?40:n<=36?32:26)+'px';
+}
+function correct(){
+  if(!guard()||S.current==null)return;
+  buzz(25);
+  act(s=>{const w=s.current;s.bowl=s.bowl.filter(i=>i!==w);s.turnGot.push(w);s.scores[s.teamIdx][s.round]++;
+    if(!s.bowl.length){s.current=null;s.phase='summary'}else draw(s)});
+  if(S.phase==='summary')buzz([40,60,40]);
+}
+function skip(){if(!guard())return;act(draw)}
+function undoLast(){if(!myTurn())return;act(s=>{const w=s.turnGot.pop();if(w==null)return;if(s.current!=null&&!s.bowl.includes(s.current))s.bowl.push(s.current);s.bowl.push(w);s.scores[s.teamIdx][s.round]--;s.current=w});toast('Angret')}
+function timeUp(){if(!guard())return;buzz(60);act(s=>{s.current=null;s.phase='summary'})}
+
+/* ---------- SUMMARY ---------- */
+function vSummary(){
+  const empty=S.bowl.length===0, team=S.teams[S.teamIdx];
+  const list=S.turnGot.length?`<ul class="list">${S.turnGot.map((w,k)=>`<li><span>${esc(S.words[w])}</span><button onclick="removeGot(${k})">Ikke godkjent</button></li>`).join('')}</ul>`:'<p class="empty">Ingen lapper denne gangen.</p>';
+  const head=empty?`<span class="pill">Bollen er tom!</span><h1 style="margin-top:12px">Runde ${S.round+1} ferdig</h1>`
+    :`<span class="pill">Tiden er ute</span><h1 style="margin-top:12px">${esc(team)} tok ${S.turnGot.length}</h1>`;
+  let actions;
+  if(empty&&S.round<2){
+    const nx=ROUNDS[S.round+1];
+    actions=`<p class="rule"><b>Neste runde: ${nx.name}.</b> Alle lappene går tilbake i bollen. Har ${esc(team)} tid igjen på klokka, fortsetter de.</p>
+      <button class="btn primary" onclick="nextRound(true)">${esc(team)} fortsetter (har tid igjen)</button>
+      <button class="btn outline" onclick="nextRound(false)">Neste lag: ${esc(S.teams[nextTeam(S.teamIdx)])}</button>`;
+  }else if(empty){
+    actions=`<button class="btn primary" onclick="act(s=>s.phase='final')">Se resultatet</button>`;
+  }else{
+    actions=`<button class="btn primary" onclick="nextTurn()">Neste lag: ${esc(S.teams[nextTeam(S.teamIdx)])}</button>
+      ${myTurn()?'<button class="btn ghost" onclick="resumeTurn()">Oi, trykket feil. Fortsett turen</button>':''}`;
+  }
+  return header(true)+head+`
+  <div class="card"><p class="label">${esc(team)} denne turen</p>${list}
+    <p class="small" style="margin:10px 0 0">Trykk «Ikke godkjent» hvis noen jukset; lappen går tilbake i bollen.</p></div>
+  ${actions}
+  <div class="card"><p class="label">Poeng</p>${scoreRows(-1)}</div>`;
+}
+function removeGot(k){act(s=>{const w=s.turnGot.splice(k,1)[0];if(w==null)return;s.bowl.push(w);s.scores[s.teamIdx][s.round]--});toast('Lappen er tilbake i bollen')}
+function nextTurn(){act(s=>{s.teamIdx=nextTeam(s.teamIdx);s.turnGot=[];s.turnDev=null;s.phase='ready'})}
+function resumeTurn(){act(s=>{s.turnDev=DEV;draw(s);s.phase='turn'})}
+function nextRound(carry){act(s=>{s.round++;fillBowl(s);s.carry=carry;if(!carry)s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'})}
+function endRoundEarly(){
+  if(!S||['setup','words','final'].includes(S.phase))return;
+  if(!confirm('Avslutte runde '+(S.round+1)+' nå? Lappene som er igjen teller ikke.'))return;
+  act(s=>{if(s.round<2){s.round++;fillBowl(s);s.carry=false;s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'}else s.phase='final'});
+}
+function restartSameTeams(ask=true){
+  if(ask&&!confirm('Starte på nytt med nye lapper? Poengene nullstilles, lagene beholdes.'))return;
+  act(s=>{s.parti=(s.parti||1)+1;s.words=[];s.batches=[];s.scores=[];s.bowl=[];s.current=null;s.turnGot=[];s.turnDev=null;s.phase='words'});
+  LCOUNT=0;EXTRA=false;render();
+}
+
+/* ---------- FINAL ---------- */
+function vFinal(){
+  const idx=S.teams.map((_,i)=>i).sort((a,b)=>total(b)-total(a));
+  const best=total(idx[0]);const win=idx.filter(i=>total(i)===best);
+  return header(false)+`
+  <div style="text-align:center;margin-top:10px"><div class="trophy">🏆</div>
+  <h1 style="margin-top:10px">${win.length>1?'Uavgjort!':esc(S.teams[win[0]])+' vant!'}</h1>
+  <p class="lede">${win.length>1?win.map(i=>esc(S.teams[i])).join(' og ')+' med '+best+' poeng hver':best+' poeng totalt'}</p></div>
+  <div class="card"><table><thead><tr><th>Lag</th><th>Forkl.</th><th>Mime</th><th>Lyd</th><th>Sum</th></tr></thead><tbody>
+  ${idx.map(i=>`<tr class="${total(i)===best?'win':''}"><td>${esc(S.teams[i])}</td>${S.scores[i].map(v=>`<td>${v}</td>`).join('')}<td class="tot">${total(i)}</td></tr>`).join('')}
+  </tbody></table></div>
+  <div class="spacer"></div>
+  <button class="btn primary" onclick="restartSameTeams(false)">Nytt spill med nye lapper</button>
+  <button class="btn outline" onclick="act(beginGame)">Spill igjen med samme lapper</button>
+  <button class="btn ghost" onclick="leaveGame()">Avslutt</button>`;
+}
+
+/* ---------- MENU ---------- */
+function openMenu(){
+  $('menuScores').innerHTML=(S.scores&&S.scores.length)?`<table><thead><tr><th>Lag</th><th>R1</th><th>R2</th><th>R3</th><th>Sum</th></tr></thead><tbody>${S.teams.map((t,i)=>`<tr><td>${esc(t)}</td>${(S.scores[i]||[0,0,0]).map(v=>`<td>${v}</td>`).join('')}<td class="tot">${total(i)}</td></tr>`).join('')}</tbody></table>`:'';
+  $('menu').classList.add('open');
+}
+function closeMenu(){$('menu').classList.remove('open')}
+
+/* ---------- BOOT ---------- */
+(function(){
+  const q=new URLSearchParams(location.search).get('r');
+  render();
+  if(q)joinRoom(q);
+})();
+</script>
+</body>
+</html>
