@@ -106,6 +106,10 @@ tr.win td{color:var(--yellow-deep)}
 .sheet.open{display:flex}
 .sheet .panel{background:var(--bg);width:100%;max-width:520px;border-radius:26px 26px 0 0;padding:20px 18px calc(env(safe-area-inset-bottom) + 18px)}
 .small{font-size:13px;color:var(--muted);line-height:1.4}
+.stealword{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:34px;line-height:1.1;text-align:center;margin:6px 0 4px;word-break:break-word}
+.cd{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:44px;text-align:center;color:var(--red);line-height:1;margin:6px 0 2px}
+.cd.done{font-size:20px}
+.steal{box-shadow:inset 0 0 0 3px var(--yellow-deep),var(--shadow)}
 .fade{animation:fade .25s ease}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 </style>
@@ -296,6 +300,7 @@ function render(){
   if(focusId){const el=$(focusId);if(el){el.focus();try{el.setSelectionRange(sel,sel)}catch(e){}}}
   if(S&&S.phase==='turn'&&myTurn())fitWord();
   keepAwake(!!(S&&S.phase==='turn'&&myTurn()));
+  runCountdown();
 }
 
 /* ---------- HOME ---------- */
@@ -434,7 +439,7 @@ function addBatch(){
 function undoBatch(){act(s=>{const k=s.batches.pop();if(k)s.words.splice(s.words.length-k,k)})}
 
 /* ---------- GAME ---------- */
-function fillBowl(s){s.bowl=shuffle(s.words.map((_,i)=>i));s.current=null;s.turnGot=[];s.turnDev=null}
+function fillBowl(s){s.bowl=shuffle(s.words.map((_,i)=>i));s.current=null;s.turnGot=[];s.turnDev=null;s.steal=null}
 function normWord(t){return String(t).normalize('NFKC').toLowerCase().replace(/[\s\u00a0]+/g,' ').replace(/^[\s"'«»]+|[\s"'«».!?,]+$/g,'')}
 function dedupe(list){const seen=new Set();return list.filter(t=>{const k=normWord(t);if(!k||seen.has(k))return false;seen.add(k);return true})}
 function beginGame(s){const before=s.words.length;s.words=dedupe(s.words);const gone=before-s.words.length;if(gone)setTimeout(()=>toast(gone+(gone===1?' duplikat':' duplikater')+' fjernet'),50);s.scores=s.teams.map(()=>[0,0,0]);s.round=0;s.teamIdx=0;s.carry=false;fillBowl(s);s.phase='ready'}
@@ -463,7 +468,7 @@ function vReady(){
   <div class="count"><b>${S.bowl.length}</b><span>lapper igjen i bollen<br>denne runden</span></div>
   <div class="card"><p class="label">Poeng</p>${scoreRows(S.teamIdx)}</div>`;
 }
-function startTurn(){act(s=>{s.turnGot=[];s.carry=false;s.current=null;s.turnDev=DEV;draw(s);s.phase='turn'})}
+function startTurn(){act(s=>{s.steal=null;s.turnGot=[];s.carry=false;s.current=null;s.turnDev=DEV;draw(s);s.phase='turn'})}
 
 let lastTap=0;
 function guard(){const t=Date.now();if(t-lastTap<350)return false;lastTap=t;return myTurn()}
@@ -509,7 +514,20 @@ function correct(){
 }
 function skip(){if(!guard())return;act(draw)}
 function undoLast(){if(!myTurn())return;act(s=>{const w=s.turnGot.pop();if(w==null)return;if(s.current!=null&&!s.bowl.includes(s.current))s.bowl.push(s.current);s.bowl.push(w);s.scores[s.teamIdx][s.round]--;s.current=w});toast('Angret')}
-function timeUp(){if(!guard())return;buzz(60);act(s=>{s.current=null;s.phase='summary'})}
+let STEAL_T=0,stealTimer=null;
+function timeUp(){if(!guard())return;buzz(60);STEAL_T=Date.now();act(s=>{s.steal=s.current!=null?{w:s.current,open:true,by:null}:null;s.current=null;s.phase='summary'})}
+function steal(i){act(s=>{const st=s.steal;if(!st)return;if(i>=0){s.bowl=s.bowl.filter(x=>x!==st.w);s.scores[i][s.round]++;s.steal={w:st.w,open:false,by:i}}else s.steal=null});if(i>=0){buzz(30);toast(S.teams[i]+' stjal lappen!')}}
+function undoSteal(){act(s=>{const st=s.steal;if(!st||st.by==null)return;if(!s.bowl.includes(st.w))s.bowl.push(st.w);s.scores[st.by][s.round]--;s.steal={w:st.w,open:true,by:null}});STEAL_T=Date.now()}
+function runCountdown(){
+  clearInterval(stealTimer);stealTimer=null;
+  if(!(S&&S.phase==='summary'&&S.steal&&S.steal.open&&myTurn()))return;
+  if(!STEAL_T)STEAL_T=Date.now();
+  let buzzed=false;
+  const tick=()=>{const el=$('cd');if(!el){clearInterval(stealTimer);return}
+    const left=Math.max(0,10-Math.floor((Date.now()-STEAL_T)/1000));
+    if(left>0){el.textContent=left;el.classList.remove('done')}else{el.textContent='Tiden er ute!';el.classList.add('done');if(!buzzed){buzzed=true;buzz([80,60,80])}clearInterval(stealTimer)}};
+  tick();stealTimer=setInterval(tick,250);
+}
 
 /* ---------- SUMMARY ---------- */
 function vSummary(){
@@ -517,8 +535,26 @@ function vSummary(){
   const list=S.turnGot.length?`<ul class="list">${S.turnGot.map((w,k)=>`<li><span>${esc(S.words[w])}</span><button onclick="removeGot(${k})">Ikke godkjent</button></li>`).join('')}</ul>`:'<p class="empty">Ingen lapper denne gangen.</p>';
   const head=empty?`<span class="pill">Bollen er tom!</span><h1 style="margin-top:12px">Runde ${S.round+1} ferdig</h1>`
     :`<span class="pill">Tiden er ute</span><h1 style="margin-top:12px">${esc(team)} tok ${S.turnGot.length}</h1>`;
+  const st=S.steal;let stealHtml='';
+  if(st&&st.open){
+    const others=S.teams.map((_,i)=>i).filter(i=>i!==S.teamIdx);
+    stealHtml=`<div class="card steal"><p class="label">Siste lapp: de andre lagene kan stjele</p>
+      ${myTurn()?`<div class="stealword">${esc(S.words[st.w])}</div><div class="cd" id="cd">10</div><p class="small" style="text-align:center;margin:0">De andre lagene gjetter nå.</p>`
+        :'<p class="small" style="margin:0">Ordet vises på mobilen som spilte. De andre lagene har ca. 10 sekunder på seg.</p>'}
+      ${others.map(i=>`<button class="btn good" onclick="steal(${i})">${esc(S.teams[i])} tok den</button>`).join('')}
+      <button class="btn outline" onclick="steal(-1)">Ingen tok den</button></div>`;
+  }else if(st&&st.by!=null){
+    stealHtml=`<div class="card"><p class="label">Stjålet</p><ul class="list"><li><span>${esc(S.teams[st.by])}: ${esc(S.words[st.w])}</span><button onclick="undoSteal()">Angre</button></li></ul></div>`;
+  }
+  const stolen=!!(st&&st.by!=null);
   let actions;
-  if(empty&&S.round<2){
+  if(st&&st.open){
+    actions='';
+  }else if(empty&&S.round<2&&stolen){
+    const nx=ROUNDS[S.round+1];
+    actions=`<p class="rule"><b>Neste runde: ${nx.name}.</b> Alle lappene går tilbake i bollen.</p>
+      <button class="btn primary" onclick="nextRound(false)">Neste lag: ${esc(S.teams[nextTeam(S.teamIdx)])}</button>`;
+  }else if(empty&&S.round<2){
     const nx=ROUNDS[S.round+1];
     actions=`<p class="rule"><b>Neste runde: ${nx.name}.</b> Alle lappene går tilbake i bollen. Har ${esc(team)} tid igjen på klokka, fortsetter de.</p>
       <button class="btn primary" onclick="nextRound(true)">${esc(team)} fortsetter (har tid igjen)</button>
@@ -527,17 +563,17 @@ function vSummary(){
     actions=`<button class="btn primary" onclick="act(s=>s.phase='final')">Se resultatet</button>`;
   }else{
     actions=`<button class="btn primary" onclick="nextTurn()">Neste lag: ${esc(S.teams[nextTeam(S.teamIdx)])}</button>
-      ${myTurn()?'<button class="btn ghost" onclick="resumeTurn()">Oi, trykket feil. Fortsett turen</button>':''}`;
+      ${myTurn()&&!stolen?'<button class="btn ghost" onclick="resumeTurn()">Oi, trykket feil. Fortsett turen</button>':''}`;
   }
-  return header(true)+head+`
+  return header(true)+head+stealHtml+`
   <div class="card"><p class="label">${esc(team)} denne turen</p>${list}
     <p class="small" style="margin:10px 0 0">Trykk «Ikke godkjent» hvis noen jukset; lappen går tilbake i bollen.</p></div>
   ${actions}
   <div class="card"><p class="label">Poeng</p>${scoreRows(-1)}</div>`;
 }
 function removeGot(k){act(s=>{const w=s.turnGot.splice(k,1)[0];if(w==null)return;s.bowl.push(w);s.scores[s.teamIdx][s.round]--});toast('Lappen er tilbake i bollen')}
-function nextTurn(){act(s=>{s.teamIdx=nextTeam(s.teamIdx);s.turnGot=[];s.turnDev=null;s.phase='ready'})}
-function resumeTurn(){act(s=>{s.turnDev=DEV;draw(s);s.phase='turn'})}
+function nextTurn(){act(s=>{s.steal=null;s.teamIdx=nextTeam(s.teamIdx);s.turnGot=[];s.turnDev=null;s.phase='ready'})}
+function resumeTurn(){act(s=>{s.steal=null;s.turnDev=DEV;draw(s);s.phase='turn'})}
 function nextRound(carry){act(s=>{s.round++;fillBowl(s);s.carry=carry;if(!carry)s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'})}
 function endRoundEarly(){
   if(!S||['setup','words','final'].includes(S.phase))return;
