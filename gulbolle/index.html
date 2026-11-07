@@ -439,7 +439,7 @@ function addBatch(){
 function undoBatch(){act(s=>{const k=s.batches.pop();if(k)s.words.splice(s.words.length-k,k)})}
 
 /* ---------- GAME ---------- */
-function fillBowl(s){s.bowl=shuffle(s.words.map((_,i)=>i));s.current=null;s.turnGot=[];s.turnDev=null;s.steal=null}
+function fillBowl(s){s.bowl=shuffle(s.words.map((_,i)=>i));s.current=null;s.turnGot=[];s.turnSkips=0;s.turnDev=null;s.steal=null}
 function normWord(t){return String(t).normalize('NFKC').toLowerCase().replace(/[\s\u00a0]+/g,' ').replace(/^[\s"'«»]+|[\s"'«».!?,]+$/g,'')}
 function dedupe(list){const seen=new Set();return list.filter(t=>{const k=normWord(t);if(!k||seen.has(k))return false;seen.add(k);return true})}
 function beginGame(s){const before=s.words.length;s.words=dedupe(s.words);const gone=before-s.words.length;if(gone)setTimeout(()=>toast(gone+(gone===1?' duplikat':' duplikater')+' fjernet'),50);s.scores=s.teams.map(()=>[0,0,0]);s.round=0;s.teamIdx=0;s.carry=false;fillBowl(s);s.phase='ready'}
@@ -468,7 +468,7 @@ function vReady(){
   <div class="count"><b>${S.bowl.length}</b><span>lapper igjen i bollen<br>denne runden</span></div>
   <div class="card"><p class="label">Poeng</p>${scoreRows(S.teamIdx)}</div>`;
 }
-function startTurn(){act(s=>{s.steal=null;s.turnGot=[];s.carry=false;s.current=null;s.turnDev=DEV;draw(s);s.phase='turn'})}
+function startTurn(){act(s=>{s.steal=null;s.turnSkips=0;s.turnGot=[];s.carry=false;s.current=null;s.turnDev=DEV;draw(s);s.phase='turn'})}
 
 let lastTap=0;
 function guard(){const t=Date.now();if(t-lastTap<350)return false;lastTap=t;return myTurn()}
@@ -476,11 +476,11 @@ function guard(){const t=Date.now();if(t-lastTap<350)return false;lastTap=t;retu
 function vTurn(){
   const r=ROUNDS[S.round];
   return `<div class="turn">
-    <div class="turnhead"><span class="pill">${esc(S.teams[S.teamIdx])} · ${r.short}</span><span class="got">${S.turnGot.length} tatt · ${S.bowl.length} igjen</span></div>
+    <div class="turnhead"><span class="pill">${esc(S.teams[S.teamIdx])} · ${r.short}</span><span class="got">${S.turnGot.length} tatt${S.turnSkips?' · −'+S.turnSkips:''} · ${S.bowl.length} igjen</span></div>
     <div class="word pop" id="word">${esc(S.words[S.current]??'')}</div>
     <p class="hint">${r.rule}</p>
     <div class="btnrow">
-      <button class="btn outline xl" ${S.bowl.length>1?'':'disabled'} onclick="skip()">Hopp over</button>
+      <button class="btn outline xl" style="flex-direction:column;gap:2px" ${S.bowl.length>1?'':'disabled'} onclick="skip()">Hopp over<small style="font-size:13px;font-weight:700;opacity:.7">−1 poeng</small></button>
       <button class="btn good xl" onclick="correct()">Riktig ✓</button>
     </div>
     <button class="btn bad" onclick="timeUp()">Tiden er ute</button>
@@ -512,7 +512,8 @@ function correct(){
     if(!s.bowl.length){s.current=null;s.phase='summary'}else draw(s)});
   if(S.phase==='summary')buzz([40,60,40]);
 }
-function skip(){if(!guard())return;act(draw)}
+function skip(){if(!guard())return;buzz(15);act(s=>{s.scores[s.teamIdx][s.round]--;s.turnSkips=(s.turnSkips||0)+1;draw(s)})}
+function undoSkip(){act(s=>{if(!(s.turnSkips>0))return;s.turnSkips--;s.scores[s.teamIdx][s.round]++});toast('Minuspoeng fjernet')}
 function undoLast(){if(!myTurn())return;act(s=>{const w=s.turnGot.pop();if(w==null)return;if(s.current!=null&&!s.bowl.includes(s.current))s.bowl.push(s.current);s.bowl.push(w);s.scores[s.teamIdx][s.round]--;s.current=w});toast('Angret')}
 let STEAL_T=0,stealTimer=null;
 function timeUp(){if(!guard())return;buzz(60);STEAL_T=Date.now();act(s=>{s.steal=s.current!=null?{w:s.current,open:true,by:null}:null;s.current=null;s.phase='summary'})}
@@ -535,6 +536,9 @@ function vSummary(){
   const list=S.turnGot.length?`<ul class="list">${S.turnGot.map((w,k)=>`<li><span>${esc(S.words[w])}</span><button onclick="removeGot(${k})">Ikke godkjent</button></li>`).join('')}</ul>`:'<p class="empty">Ingen lapper denne gangen.</p>';
   const head=empty?`<span class="pill">Bollen er tom!</span><h1 style="margin-top:12px">Runde ${S.round+1} ferdig</h1>`
     :`<span class="pill">Tiden er ute</span><h1 style="margin-top:12px">${esc(team)} tok ${S.turnGot.length}</h1>`;
+  const sk=S.turnSkips||0;
+  const skipHtml=sk?`<ul class="list" style="margin-top:8px"><li><span>Hoppet over ${sk} ${sk===1?'gang':'ganger'}: −${sk}</span><button onclick="undoSkip()">Angre én</button></li></ul>`:'';
+  const net=S.turnGot.length-sk;
   const st=S.steal;let stealHtml='';
   if(st&&st.open){
     const others=S.teams.map((_,i)=>i).filter(i=>i!==S.teamIdx);
@@ -566,13 +570,13 @@ function vSummary(){
       ${myTurn()&&!stolen?'<button class="btn ghost" onclick="resumeTurn()">Oi, trykket feil. Fortsett turen</button>':''}`;
   }
   return header(true)+head+stealHtml+`
-  <div class="card"><p class="label">${esc(team)} denne turen</p>${list}
+  <div class="card"><p class="label">${esc(team)} denne turen${sk?' · '+(net>0?'+':'')+net+' totalt':''}</p>${list}${skipHtml}
     <p class="small" style="margin:10px 0 0">Trykk «Ikke godkjent» hvis noen jukset; lappen går tilbake i bollen.</p></div>
   ${actions}
   <div class="card"><p class="label">Poeng</p>${scoreRows(-1)}</div>`;
 }
 function removeGot(k){act(s=>{const w=s.turnGot.splice(k,1)[0];if(w==null)return;s.bowl.push(w);s.scores[s.teamIdx][s.round]--});toast('Lappen er tilbake i bollen')}
-function nextTurn(){act(s=>{s.steal=null;s.teamIdx=nextTeam(s.teamIdx);s.turnGot=[];s.turnDev=null;s.phase='ready'})}
+function nextTurn(){act(s=>{s.steal=null;s.turnSkips=0;s.teamIdx=nextTeam(s.teamIdx);s.turnGot=[];s.turnDev=null;s.phase='ready'})}
 function resumeTurn(){act(s=>{s.steal=null;s.turnDev=DEV;draw(s);s.phase='turn'})}
 function nextRound(carry){act(s=>{s.round++;fillBowl(s);s.carry=carry;if(!carry)s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'})}
 function endRoundEarly(){
