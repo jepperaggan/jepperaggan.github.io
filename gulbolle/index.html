@@ -194,8 +194,9 @@ async function pull(force){
 }
 async function pullCount(){
   if(MODE!=='online'||S.phase!=='words')return;
-  try{const j=await api(`gulbolle_lapper?rom=eq.${ROOM}&parti=eq.${S.parti||1}&select=id`);
-    if(j.length!==LCOUNT){LCOUNT=j.length;const el=$('lcount');if(el)el.textContent=LCOUNT;else render()}}catch(e){}
+  try{const j=await api(`gulbolle_lapper?rom=eq.${ROOM}&parti=eq.${S.parti||1}&select=tekst`);
+    const n=dedupe(j.map(x=>x.tekst)).length;
+    if(n!==LCOUNT){LCOUNT=n;const el=$('lcount');if(el)el.textContent=LCOUNT;else render()}}catch(e){}
 }
 let tickN=0;
 setInterval(()=>{
@@ -380,7 +381,7 @@ async function sendWords(){
   BUSY=true;render();
   try{
     await api('gulbolle_lapper',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(got.map(t=>({rom:ROOM,parti:S.parti||1,tekst:t})))});
-    BUSY=false;clearWords();ls(sentKey(),'1');EXTRA=false;LCOUNT+=got.length;buzz(25);
+    BUSY=false;clearWords();ls(sentKey(),'1');EXTRA=false;buzz(25);
     render();toast(got.length+' '+(got.length===1?'lapp':'lapper')+' i bollen!');pullCount();
     document.activeElement&&document.activeElement.blur();
   }catch(e){BUSY=false;render();toast('Klarte ikke å sende, prøv igjen')}
@@ -404,7 +405,7 @@ async function startOnline(){
   try{
     const j=await api(`gulbolle_lapper?rom=eq.${ROOM}&parti=eq.${S.parti||1}&select=tekst&order=laget.asc`);
     BUSY=false;
-    if(j.length<2){render();toast('For få lapper');return}
+    if(dedupe(j.map(x=>x.tekst)).length<2){render();toast('For få lapper');return}
     act(s=>{s.words=j.map(x=>x.tekst);beginGame(s)});
   }catch(e){BUSY=false;render();toast('Nettfeil, prøv igjen')}
 }
@@ -434,7 +435,9 @@ function undoBatch(){act(s=>{const k=s.batches.pop();if(k)s.words.splice(s.words
 
 /* ---------- GAME ---------- */
 function fillBowl(s){s.bowl=shuffle(s.words.map((_,i)=>i));s.current=null;s.turnGot=[];s.turnDev=null}
-function beginGame(s){s.scores=s.teams.map(()=>[0,0,0]);s.round=0;s.teamIdx=0;s.carry=false;fillBowl(s);s.phase='ready'}
+function normWord(t){return String(t).normalize('NFKC').toLowerCase().replace(/[\s\u00a0]+/g,' ').replace(/^[\s"'«»]+|[\s"'«».!?,]+$/g,'')}
+function dedupe(list){const seen=new Set();return list.filter(t=>{const k=normWord(t);if(!k||seen.has(k))return false;seen.add(k);return true})}
+function beginGame(s){const before=s.words.length;s.words=dedupe(s.words);const gone=before-s.words.length;if(gone)setTimeout(()=>toast(gone+(gone===1?' duplikat':' duplikater')+' fjernet'),50);s.scores=s.teams.map(()=>[0,0,0]);s.round=0;s.teamIdx=0;s.carry=false;fillBowl(s);s.phase='ready'}
 function draw(s){
   if(!s.bowl.length){s.current=null;return}
   const pool=s.bowl.filter(i=>i!==s.current);
