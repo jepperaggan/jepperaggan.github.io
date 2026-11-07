@@ -439,10 +439,10 @@ function addBatch(){
 function undoBatch(){act(s=>{const k=s.batches.pop();if(k)s.words.splice(s.words.length-k,k)})}
 
 /* ---------- GAME ---------- */
-function fillBowl(s){s.bowl=shuffle(s.words.map((_,i)=>i));s.current=null;s.turnGot=[];s.turnSkips=0;s.turnDev=null;s.steal=null}
+function fillBowl(s){const del=s.deleted||[];s.bowl=shuffle(s.words.map((_,i)=>i).filter(i=>!del.includes(i)));s.current=null;s.turnGot=[];s.turnSkips=0;s.turnDev=null;s.steal=null}
 function normWord(t){return String(t).normalize('NFKC').toLowerCase().replace(/[\s\u00a0]+/g,' ').replace(/^[\s"'«»]+|[\s"'«».!?,]+$/g,'')}
 function dedupe(list){const seen=new Set();return list.filter(t=>{const k=normWord(t);if(!k||seen.has(k))return false;seen.add(k);return true})}
-function beginGame(s){const before=s.words.length;s.words=dedupe(s.words);const gone=before-s.words.length;if(gone)setTimeout(()=>toast(gone+(gone===1?' duplikat':' duplikater')+' fjernet'),50);s.scores=s.teams.map(()=>[0,0,0]);s.round=0;s.teamIdx=0;s.carry=false;fillBowl(s);s.phase='ready'}
+function beginGame(s){const del=s.deleted||[];s.words=s.words.filter((_,i)=>!del.includes(i));s.deleted=[];const before=s.words.length;s.words=dedupe(s.words);const gone=before-s.words.length;if(gone)setTimeout(()=>toast(gone+(gone===1?' duplikat':' duplikater')+' fjernet'),50);s.scores=s.teams.map(()=>[0,0,0]);s.round=0;s.teamIdx=0;s.carry=false;fillBowl(s);s.phase='ready'}
 function draw(s){
   if(!s.bowl.length){s.current=null;return}
   const pool=s.bowl.filter(i=>i!==s.current);
@@ -485,6 +485,7 @@ function vTurn(){
     </div>
     <button class="btn bad" onclick="timeUp()">Tiden er ute</button>
     ${S.turnGot.length?'<button class="btn ghost" onclick="undoLast()">Angre siste riktig</button>':''}
+    <button class="btn ghost" style="margin-top:0;font-size:14px" onclick="deleteWord()">Slett denne lappen fra spillet</button>
   </div>`;
 }
 function vWatch(){
@@ -516,6 +517,13 @@ function skip(){if(!guard())return;buzz(15);act(s=>{s.scores[s.teamIdx][s.round]
 function undoSkip(){act(s=>{if(!(s.turnSkips>0))return;s.turnSkips--;s.scores[s.teamIdx][s.round]++});toast('Minuspoeng fjernet')}
 function undoLast(){if(!myTurn())return;act(s=>{const w=s.turnGot.pop();if(w==null)return;if(s.current!=null&&!s.bowl.includes(s.current))s.bowl.push(s.current);s.bowl.push(w);s.scores[s.teamIdx][s.round]--;s.current=w});toast('Angret')}
 let STEAL_T=0,stealTimer=null;
+function deleteWord(){
+  if(!myTurn()||S.current==null)return;
+  if(!confirm('Slette «'+S.words[S.current]+'» fra spillet? Den kommer ikke tilbake i senere runder, og ingen får poeng for den.'))return;
+  act(s=>{const w=s.current;(s.deleted=s.deleted||[]).push(w);s.bowl=s.bowl.filter(i=>i!==w);
+    if(!s.bowl.length){s.current=null;s.phase='summary'}else draw(s)});
+  toast('Lappen er slettet');
+}
 function timeUp(){if(!guard())return;buzz(60);STEAL_T=Date.now();act(s=>{s.steal=s.current!=null?{w:s.current,open:true,by:null}:null;s.current=null;s.phase='summary'})}
 function steal(i){act(s=>{const st=s.steal;if(!st)return;if(i>=0){s.bowl=s.bowl.filter(x=>x!==st.w);s.scores[i][s.round]++;s.steal={w:st.w,open:false,by:i}}else s.steal=null});if(i>=0){buzz(30);toast(S.teams[i]+' stjal lappen!')}}
 function undoSteal(){act(s=>{const st=s.steal;if(!st||st.by==null)return;if(!s.bowl.includes(st.w))s.bowl.push(st.w);s.scores[st.by][s.round]--;s.steal={w:st.w,open:true,by:null}});STEAL_T=Date.now()}
