@@ -167,6 +167,12 @@ body[data-role=klokke] .wrap{max-width:none;padding:calc(env(safe-area-inset-top
 .tvfin .tvrow{padding:1vmin 3vmin;font-size:min(3.6vmin,36px)}.tvfin .tvrow span{font-size:min(5vmin,50px)}.tvfin .tvrow small{font-size:min(2vmin,18px)}
 .tvfin .tvaw{grid-template-columns:repeat(auto-fit,minmax(min(28vw,330px),1fr));margin-top:2vmin;gap:1vmin}
 .tvfin .tvaw .aw{padding:1.4vmin 2vmin}.tvfin .tvaw .aw .ic{font-size:min(4.5vmin,40px)}.tvfin .tvaw .aw b{font-size:min(2.4vmin,22px)}.tvfin .tvaw .aw span{font-size:min(2.1vmin,19px)}
+.rv{opacity:0;transform:translateY(12px);transition:opacity 450ms cubic-bezier(0.23,1,0.32,1),transform 450ms cubic-bezier(0.23,1,0.32,1)}
+.rv.show{opacity:1;transform:none}
+.rvpre.show{display:none}
+.tvteam .rv{display:none}.tvteam .rv.show{display:inline}
+.place{color:var(--muted);margin-right:.4em}
+@media (prefers-reduced-motion: reduce){.rv{transform:none;transition:opacity 300ms ease}}
 .tvteam.sm{font-size:min(10vmin,110px)}
 .tvexp{font-size:min(5vmin,48px);font-weight:800;margin:0}
 .tvcount{font-size:min(6vmin,56px);font-weight:800;margin:1vmin 0 0;font-family:"Bricolage Grotesque",sans-serif}
@@ -373,6 +379,17 @@ function clockTick(){
       }
     }
   }
+  if(S.phase==='final'){
+    const now=Date.now();
+    document.querySelectorAll('[data-at]').forEach(el=>{
+      if(el.classList.contains('show'))return;
+      if(now>=+el.dataset.at||REVEAL_SKIP){el.classList.add('show');
+        if(!el.dataset.played&&now-+el.dataset.at<1500){el.dataset.played=1;
+          if(el.dataset.snd==='row')tone(392,.18,.22,'triangle');
+          if(el.dataset.snd==='win'){[523,659,784,1047].forEach((f,i)=>tone(f,.35,.25,'triangle',i*.14));buzz([80,60,80,60,200])}}}
+    });
+    if(ROLE!=='klokke'&&!FINAL_SHOWN&&revealDone()){FINAL_SHOWN=true;render()}
+  }
   if(S.phase==='summary'&&S.steal&&S.steal.open&&S.steal.endsAt){
     const left=S.steal.endsAt-Date.now();
     document.querySelectorAll('.sleft').forEach(el=>{el.textContent=left>0?Math.ceil(left/1000):'Tiden er ute!';el.classList.toggle('done',left<=0)});
@@ -431,6 +448,7 @@ function render(){
   const app=$('app');const keep={};let focusId=null,sel=null;
   app.querySelectorAll('input[id]').forEach(i=>keep[i.id]=i.value);
   const ae=document.activeElement;if(ae&&ae.id&&app.contains(ae)){focusId=ae.id;try{sel=ae.selectionStart}catch(e){}}
+  if(S&&S.phase!=='final'){REVEAL_SKIP=false;FINAL_SHOWN=false}
   app.innerHTML=view();
   for(const id in keep){const el=$(id);if(el&&(el.dataset.keep!=='0'||id===focusId))el.value=keep[id]}
   if(focusId){const el=$(focusId);if(el){el.focus();try{el.setSelectionRange(sel,sel)}catch(e){}}}
@@ -625,7 +643,7 @@ function shuffleTeams(){act(s=>{s.roster={};ensureRoster(s)})}
 function moveP(k){const n=players(S)[k];if(n==null)return;act(s=>{s.roster=s.roster||{};const c=s.roster[n];s.roster[n]=(c==null||c>=s.teams.length-1)?0:c+1})}
 function explainerOf(s,team){if(!s.useNames)return null;const m=members(team,s);if(!m.length)return null;return m[((s.expIdx||[])[team]||0)%m.length]}
 function advanceExp(s,team){s.expIdx=s.expIdx&&s.expIdx.length===s.teams.length?s.expIdx:s.teams.map(()=>0);s.expIdx[team]=(s.expIdx[team]||0)+1}
-function beginGame(s){
+function beginGame(s){s.finalAt=null;
   const del=s.deleted||[];const keep=s.words.map((_,i)=>i).filter(i=>!del.includes(i));
   s.words=keep.map(i=>s.words[i]);s.wordBy=keep.map(i=>(s.wordBy||[])[i]||[]);s.deleted=[];
   if(s.useNames)ensureRoster(s);s.expIdx=s.teams.map(()=>0);
@@ -690,11 +708,11 @@ function archiveTurn(s){
 function nextTurn(){const ti=S.teamIdx;act(s=>{if(s.phase!=='summary'||s.teamIdx!==ti)return;archiveTurn(s);advanceExp(s,ti);s.teamIdx=nextTeam(ti);resetTurn(s);s.phase='ready'})}
 function nextRound(carry){const rd=S.round;act(s=>{if(s.phase!=='summary'||s.round!==rd||s.bowl.length)return;archiveTurn(s);s.round++;fillBowl(s);
   s.carry=!!carry&&s.carryLeft>1000;if(!s.carry){s.carryLeft=0;advanceExp(s,s.teamIdx);s.teamIdx=nextTeam(s.teamIdx)}s.phase='ready'})}
-function toFinal(){act(s=>{if(s.phase==='summary'&&!s.bowl.length){archiveTurn(s);s.phase='final'}})}
+function toFinal(){act(s=>{if(s.phase==='summary'&&!s.bowl.length){archiveTurn(s);s.finalAt=Date.now();s.phase='final'}})}
 function endRoundEarly(){
   closeSheet('menu');if(!S||['setup','words','final'].includes(S.phase))return;
   if(!confirm('Avslutte runde '+(S.round+1)+' nå? Lappene som er igjen teller ikke.'))return;
-  const rd=S.round;act(s=>{if(s.round!==rd)return;if(s.phase==='summary'){archiveTurn(s);advanceExp(s,s.teamIdx)}if(s.round<2){s.round++;fillBowl(s);s.carry=false;s.carryLeft=0;s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'}else s.phase='final'});
+  const rd=S.round;act(s=>{if(s.round!==rd)return;if(s.phase==='summary'){archiveTurn(s);advanceExp(s,s.teamIdx)}if(s.round<2){s.round++;fillBowl(s);s.carry=false;s.carryLeft=0;s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'}else{s.finalAt=Date.now();s.phase='final'}});
 }
 function restartSameTeams(ask=true){
   closeSheet('menu');
@@ -909,14 +927,36 @@ function vJudge(){
 
 /* ---------- CLOCK (TV) ---------- */
 function goFull(){const d=document.documentElement;try{(d.requestFullscreen||d.webkitRequestFullscreen).call(d)}catch(e){}}
+/* Total standings are only shown between rounds, never during the last round. */
+function standingsVisible(){
+  if(S.phase==='summary'&&!S.bowl.length&&!(S.steal&&S.steal.open))return S.round<2;
+  if(S.phase==='ready'&&S.round>0)return !(S.history||[]).some(h=>h.round===S.round);
+  return false;
+}
+const REV_STEP=1700,REV_LEAD=900;
+function revealPlan(){
+  const idx=rankIdx(),best=total(idx[0]);
+  const rest=idx.filter(i=>total(i)<best).reverse(); // last place first, winners (incl. ties) together at the end
+  const t0=(S.finalAt||0)+REV_LEAD;const rowAt={};rest.forEach((i,k)=>rowAt[i]=t0+k*REV_STEP);
+  const winAt=t0+rest.length*REV_STEP;idx.filter(i=>total(i)===best).forEach(i=>rowAt[i]=winAt);
+  return {rowAt,winAt,awAt:winAt+2200,end:winAt+2600};
+}
+function rankIdx(){return S.teams.map((_,i)=>i).sort((a,b)=>total(b)-total(a)||a-b)}
+function placeOf(i){return 1+S.teams.filter((_,j)=>total(j)>total(i)).length}
+function revealDone(){return MODE==='local'||!S.finalAt||Date.now()>=revealPlan().end}
+let REVEAL_SKIP=false,FINAL_SHOWN=false;
 function vClock(){
   const r=ROUNDS[S.round],team=esc(S.teams[S.teamIdx]);let mid;
   if(S.phase==='turn'){const n=(S.turnGot||[]).length;mid=`<p class="clabel">${team}${S.turnExp?' · '+esc(S.turnExp):''} · ${r.name}</p>
     <div class="jring tv"><svg viewBox="0 0 200 200"><circle class="trk" cx="100" cy="100" r="90"/><circle class="prg" cx="100" cy="100" r="90" style="stroke-dasharray:${565.49*timeFrac()} 600"/></svg><div class="tbig tleft num"></div></div>
     <p class="tvcount">${n} ${n===1?'riktig':'riktige'}</p>`}
   else if(S.phase==='summary'&&S.steal&&S.steal.open)mid=`<p class="clabel">Siste lapp kan stjeles!</p><div class="tvnum cd sleft">10</div>`;
-  else if(S.phase==='summary'){const net=turnNet();mid=`<p class="clabel">${S.bowl.length?'Tiden er ute':'Runde '+(S.round+1)+' ferdig'}</p><div class="tvteam sm">${team} ${net>=0?'+':''}${net}</div>${tvBoard(-1)}`}
-  else{const ex=explainerOf(S,S.teamIdx);mid=`<p class="clabel">Runde ${S.round+1} av 3 · ${r.name}</p><div class="tvteam sm">${team}</div>${ex?`<p class="tvexp">${esc(ex)} ${S.round===1?'mimer':S.round===2?'lager lyden':'forklarer'}</p>`:''}${tvBoard(S.teamIdx)}`}
+  else if(S.phase==='summary'){const net=turnNet();const empty=!S.bowl.length;
+    mid=`<p class="clabel">${empty?(S.round<2?'Stillingen etter runde '+(S.round+1):'Bollen er tom! 🥁'):'Tiden er ute'}</p><div class="tvteam sm">${team} ${net>=0?'+':''}${net}</div>
+    ${standingsVisible()?tvBoard(-1):empty?'<p class="tvsub">Vinneren avsløres om et øyeblikk …</p>':''}`}
+  else{const ex=explainerOf(S,S.teamIdx);const sv=standingsVisible();
+    mid=`<p class="clabel">${sv?'Stillingen etter runde '+S.round+' · nå: '+r.name:'Runde '+(S.round+1)+' av 3 · '+r.name}</p><div class="tvteam sm">${team}</div>${ex?`<p class="tvexp">${esc(ex)} ${S.round===1?'mimer':S.round===2?'lager lyden':'forklarer'}</p>`:''}
+    ${sv?tvBoard(S.teamIdx):`<p class="tvsub">${S.bowl.length} lapper i bollen${S.round===2?' · stillingen er hemmelig til slutt':''}</p>`}`}
   const needTap=SOUND&&(!AC||AC.state!=='running');
   return `<div class="tv">${mid}${needTap?'<p class="small">Trykk på skjermen for å slå på lyden</p>':''}</div>
   <div class="tvbtns">${document.fullscreenEnabled||document.webkitFullscreenEnabled?'<button class="iconbtn" onclick="goFull()">Fullskjerm</button>':''}<button class="iconbtn" onclick="toggleSound()">${SOUND?'🔊':'🔇'}</button><button class="iconbtn" onclick="openMenu()">Meny</button></div>`;
@@ -926,23 +966,28 @@ function tvBoard(hl){
   return `<div class="tvboard">${S.teams.map((t,i)=>`<div class="tvrow ${i===hl?'on':''}"><div>${esc(t)}${S.useNames&&members(i).length?`<small>${members(i).map(esc).join(', ')}</small>`:''}</div><span>${total(i)}</span></div>`).join('')}</div>`;
 }
 function vClockFinal(){
-  const idx=S.teams.map((_,i)=>i).sort((a,b)=>total(b)-total(a));const best=total(idx[0]);const win=idx.filter(i=>total(i)===best);
-  const A=awards();
-  return `<div class="tv tvfin"><div style="font-size:min(7vmin,64px);line-height:1">🏆</div>
-    <div class="tvteam sm">${win.length>1?'Uavgjort!':esc(S.teams[win[0]])+' vant!'}</div>
-    <div class="tvboard">${idx.map(i=>`<div class="tvrow ${total(i)===best?'on':''}"><div>${esc(S.teams[i])}${S.useNames&&members(i).length?`<small>${members(i).map(esc).join(', ')}</small>`:''}</div><span>${total(i)}</span></div>`).join('')}</div>
-    ${A.length?`<div class="tvaw">${awardHtml(A)}</div>`:''}</div>
+  const idx=rankIdx();const best=total(idx[0]);const win=idx.filter(i=>total(i)===best);
+  const A=awards();const P=revealPlan();
+  return `<div class="tv tvfin">
+    <div class="rv" data-at="${P.winAt}" style="font-size:min(7vmin,64px);line-height:1">🏆</div>
+    <div class="tvteam sm"><span class="rvpre" data-at="${P.winAt}">Og vinneren er …</span><span class="rv" data-at="${P.winAt}" data-snd="win">${win.length>1?'Uavgjort!':esc(S.teams[win[0]])+' vant!'}</span></div>
+    <div class="tvboard">${idx.map((i,k)=>`<div class="tvrow rv ${total(i)===best?'on':''}" data-at="${P.rowAt[i]}" data-snd="${total(i)===best?'':'row'}"><div><span class="place">${placeOf(i)}.</span> ${esc(S.teams[i])}${S.useNames&&members(i).length?`<small>${members(i).map(esc).join(', ')}</small>`:''}</div><span>${total(i)}</span></div>`).join('')}</div>
+    ${A.length?`<div class="tvaw rv" data-at="${P.awAt}">${awardHtml(A)}</div>`:''}</div>
   <div class="tvbtns"><button class="iconbtn" onclick="openMenu()">Meny</button></div>`;
 }
 
 /* ---------- AWARDS ---------- */
 function awards(){
   const H=S.history||[],A=[],W=w=>'«'+esc(S.words[w])+'»';
-  const ex={};H.forEach(h=>{if(!h.exp)return;const e=ex[h.exp]||(ex[h.exp]={got:0,turns:0,skip:0});e.got+=h.got.length;e.turns++;e.skip+=h.skipped.length});
+  const fmt1=x=>(Math.round(x*10)/10).toString().replace('.',',');
+  [['🗣️','Beste forklarer'],['🕺','Beste mimer'],['📣','Beste lydmaker']].forEach(([ic,title],r)=>{
+    const ex={};H.forEach(h=>{if(!h.exp||h.round!==r)return;const e=ex[h.exp]||(ex[h.exp]={got:0,turns:0});e.got+=h.got.length;e.turns++});
+    const best=Object.entries(ex).sort((a,c)=>(c[1].got/c[1].turns)-(a[1].got/a[1].turns)||c[1].got-a[1].got)[0];
+    if(best&&best[1].got)A.push([ic,title,`${esc(best[0])} · ${fmt1(best[1].got/best[1].turns)} lapper per tur (${best[1].got} totalt)`]);
+  });
+  const ex={};H.forEach(h=>{if(!h.exp)return;const e=ex[h.exp]||(ex[h.exp]={skip:0});e.skip+=h.skipped.length});
   const exs=Object.entries(ex);
   if(exs.length){
-    const [bn,b]=exs.sort((a,c)=>c[1].got-a[1].got||(c[1].got/c[1].turns)-(a[1].got/a[1].turns))[0];
-    if(b.got)A.push(['🎤','Kveldens forklarer',`${esc(bn)} · ${b.got} lapper på ${b.turns} ${b.turns===1?'tur':'turer'}`]);
     const [sn,sv]=exs.slice().sort((a,c)=>c[1].skip-a[1].skip)[0];
     if(sv.skip)A.push(['🙈','Mest hoppet over',`${esc(sn)} · ${sv.skip} ${sv.skip===1?'gang':'ganger'}`]);
   }
@@ -977,11 +1022,13 @@ function vAudience(){
   return header(true)+`<span class="pill">Runde ${S.round+1} av 3 · ${r.name}</span>
   <div class="card" style="text-align:center;padding:26px 18px"><p class="label" style="margin:0">${what}</p><h1 class="big-team">${team}</h1>
     ${S.phase==='turn'?'<div class="tbig tleft"></div>':''}<p class="small" style="margin:8px 0 0">${S.bowl.length} lapper igjen i bollen</p></div>
-  <div class="card"><p class="label">Poeng</p>${scoreTable(false)}</div>`;
+  ${standingsVisible()?`<div class="card"><p class="label">Stillingen etter runde ${S.phase==='ready'?S.round:S.round+1}</p>${scoreTable(false)}</div>`:'<p class="small" style="text-align:center;margin-top:14px">Stillingen vises mellom rundene.</p>'}`;
 }
 
 /* ---------- FINAL ---------- */
 function vFinal(){
+  if(!revealDone()&&!REVEAL_SKIP){FINAL_SHOWN=false;return header(false)+`<div class="tv"><div class="trophy">🥁</div><h1 style="margin-top:14px">Resultatet avsløres på TV-en</h1>
+    <p class="lede">Følg med på skjermen …</p><button class="btn ghost" onclick="REVEAL_SKIP=true;render()">Vis resultatet her nå</button></div>`}
   const idx=S.teams.map((_,i)=>i).sort((a,b)=>total(b)-total(a));
   const best=total(idx[0]);const win=idx.filter(i=>total(i)===best);
   return header(false)+`<div style="text-align:center;margin-top:10px"><div class="trophy">🏆</div>
