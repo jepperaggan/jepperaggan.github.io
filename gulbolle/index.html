@@ -215,9 +215,9 @@ h1{font-weight:800;letter-spacing:-.02em}
 .iconbtn{background:var(--cream)}
 .chip{background:var(--field)}
 tr.win td{color:var(--pink)}
-#edge .trk{stroke:var(--ink);stroke-width:7;stroke-dasharray:3 7}
+#edge .trk{stroke:var(--ink);stroke-width:7;stroke-dasharray:3 7;stroke-linecap:butt;opacity:.55}
 #edge .prg{stroke:var(--pink);stroke-width:7;stroke-linecap:butt}
-.jring .trk{stroke:var(--ink);stroke-dasharray:1.6 8.24}
+.jring .trk{stroke:var(--ink);stroke-dasharray:1.2 8.22;stroke-linecap:butt;opacity:.55}
 .jring .prg{stroke:var(--pink)}
 .jring .disc{fill:var(--ink)}
 .jring .num{color:var(--cream)}
@@ -966,9 +966,10 @@ function standingsVisible(){
 const REV_STEP=1700,REV_LEAD=900;
 function revealPlan(){
   const idx=rankIdx(),best=total(idx[0]);
-  const rest=idx.filter(i=>total(i)<best).reverse(); // last place first, winners (incl. ties) together at the end
-  const t0=(S.finalAt||0)+REV_LEAD;const rowAt={};rest.forEach((i,k)=>rowAt[i]=t0+k*REV_STEP);
-  const winAt=t0+rest.length*REV_STEP;idx.filter(i=>total(i)===best).forEach(i=>rowAt[i]=winAt);
+  const rest=idx.filter(i=>total(i)<best).reverse(); // last place first; equal scores appear together
+  const levels=[...new Set(rest.map(total))];
+  const t0=(S.finalAt||0)+REV_LEAD;const rowAt={};rest.forEach(i=>rowAt[i]=t0+levels.indexOf(total(i))*REV_STEP);
+  const winAt=t0+levels.length*REV_STEP;idx.filter(i=>total(i)===best).forEach(i=>rowAt[i]=winAt);
   return {rowAt,winAt,awAt:winAt+2200,end:winAt+2600};
 }
 function rankIdx(){return S.teams.map((_,i)=>i).sort((a,b)=>total(b)-total(a)||a-b)}
