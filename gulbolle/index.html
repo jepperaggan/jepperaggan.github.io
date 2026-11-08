@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Gul bolle</title>
-<meta name="theme-color" content="#F7C948">
+<meta name="theme-color" content="#F7C548">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -14,22 +14,14 @@
 <link rel="icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#FFF8E6; --card:#FFFFFF; --ink:#1E1A12; --muted:#7A715E; --hair:rgba(30,26,18,.10);
-  --yellow:#F7C948; --yellow-deep:#E8AE17; --yellow-soft:#FDEBB3;
-  --green:#1F8A4C; --green-ink:#fff; --red:#C8372D; --field:#F6EFDC;
-  --shadow:0 1px 2px rgba(60,40,0,.06),0 8px 24px rgba(60,40,0,.08);
-  color-scheme:light dark;
-}
-@media (prefers-color-scheme: dark){
-  :root{
-    --bg:#17150F; --card:#221F17; --ink:#F4EEDF; --muted:#A79E89; --hair:rgba(255,255,255,.10);
-    --yellow:#F7C948; --yellow-deep:#F7C948; --yellow-soft:#3A3115;
-    --green:#2EA862; --red:#E0574C; --field:#2B271D;
-    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
-  }
+  --bg:#F7C548; --card:#FFF6DC; --ink:#2B1240; --muted:#6B4A57; --hair:rgba(43,18,64,.14);
+  --yellow:#2B1240; --yellow-deep:#FF4F8B; --yellow-soft:#FFE59A; --pink:#FF4F8B; --mustard:#F7C548; --cream:#FFF6DC;
+  --green:#1E9E5A; --green-ink:#fff; --red:#E0383E; --field:#F7EBC4;
+  --shadow:0 1px 2px rgba(43,18,64,.08),0 8px 24px rgba(43,18,64,.10);
+  color-scheme:light;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,button,a,input,label{touch-action:manipulation}
@@ -204,6 +196,40 @@ body[data-role=klokke] .wrap{max-width:none;padding:calc(env(safe-area-inset-top
 .status{font-size:20px;font-weight:800;margin:10px 0 0;font-family:"Bricolage Grotesque",sans-serif}
 .sheet .panel{max-height:85dvh;overflow:auto}
 td .mini{border:0;background:var(--field);border-radius:8px;width:26px;height:26px;font-weight:800;cursor:pointer;margin:0 2px}
+/* ===== Theme: Gullshow ===== */
+html,body{font-family:'Space Grotesk',-apple-system,system-ui,sans-serif}
+h1,h2,.brand,.big-team,.tbig,.tsm,.stealword,.cd,.tvteam,.tvnum,.tvcount,.exp,.status,.word,.pill,.srow .pts,td.tot,.tvrow span,.count b,.tg,.tr,.trophy+h1{font-family:Unbounded,sans-serif}
+h1{font-weight:800;letter-spacing:-.02em}
+.primary{background:var(--ink);color:var(--mustard)}
+.dark{background:var(--pink);color:var(--ink)}
+.good{background:var(--green);color:#fff}
+.bad{box-shadow:inset 0 0 0 2px var(--red);color:var(--red)}
+.outline{box-shadow:inset 0 0 0 2px var(--ink)}
+.skipbtn{box-shadow:inset 0 0 0 3px var(--red)!important;color:var(--red)!important;background:var(--cream)!important}
+.pill{background:var(--ink);color:var(--mustard);text-transform:uppercase;letter-spacing:.04em;font-size:12px}
+.count{background:var(--ink);color:var(--cream)}.count b{color:var(--mustard)}.count span{color:rgba(255,246,220,.75)}
+.rounds div{background:rgba(43,18,64,.08);color:var(--muted)}.rounds div.on{background:var(--ink);color:var(--mustard)}
+.word{background:var(--ink);color:var(--cream);text-transform:uppercase}
+.srow{background:var(--field)}.srow.next{background:var(--ink);color:var(--mustard);box-shadow:none}.srow.next small{color:rgba(247,197,72,.75)}
+.tvrow{background:var(--cream)}.tvrow.on{background:var(--ink);color:var(--mustard);box-shadow:none}.tvrow.on small{color:rgba(247,197,72,.75)}
+.iconbtn{background:var(--cream)}
+.chip{background:var(--field)}
+tr.win td{color:var(--pink)}
+#edge .trk{stroke:var(--ink);stroke-width:7;stroke-dasharray:3 7}
+#edge .prg{stroke:var(--pink);stroke-width:7;stroke-linecap:butt}
+.jring .trk{stroke:var(--ink);stroke-dasharray:1.6 8.24}
+.jring .prg{stroke:var(--pink)}
+.jring .disc{fill:var(--ink)}
+.jring .num{color:var(--cream)}
+#edge.low .prg,.jring.low .prg{stroke:var(--red)}
+.tally{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.tg,.tr{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:8px 14px;font-weight:700;font-size:14px;color:#fff}
+.tg{background:var(--green)}.tr{background:var(--red)}
+.tr.zero{background:rgba(224,56,62,.18);color:var(--red)}
+.tvtally{display:flex;gap:2vmin;justify-content:center;margin-top:1.5vmin}
+.tvtally .tg,.tvtally .tr{font-size:min(4.2vmin,42px);padding:1.2vmin 3vmin}
+.tvrow.on .place{color:rgba(247,197,72,.7)}
+@media (min-width:700px){body[data-role=scene] .tg,body[data-role=scene] .tr{font-size:20px;padding:10px 18px}}
 </style>
 </head>
 <body>
@@ -224,7 +250,7 @@ const ROUNDS=[
   {name:'Mime',verb:'mime',rule:'Ingen ord og ingen lyder. Bare miming.'},
   {name:'Én lyd',verb:'lage lyden',rule:'Bare én lyd. Ingen ord.'}
 ];
-const BOWL_SVG='<svg class="bowl" viewBox="0 0 32 32" aria-hidden="true"><ellipse cx="16" cy="13" rx="13" ry="3.4" fill="#E8AE17"/><path d="M3 13c0 7.5 5.8 13 13 13s13-5.5 13-13" fill="#F7C948"/><ellipse cx="16" cy="13" rx="10.5" ry="2.2" fill="#B9860A" opacity=".45"/><path d="M11 12.4l3-3.6M17 12.6l1.5-4.6M21 12.2l-.8-3.4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
+const BOWL_SVG='<svg class="bowl" viewBox="0 0 32 32" aria-hidden="true"><ellipse cx="16" cy="13" rx="13" ry="3.4" fill="#FF4F8B"/><path d="M3 13c0 7.5 5.8 13 13 13s13-5.5 13-13" fill="#2B1240"/><ellipse cx="16" cy="13" rx="10.5" ry="2.2" fill="#000000" opacity=".45"/><path d="M11 12.4l3-3.6M17 12.6l1.5-4.6M21 12.2l-.8-3.4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
 /* ===== Helpers ===== */
 function $(id){return document.getElementById(id)}
@@ -458,7 +484,7 @@ function render(){
   fitWord();clockTick();
   keepAwake(!!(S&&MODE&&!['words','setup','final'].includes(S.phase)));
 }
-function fitWord(){const el=$('word');if(!el)return;const n=(el.textContent||'').length;const k=Math.min(2.4,Math.max(1,innerWidth/430));el.style.fontSize=Math.round((n<=8?58:n<=14?48:n<=22?40:n<=36?32:26)*k)+'px'}
+function fitWord(){const el=$('word');if(!el)return;const n=(el.textContent||'').length;const k=Math.min(2.4,Math.max(1,innerWidth/430));el.style.fontSize=Math.round((n<=8?58:n<=14?48:n<=22?40:n<=36?32:26)*k*0.74)+'px'}
 addEventListener('resize',fitWord);
 
 /* ---------- HOME ---------- */
@@ -836,8 +862,9 @@ function vScene(){
     return `<div class="turn">
       <div class="turnhead"><span class="pill">${team} · ${r.name}</span><span class="tsm tleft"></span></div>
       <div class="word pop" id="word">${esc(S.words[S.current]??'')}</div>
+      ${tally('tally')}
       <div class="btnrow">
-        <button class="btn outline xl" style="flex-direction:column;gap:2px" ${S.current!=null?'':'disabled'} onclick="skip()">Hopp over<small style="font-size:13px;font-weight:700;opacity:.7">−1 poeng</small></button>
+        <button class="btn outline xl skipbtn" style="flex-direction:column;gap:2px" ${S.current!=null?'':'disabled'} onclick="skip()">Hopp over<small style="font-size:13px;font-weight:700;opacity:.7">−1 poeng</small></button>
         <button class="btn good xl" onclick="correct()">Riktig ✓</button>
       </div>
       <div class="links">${(S.turnLog||[]).length?'<button onclick="undoLast()">Angre siste</button>':''}</div>
@@ -861,13 +888,14 @@ function vScene(){
   return vAudience();
 }
 function takeOver(){if(confirm('Ta over turen her? Bruk dette bare hvis performer-skjermen har problemer.'))act(s=>{s.turnDev=DEV;if(s.current==null)draw(s)})}
+function tally(cls){const g=(S.turnGot||[]).length,k=(S.turnSkipped||[]).length;return `<div class="${cls}"><span class="tg">✓ ${g} ${g===1?'riktig':'riktige'}</span><span class="tr${k?'':' zero'}">✕ ${k} hoppet over</span></div>`}
 function turnNet(){return (S.turnGot||[]).length-(S.turnSkipped||[]).length}
 function doneBlock(big){
   const team=esc(S.teams[S.teamIdx]),empty=!S.bowl.length,net=turnNet(),st=S.steal;
   const stolen=st&&st.by!=null?`<p class="small" style="margin:8px 0 0">${esc(S.teams[st.by])} stjal den siste lappen.</p>`:'';
   let h=`<div class="card" style="text-align:center;padding:26px 18px">
     <p class="label" style="margin:0">${empty?'Bollen er tom! Runde '+(S.round+1)+' ferdig':'Tiden er ute'}</p>
-    <h1 class="big-team" style="font-size:${big?40:30}px">${team} ${net>=0?'+':''}${net}</h1>${stolen}</div>`;
+    <h1 class="big-team" style="font-size:${big?40:30}px">${team} ${net>=0?'+':''}${net}</h1>${tally('tally')}${stolen}</div>`;
   if(empty&&S.round<2){
     const nx=ROUNDS[S.round+1];
     h+=`<p class="rule"><b>Neste runde: ${nx.name}.</b> Alle lappene går tilbake i bollen.</p>`;
@@ -900,7 +928,7 @@ function vJudge(){
     status=`${team} spiller`;
     return header(true)+`<span class="pill">⚖️ Dommer · Runde ${S.round+1} av 3 · ${r.name}</span>
       <div class="card" style="text-align:center;padding:24px 18px;margin-top:18px"><p class="label" style="margin:0">${team} spiller</p>
-      <div class="jring"><svg viewBox="0 0 200 200"><circle class="trk" cx="100" cy="100" r="90"/><circle class="prg" cx="100" cy="100" r="90" style="stroke-dasharray:${565.49*timeFrac()} 600"/></svg><div class="tbig tleft num" style="font-size:96px"></div></div></div>`;
+      <div class="jring"><svg viewBox="0 0 200 200"><circle class="disc" cx="100" cy="100" r="83"/><circle class="trk" cx="100" cy="100" r="90"/><circle class="prg" cx="100" cy="100" r="90" style="stroke-dasharray:${565.49*timeFrac()} 600"/></svg><div class="tbig tleft num" style="font-size:96px"></div></div></div>`;
   }else if(S.phase==='summary'&&S.steal&&S.steal.open){
     status='Siste lapp kan stjeles';
     const others=S.teams.map((_,i)=>i).filter(i=>i!==S.teamIdx);
@@ -950,11 +978,11 @@ let REVEAL_SKIP=false,FINAL_SHOWN=false;
 function vClock(){
   const r=ROUNDS[S.round],team=esc(S.teams[S.teamIdx]);let mid;
   if(S.phase==='turn'){const n=(S.turnGot||[]).length;mid=`<p class="clabel">${team}${S.turnExp?' · '+esc(S.turnExp):''} · ${r.name}</p>
-    <div class="jring tv"><svg viewBox="0 0 200 200"><circle class="trk" cx="100" cy="100" r="90"/><circle class="prg" cx="100" cy="100" r="90" style="stroke-dasharray:${565.49*timeFrac()} 600"/></svg><div class="tbig tleft num"></div></div>
-    <p class="tvcount">${n} ${n===1?'riktig':'riktige'}</p>`}
+    <div class="jring tv"><svg viewBox="0 0 200 200"><circle class="disc" cx="100" cy="100" r="83"/><circle class="trk" cx="100" cy="100" r="90"/><circle class="prg" cx="100" cy="100" r="90" style="stroke-dasharray:${565.49*timeFrac()} 600"/></svg><div class="tbig tleft num"></div></div>
+    ${tally('tvtally')}`}
   else if(S.phase==='summary'&&S.steal&&S.steal.open)mid=`<p class="clabel">Siste lapp kan stjeles!</p><div class="tvnum cd sleft">10</div>`;
   else if(S.phase==='summary'){const net=turnNet();const empty=!S.bowl.length;
-    mid=`<p class="clabel">${empty?(S.round<2?'Stillingen etter runde '+(S.round+1):'Bollen er tom! 🥁'):'Tiden er ute'}</p><div class="tvteam sm">${team} ${net>=0?'+':''}${net}</div>
+    mid=`<p class="clabel">${empty?(S.round<2?'Stillingen etter runde '+(S.round+1):'Bollen er tom! 🥁'):'Tiden er ute'}</p><div class="tvteam sm">${team} ${net>=0?'+':''}${net}</div>${tally('tvtally')}
     ${standingsVisible()?tvBoard(-1):empty?'<p class="tvsub">Vinneren avsløres om et øyeblikk …</p>':''}`}
   else{const ex=explainerOf(S,S.teamIdx);const sv=standingsVisible();
     mid=`<p class="clabel">${sv?'Stillingen etter runde '+S.round+' · nå: '+r.name:'Runde '+(S.round+1)+' av 3 · '+r.name}</p><div class="tvteam sm">${team}</div>${ex?`<p class="tvexp">${esc(ex)} ${S.round===1?'mimer':S.round===2?'lager lyden':'forklarer'}</p>`:''}
