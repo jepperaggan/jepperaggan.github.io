@@ -480,7 +480,7 @@ function render(){
   for(const id in keep){const el=$(id);if(el&&(el.dataset.keep!=='0'||id===focusId))el.value=keep[id]}
   if(focusId){const el=$(focusId);if(el){el.focus();try{el.setSelectionRange(sel,sel)}catch(e){}}}
   document.body.dataset.role=(MODE&&S&&!['words','setup'].includes(S.phase)&&(S.phase!=='final'||ROLE==='klokke')&&ROLE)||'';
-  if(ROLE==='klokke'&&S){const tv=app.querySelector('.tv');const k=[S.phase,S.round,S.teamIdx,!!(S.steal&&S.steal.open)].join('|');if(tv&&TVKEY&&k!==TVKEY)tv.classList.add('enter');TVKEY=k}
+  if(ROLE==='klokke'&&S){const tv=app.querySelector('.tv');const k=[S.phase,S.round,S.teamIdx,!!(S.steal&&S.steal.open),!!S.teamsDrawn].join('|');if(tv&&TVKEY&&k!==TVKEY)tv.classList.add('enter');TVKEY=k}
   fitWord();clockTick();
   keepAwake(!!(S&&MODE&&!['words','setup','final'].includes(S.phase)));
 }
@@ -592,16 +592,21 @@ function vHostSetup(){
 }
 function vTvLobby(){
   const ps=players(S),n=slipCount();
+  const btns=`<div class="tvbtns"><button class="iconbtn" onclick="testSound()">Test lyd</button>${document.fullscreenEnabled||document.webkitFullscreenEnabled?'<button class="iconbtn" onclick="goFull()">Fullskjerm</button>':''}<button class="iconbtn" onclick="setRole(null)">Tilbake</button></div>`;
+  const tap=SOUND&&(!AC||AC.state!=='running')?'<p class="small">Trykk på skjermen for å slå på lyden</p>':'';
+  if(S.useNames&&S.teamsDrawn)return `<div class="tv">
+    <p class="clabel">Lagene er trukket!</p>
+    <div class="tvboard">${S.teams.map((t,i)=>`<div class="tvrow"><div>${esc(t)}</div><div style="font-size:min(4.4vmin,42px);text-align:right">${members(i).map(esc).join(' · ')||'–'}</div></div>`).join('')}</div>
+    <p class="tvsub" style="margin-top:3vmin;max-width:none">Kode <b style="color:var(--ink)">${ROOM}</b> · raggan.no/gulbolle · ${n} ${n===1?'lapp':'lapper'} i bollen</p>${tap}
+  </div>${btns}`;
   return `<div class="tv">
     <p class="clabel">Bli med på</p>
     <div class="tvteam sm">raggan.no/gulbolle</div>
     <p class="clabel" style="margin-top:2vmin">Kode</p>
     <div class="tvteam" style="letter-spacing:.12em">${ROOM}</div>
     <p class="tvcount">${n} ${n===1?'lapp':'lapper'} i bollen${S.useNames?' · '+ps.length+(ps.length===1?' person':' personer'):''}</p>
-    ${S.useNames&&ps.length?`<p class="tvsub" style="max-width:80vw">${ps.map(esc).join(' · ')}</p>`:''}
-    ${SOUND&&(!AC||AC.state!=='running')?'<p class="small">Trykk på skjermen for å slå på lyden</p>':''}
-  </div>
-  <div class="tvbtns"><button class="iconbtn" onclick="testSound()">Test lyd</button>${document.fullscreenEnabled||document.webkitFullscreenEnabled?'<button class="iconbtn" onclick="goFull()">Fullskjerm</button>':''}<button class="iconbtn" onclick="setRole(null)">Tilbake</button></div>`;
+    ${S.useNames&&ps.length?`<p class="tvsub" style="max-width:80vw">${ps.map(esc).join(' · ')}</p>`:''}${tap}
+  </div>${btns}`;
 }
 function vLobby(){
   return header(false)+`<span class="pill">Kode ${ROOM}</span>
@@ -626,12 +631,16 @@ function rosterCard(){
   const ps=players(S);if(!ps.length)return '';
   const r=S.roster||{};const free=ps.filter(n=>r[n]==null||r[n]>=S.teams.length);
   const ed=canEdit();
+  if(!S.teamsDrawn){
+    if(!ed)return '';
+    return `<div class="card"><p class="label">Lagene</p><p class="small" style="margin:0">${ps.length} ${ps.length===1?'person':'personer'} har skrevet seg på. Lagene er hemmelige til du trekker dem, så kommer de opp hos alle og på TV-en.</p>
+      <button class="btn primary" onclick="drawTeams()">Trekk lag</button></div>`;
+  }
   const chip=n=>ed?`<button class="nm" onclick="moveP(${ps.indexOf(n)})">${esc(n)}</button>`:`<span class="nm" style="cursor:default">${esc(n)}</span>`;
-  if(!ed&&!Object.keys(r).length)return '';
   return `<div class="card"><p class="label">Lagene${ed?' · trykk på et navn for å flytte det':''}</p>
     ${S.teams.map((t,i)=>`<b>${esc(t)}</b><div class="names">${members(i).map(chip).join('')||'<span class="small">Ingen ennå</span>'}</div>`).join('')}
     ${free.length?`<b>Ikke fordelt</b><div class="names">${free.map(chip).join('')}</div>`:''}
-    ${ed?`<div class="row2"><button class="btn outline" onclick="fillTeams()">Fordel nye</button><button class="btn outline" onclick="shuffleTeams()">Stokk alle</button></div>
+    ${ed?`<div class="row2"><button class="btn outline" ${free.length?'':'disabled'} onclick="fillTeams()">Fordel nye</button><button class="btn outline" onclick="shuffleTeams()">Trekk på nytt</button></div>
     <p class="small" style="margin:10px 0 0">De som ikke er fordelt når spillet starter, havner automatisk på det minste laget.</p>`:''}</div>`;
 }
 function vLocalWords(){
@@ -671,14 +680,15 @@ function ensureRoster(s){
   }
 }
 function fillTeams(){if(!canEdit())return;act(ensureRoster)}
-function shuffleTeams(){if(!canEdit())return;act(s=>{s.roster={};ensureRoster(s)})}
+function shuffleTeams(){if(!canEdit())return;act(s=>{s.roster={};ensureRoster(s);s.teamsDrawn=true})}
+function drawTeams(){shuffleTeams();buzz([30,40,30])}
 function moveP(k){if(!canEdit())return;const n=players(S)[k];if(n==null)return;act(s=>{s.roster=s.roster||{};const c=s.roster[n];s.roster[n]=(c==null||c>=s.teams.length-1)?0:c+1})}
 function explainerOf(s,team){if(!s.useNames)return null;const m=members(team,s);if(!m.length)return null;return m[((s.expIdx||[])[team]||0)%m.length]}
 function advanceExp(s,team){s.expIdx=s.expIdx&&s.expIdx.length===s.teams.length?s.expIdx:s.teams.map(()=>0);s.expIdx[team]=(s.expIdx[team]||0)+1}
 function beginGame(s){s.finalAt=null;
   const del=s.deleted||[];const keep=s.words.map((_,i)=>i).filter(i=>!del.includes(i));
   s.words=keep.map(i=>s.words[i]);s.wordBy=keep.map(i=>(s.wordBy||[])[i]||[]);s.deleted=[];
-  if(s.useNames)ensureRoster(s);s.expIdx=s.teams.map(()=>0);
+  if(s.useNames){ensureRoster(s);s.teamsDrawn=true}s.expIdx=s.teams.map(()=>0);
   s.seen=[];s.history=[];s.scores=s.teams.map(()=>[0,0,0]);s.round=0;s.teamIdx=0;s.carry=false;s.carryLeft=0;s.dur=s.dur||60;fillBowl(s);s.phase='ready';
 }
 function draw(s){
