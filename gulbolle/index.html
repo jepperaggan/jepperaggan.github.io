@@ -196,6 +196,28 @@ body[data-role=klokke] .wrap{max-width:none;padding:calc(env(safe-area-inset-top
 .status{font-size:20px;font-weight:800;margin:10px 0 0;font-family:"Bricolage Grotesque",sans-serif}
 .sheet .panel{max-height:85dvh;overflow:auto}
 td .mini{border:0;background:var(--field);border-radius:8px;width:26px;height:26px;font-weight:800;cursor:pointer;margin:0 2px}
+/* ===== Final show (TV) ===== */
+.tvstage{position:relative;flex:1;min-height:calc(100dvh - 24px)}
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vmin;text-align:center;opacity:0;visibility:hidden;transition:opacity 450ms cubic-bezier(0.23,1,0.32,1),visibility 0s 450ms}
+.scene.vis{opacity:1;visibility:visible;transition:opacity 450ms cubic-bezier(0.23,1,0.32,1)}
+.scene.tvfin{justify-content:flex-start;padding-top:2vmin}
+.awic{font-size:min(16vmin,150px);line-height:1}
+.awtitle{font-family:Unbounded,sans-serif;font-weight:800;font-size:min(7vmin,72px);letter-spacing:-.02em}
+.awwho{font-family:Unbounded,sans-serif;font-weight:800;font-size:min(10vmin,104px);background:var(--ink);color:var(--mustard);padding:1.4vmin 5vmin;border-radius:3vmin;line-height:1.1}
+.awstat{font-size:min(3.6vmin,34px);font-weight:600;color:var(--muted);margin:0}
+.rv.pop{transform:scale(.8)}
+.rv.pop.show{transform:none;transition:opacity 300ms ease,transform 550ms cubic-bezier(0.34,1.45,0.64,1)}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:2.5vmin;width:min(90vw,1100px);height:58vh}
+.pcol{flex:1;max-width:30vw;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-end;height:100%;gap:1.4vmin}
+.pname{font-family:Unbounded,sans-serif;font-weight:800;font-size:min(4.4vmin,44px);line-height:1.1}
+.pname small{display:block;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:min(2.4vmin,22px);color:var(--muted);margin-top:.6vmin}
+.pbar{background:var(--ink);color:var(--mustard);border-radius:2.4vmin 2.4vmin 0 0;display:flex;flex-direction:column;align-items:center;padding-top:2vmin;gap:.6vmin;transform-origin:bottom}
+.pbar.win{background:var(--pink);color:var(--ink)}
+.pbar.rv{opacity:1;transform:scaleY(0);transition:transform 750ms cubic-bezier(0.23,1,0.32,1)}
+.pbar.rv.show{transform:none}
+.pplace{font-family:Unbounded,sans-serif;font-weight:800;font-size:min(8vmin,80px);line-height:1}
+.pscore{font-family:Unbounded,sans-serif;font-weight:700;font-size:min(3vmin,30px)}
+@media (prefers-reduced-motion: reduce){.rv.pop{transform:none}.pbar.rv{transform:none;opacity:0;transition:opacity 300ms ease}.pbar.rv.show{opacity:1}}
 /* ===== Theme: Gullshow ===== */
 html,body{font-family:'Space Grotesk',-apple-system,system-ui,sans-serif}
 h1,h2,.brand,.big-team,.tbig,.tsm,.stealword,.cd,.tvteam,.tvnum,.tvcount,.exp,.status,.word,.pill,.srow .pts,td.tot,.tvrow span,.count b,.tg,.tr,.trophy+h1{font-family:Unbounded,sans-serif}
@@ -408,11 +430,15 @@ function clockTick(){
   }
   if(S.phase==='final'){
     const now=Date.now();
+    document.querySelectorAll('.scene[data-from]').forEach(el=>{
+      const on=REVEAL_SKIP?el.dataset.to==='9e15':(now>=+el.dataset.from&&now<+el.dataset.to);el.classList.toggle('vis',on)});
     document.querySelectorAll('[data-at]').forEach(el=>{
       if(el.classList.contains('show'))return;
       if(now>=+el.dataset.at||REVEAL_SKIP){el.classList.add('show');
         if(!el.dataset.played&&now-+el.dataset.at<1500){el.dataset.played=1;
           if(el.dataset.snd==='row')tone(392,.18,.22,'triangle');
+          if(el.dataset.snd==='drum'&&!REVEAL_SKIP)for(let i=0;i<16;i++)tone(80+i*3,.07,.06+i*.012,'triangle',i*.095);
+          if(el.dataset.snd==='aw'&&!REVEAL_SKIP){tone(659,.22,.25,'triangle');tone(988,.4,.25,'triangle',.12)}
           if(el.dataset.snd==='win'){[523,659,784,1047].forEach((f,i)=>tone(f,.35,.25,'triangle',i*.14));buzz([80,60,80,60,200])}}}
     });
     if(ROLE!=='klokke'&&!FINAL_SHOWN&&revealDone()){FINAL_SHOWN=true;render()}
@@ -597,15 +623,15 @@ function vTvLobby(){
   if(S.useNames&&S.teamsDrawn)return `<div class="tv">
     <p class="clabel">Lagene er trukket!</p>
     <div class="tvboard">${S.teams.map((t,i)=>`<div class="tvrow"><div>${esc(t)}</div><div style="font-size:min(4.4vmin,42px);text-align:right">${members(i).map(esc).join(' · ')||'–'}</div></div>`).join('')}</div>
-    <p class="tvsub" style="margin-top:3vmin;max-width:none">Kode <b style="color:var(--ink)">${ROOM}</b> · raggan.no/gulbolle · ${n} ${n===1?'lapp':'lapper'} i bollen</p>${tap}
+    <p class="tvsub" style="margin-top:3vmin;max-width:none">Kode <b style="color:var(--ink)">${ROOM}</b> · raggan.no/gulbolle</p>${tap}
   </div>${btns}`;
   return `<div class="tv">
     <p class="clabel">Bli med på</p>
     <div class="tvteam sm">raggan.no/gulbolle</div>
     <p class="clabel" style="margin-top:2vmin">Kode</p>
     <div class="tvteam" style="letter-spacing:.12em">${ROOM}</div>
-    <p class="tvcount">${n} ${n===1?'lapp':'lapper'} i bollen${S.useNames?' · '+ps.length+(ps.length===1?' person':' personer'):''}</p>
-    ${S.useNames&&ps.length?`<p class="tvsub" style="max-width:80vw">${ps.map(esc).join(' · ')}</p>`:''}${tap}
+    ${S.useNames?(ps.length?`<p class="clabel" style="margin-top:3vmin">Har levert</p><p class="tvexp" style="max-width:86vw;line-height:1.35">${ps.map(esc).join(' · ')}</p>`:'<p class="tvsub" style="margin-top:3vmin">Venter på de første lappene …</p>')
+      :`<p class="tvcount">${n} ${n===1?'lapp':'lapper'} i bollen</p>`}${tap}
   </div>${btns}`;
 }
 function vLobby(){
@@ -976,14 +1002,18 @@ function standingsVisible(){
   if(S.phase==='ready'&&S.round>0)return !(S.history||[]).some(h=>h.round===S.round);
   return false;
 }
-const REV_STEP=1700,REV_LEAD=900;
+const REV_STEP=2000,AW_STEP=4600,AW_NAME=1700;
 function revealPlan(){
+  const A=awards(),f0=S.finalAt||0;
+  const awStart=f0+(A.length?2600:600);const awAt=A.map((_,k)=>awStart+k*AW_STEP);
+  const podStart=awStart+A.length*AW_STEP;
   const idx=rankIdx(),best=total(idx[0]);
   const rest=idx.filter(i=>total(i)<best).reverse(); // last place first; equal scores appear together
   const levels=[...new Set(rest.map(total))];
-  const t0=(S.finalAt||0)+REV_LEAD;const rowAt={};rest.forEach(i=>rowAt[i]=t0+levels.indexOf(total(i))*REV_STEP);
+  const t0=podStart+1400;const rowAt={};rest.forEach(i=>rowAt[i]=t0+levels.indexOf(total(i))*REV_STEP);
   const winAt=t0+levels.length*REV_STEP;idx.filter(i=>total(i)===best).forEach(i=>rowAt[i]=winAt);
-  return {rowAt,winAt,awAt:winAt+2200,end:winAt+2600};
+  const sumAt=winAt+5000;
+  return {A,awAt,podStart,rowAt,winAt,sumAt,end:sumAt+300};
 }
 function rankIdx(){return S.teams.map((_,i)=>i).sort((a,b)=>total(b)-total(a)||a-b)}
 function placeOf(i){return 1+S.teams.filter((_,j)=>total(j)>total(i)).length}
@@ -1011,46 +1041,57 @@ function tvBoard(hl){
 }
 function vClockFinal(){
   const idx=rankIdx();const best=total(idx[0]);const win=idx.filter(i=>total(i)===best);
-  const A=awards();const P=revealPlan();
-  return `<div class="tv tvfin">
-    <div class="rv" data-at="${P.winAt}" style="font-size:min(7vmin,64px);line-height:1">🏆</div>
-    <div class="tvteam sm"><span class="rvpre" data-at="${P.winAt}">Og vinneren er …</span><span class="rv" data-at="${P.winAt}" data-snd="win">${win.length>1?'Uavgjort!':esc(S.teams[win[0]])+' vant!'}</span></div>
-    <div class="tvboard">${idx.map((i,k)=>`<div class="tvrow rv ${total(i)===best?'on':''}" data-at="${P.rowAt[i]}" data-snd="${total(i)===best?'':'row'}"><div><span class="place">${placeOf(i)}.</span> ${esc(S.teams[i])}${S.useNames&&members(i).length?`<small>${members(i).map(esc).join(', ')}</small>`:''}</div><span>${total(i)}</span></div>`).join('')}</div>
-    ${A.length?`<div class="tvaw rv" data-at="${P.awAt}">${awardHtml(A)}</div>`:''}</div>
-  <div class="tvbtns"><button class="iconbtn" onclick="openMenu()">Meny</button></div>`;
+  const P=revealPlan(),A=P.A,winTxt=win.length>1?'Uavgjort!':esc(S.teams[win[0]])+' vant!';
+  const mem=i=>S.useNames&&members(i).length?`<small>${members(i).map(esc).join(', ')}</small>`:'';
+  const top=idx.slice(0,4),arr=[1,0,2,3].filter(k=>k<top.length).map(k=>top[k]);
+  const H={1:'34vh',2:'25vh',3:'18vh',4:'13vh'};
+  const intro=A.length?`<div class="scene" data-from="0" data-to="${P.awAt[0]}"><div style="font-size:min(14vmin,130px);line-height:1">🏆</div><div class="tvteam">Kveldens priser</div></div>`:'';
+  const slides=A.map(([ic,t,who,stat],k)=>`<div class="scene" data-from="${P.awAt[k]}" data-to="${P.awAt[k]+AW_STEP}">
+      <div class="awic">${ic}</div><div class="awtitle rv" data-at="${P.awAt[k]}" data-snd="drum">${t}</div>
+      <div class="awwho rv pop" data-at="${P.awAt[k]+AW_NAME}" data-snd="aw">${who}</div>
+      <p class="awstat rv" data-at="${P.awAt[k]+AW_NAME+300}">${stat}</p></div>`).join('');
+  const podium=`<div class="scene" data-from="${P.podStart}" data-to="${P.sumAt}">
+      <div class="tvteam sm"><span class="rvpre" data-at="${P.winAt}">Og vinneren er …</span><span class="rv" data-at="${P.winAt}" data-snd="win">🏆 ${winTxt}</span></div>
+      <div class="podium">${arr.map(i=>{const pl=placeOf(i);return `<div class="pcol">
+        <div class="pname rv" data-at="${P.rowAt[i]}">${esc(S.teams[i])}${mem(i)}</div>
+        <div class="pbar rv ${pl===1?'win':''}" data-at="${P.rowAt[i]}" data-snd="${pl===1?'':'row'}" style="height:${H[Math.min(pl,4)]}"><span class="pplace">${pl}.</span><span class="pscore">${total(i)} poeng</span></div></div>`}).join('')}</div>
+      ${idx.length>4?`<p class="tvsub rv" data-at="${P.rowAt[idx[4]]}">${idx.slice(4).map(i=>placeOf(i)+'. '+esc(S.teams[i])+' ('+total(i)+')').join(' · ')}</p>`:''}</div>`;
+  const summary=`<div class="scene tvfin" data-from="${P.sumAt}" data-to="9e15">
+      <div style="font-size:min(7vmin,64px);line-height:1">🏆</div><div class="tvteam sm">${winTxt}</div>
+      <div class="tvboard">${idx.map(i=>`<div class="tvrow ${total(i)===best?'on':''}"><div><span class="place">${placeOf(i)}.</span> ${esc(S.teams[i])}${mem(i)}</div><span>${total(i)}</span></div>`).join('')}</div>
+      ${A.length?`<div class="tvaw">${awardHtml(A)}</div>`:''}</div>`;
+  return `<div class="tvstage">${intro}${slides}${podium}${summary}</div>
+  <div class="tvbtns"><button class="iconbtn" onclick="REVEAL_SKIP=true">Hopp til slutt</button><button class="iconbtn" onclick="openMenu()">Meny</button></div>`;
 }
 
 /* ---------- AWARDS ---------- */
 function awards(){
-  const H=S.history||[],A=[],W=w=>'«'+esc(S.words[w])+'»';
+  const H=S.history||[],fun=[],big=[],W=w=>'«'+esc(S.words[w])+'»';
   const fmt1=x=>(Math.round(x*10)/10).toString().replace('.',',');
   [['🗣️','Beste forklarer'],['🕺','Beste mimer'],['📣','Beste lydmaker']].forEach(([ic,title],r)=>{
     const ex={};H.forEach(h=>{if(!h.exp||h.round!==r)return;const e=ex[h.exp]||(ex[h.exp]={got:0,turns:0});e.got+=h.got.length;e.turns++});
     const best=Object.entries(ex).sort((a,c)=>(c[1].got/c[1].turns)-(a[1].got/a[1].turns)||c[1].got-a[1].got)[0];
-    if(best&&best[1].got)A.push([ic,title,`${esc(best[0])} · ${fmt1(best[1].got/best[1].turns)} lapper per tur (${best[1].got} totalt)`]);
+    if(best&&best[1].got)big.push([ic,title,esc(best[0]),`${fmt1(best[1].got/best[1].turns)} lapper per tur (${best[1].got} totalt)`]);
   });
-  const ex={};H.forEach(h=>{if(!h.exp)return;const e=ex[h.exp]||(ex[h.exp]={skip:0});e.skip+=h.skipped.length});
-  const exs=Object.entries(ex);
-  if(exs.length){
-    const [sn,sv]=exs.slice().sort((a,c)=>c[1].skip-a[1].skip)[0];
-    if(sv.skip)A.push(['🙈','Mest hoppet over',`${esc(sn)} · ${sv.skip} ${sv.skip===1?'gang':'ganger'}`]);
-  }
-  let f=null;H.forEach(h=>(h.takes||[]).forEach(t=>{if(h.got.includes(t.w)&&t.dt>300&&(!f||t.dt<f.dt))f={...t,exp:h.exp}}));
-  if(f)A.push(['⚡','Raskeste lapp',`${W(f.w)} på ${(f.dt/1000).toFixed(1).replace('.',',')} s${f.exp?' · '+esc(f.exp):''}`]);
   const sk={};H.forEach(h=>h.skipped.forEach(w=>sk[w]=(sk[w]||0)+1));
-  const hard=Object.entries(sk).sort((a,b)=>b[1]-a[1])[0];
-  if(hard)A.push(['🧱','Vanskeligste lapp',`${W(+hard[0])} · hoppet over ${hard[1]} ${hard[1]===1?'gang':'ganger'}`]);
-  const st={};H.forEach(h=>{if(h.stolen)st[h.stolen.by]=(st[h.stolen.by]||0)+1});
-  const thief=Object.entries(st).sort((a,b)=>b[1]-a[1])[0];
-  if(thief)A.push(['🦊','Lappetyvene',`${esc(S.teams[+thief[0]])} · ${thief[1]} ${thief[1]===1?'lapp':'lapper'} stjålet`]);
   if(S.useNames){
     const au={};Object.entries(sk).forEach(([w,n])=>((S.wordBy||[])[+w]||[]).forEach(a=>au[a]=(au[a]||0)+n));
     const sly=Object.entries(au).sort((a,b)=>b[1]-a[1])[0];
-    if(sly)A.push(['😈','Lumskeste lappeskriver',`${esc(sly[0])} · lappene ble hoppet over ${sly[1]} ${sly[1]===1?'gang':'ganger'}`]);
+    if(sly)fun.push(['😈','Lumskeste lappeskriver',esc(sly[0]),`lappene ble hoppet over ${sly[1]} ${sly[1]===1?'gang':'ganger'}`]);
   }
-  return A;
+  const hard=Object.entries(sk).sort((a,b)=>b[1]-a[1])[0];
+  if(hard)fun.push(['🧱','Vanskeligste lapp',W(+hard[0]),`hoppet over ${hard[1]} ${hard[1]===1?'gang':'ganger'}`]);
+  const ex={};H.forEach(h=>{if(!h.exp)return;const e=ex[h.exp]||(ex[h.exp]={skip:0});e.skip+=h.skipped.length});
+  const sk2=Object.entries(ex).sort((a,c)=>c[1].skip-a[1].skip)[0];
+  if(sk2&&sk2[1].skip)fun.push(['🙈','Mest hoppet over',esc(sk2[0]),`${sk2[1].skip} ${sk2[1].skip===1?'gang':'ganger'}`]);
+  const st={};H.forEach(h=>{if(h.stolen)st[h.stolen.by]=(st[h.stolen.by]||0)+1});
+  const thief=Object.entries(st).sort((a,b)=>b[1]-a[1])[0];
+  if(thief)fun.push(['🦊','Lappetyvene',esc(S.teams[+thief[0]]),`${thief[1]} ${thief[1]===1?'lapp':'lapper'} stjålet`]);
+  let f=null;H.forEach(h=>(h.takes||[]).forEach(t=>{if(h.got.includes(t.w)&&t.dt>300&&(!f||t.dt<f.dt))f={...t,exp:h.exp}}));
+  if(f)fun.push(['⚡','Raskeste lapp',W(f.w),`${(f.dt/1000).toFixed(1).replace('.',',')} sekunder${f.exp?' · '+esc(f.exp):''}`]);
+  return fun.concat(big.reverse()); // … lydmaker, mimer, forklarer last
 }
-function awardHtml(A){return A.map(([ic,t,d])=>`<div class="aw"><span class="ic">${ic}</span><div><b>${t}</b><span>${d}</span></div></div>`).join('')}
+function awardHtml(A){return A.map(([ic,t,who,stat])=>`<div class="aw"><span class="ic">${ic}</span><div><b>${t}</b><span>${who} · ${stat}</span></div></div>`).join('')}
 let SHOWWHO=false;
 function whoWrote(){
   if(!S.useNames||!(S.wordBy||[]).some(a=>a&&a.length))return '';
