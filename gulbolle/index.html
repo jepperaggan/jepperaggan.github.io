@@ -115,6 +115,18 @@ details.card summary::-webkit-details-marker{display:none}
 .steal{box-shadow:inset 0 0 0 3px var(--yellow-deep),var(--shadow)}
 .fade{animation:fade .25s ease}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#edge{position:fixed;inset:0;width:100vw;height:100dvh;pointer-events:none;z-index:4;opacity:0;transition:opacity 250ms cubic-bezier(0.23,1,0.32,1)}
+#edge.on{opacity:1}
+#edge path,.jring circle{fill:none;stroke-linecap:round}
+#edge .trk{stroke:var(--hair);stroke-width:7}
+#edge .prg{stroke:var(--yellow-deep);stroke-width:7;transition:stroke 300ms ease}
+.jring{position:relative;width:min(82vw,340px);aspect-ratio:1;margin:6px auto 0}
+.jring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.jring .trk{stroke:var(--field);stroke-width:14}
+.jring .prg{stroke:var(--yellow-deep);stroke-width:14;transition:stroke 300ms ease}
+.jring .num{position:absolute;inset:0;display:grid;place-items:center;margin:0}
+#edge.low .prg,.jring.low .prg{stroke:var(--red)}
+@media (prefers-reduced-motion: reduce){#edge,#edge .prg,.jring .prg{transition:none}}
 .tbig{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:76px;line-height:1;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:-.03em;margin:4px 0}
 .tbig.low,.tsm.low{color:var(--red)}
 .tsm{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
@@ -141,6 +153,7 @@ td .mini{border:0;background:var(--field);border-radius:8px;width:26px;height:26
 </head>
 <body>
 <div class="wrap" id="app"></div>
+<svg id="edge" aria-hidden="true"><path class="trk"/><path class="prg"/></svg>
 <div class="toast" id="toast"></div>
 <div class="sheet" id="menu" onclick="if(event.target===this)closeSheet('menu')"><div class="panel" id="menuPanel"></div></div>
 <div class="sheet" id="wsheet" onclick="if(event.target===this)closeSheet('wsheet')"><div class="panel" id="wpanel"></div></div>
@@ -316,6 +329,27 @@ function clockTick(){
   }
 }
 
+/* ===== Timer rings (scene edge + judge circle) ===== */
+const JC=2*Math.PI*90;let EDGE_P=0;
+function timeFrac(){const t=S&&S.timer;if(!t)return 0;const tot=t.total||((S.dur||60)*1000);const l=leftOf(S);return l==null?0:Math.max(0,Math.min(1,l/tot))}
+function layoutEdge(){
+  const w=innerWidth,h=innerHeight,i=5,r=Math.min(46,w/4,h/4),x0=i,y0=i,x1=w-i,y1=h-i,cx=w/2;
+  const d=`M${cx} ${y0}H${x1-r}A${r} ${r} 0 0 1 ${x1} ${y0+r}V${y1-r}A${r} ${r} 0 0 1 ${x1-r} ${y1}H${x0+r}A${r} ${r} 0 0 1 ${x0} ${y1-r}V${y0+r}A${r} ${r} 0 0 1 ${x0+r} ${y0}Z`;
+  EDGE_P=2*(x1-x0-2*r)+2*(y1-y0-2*r)+2*Math.PI*r;
+  const e=$('edge');e.setAttribute('viewBox',`0 0 ${w} ${h}`);e.querySelectorAll('path').forEach(p=>p.setAttribute('d',d));
+}
+addEventListener('resize',layoutEdge);
+function ringFrame(){
+  const turn=!!(S&&MODE&&S.phase==='turn'&&S.timer);
+  const frac=turn?timeFrac():0,low=turn&&S.timer.running&&leftOf(S)<=10000;
+  const e=$('edge'),showEdge=turn&&ROLE==='scene';
+  e.classList.toggle('on',showEdge);
+  if(showEdge){if(!EDGE_P)layoutEdge();e.querySelector('.prg').style.strokeDasharray=`${frac*EDGE_P} ${EDGE_P+1}`;e.classList.toggle('low',low)}
+  document.querySelectorAll('.jring').forEach(j=>{j.querySelector('.prg').style.strokeDasharray=`${frac*JC} ${JC+1}`;j.classList.toggle('low',low)});
+  requestAnimationFrame(ringFrame);
+}
+requestAnimationFrame(ringFrame);
+
 /* ===== Wake lock ===== */
 let lock=null;
 async function keepAwake(on){try{if(on&&'wakeLock' in navigator&&!lock){lock=await navigator.wakeLock.request('screen');lock.addEventListener('release',()=>lock=null)}if(!on&&lock){await lock.release();lock=null}}catch(e){}}
@@ -486,7 +520,7 @@ function startTurn(){
   unlockAudio();const ti=S.teamIdx,rd=S.round;
   act(s=>{if(s.phase!=='ready'||s.teamIdx!==ti||s.round!==rd)return;
     const ms=(s.carry&&s.carryLeft>1000)?s.carryLeft:(s.dur||60)*1000;
-    resetTurn(s);s.carry=false;s.carryLeft=0;s.turnDev=DEV;s.timer={running:true,endsAt:Date.now()+ms,left:null};draw(s);s.phase='turn'});
+    resetTurn(s);s.carry=false;s.carryLeft=0;s.turnDev=DEV;s.timer={running:true,endsAt:Date.now()+ms,left:null,total:ms};draw(s);s.phase='turn'});
 }
 function correct(){
   if(!guard()||S.current==null)return;const w=S.current;buzz(25);
@@ -664,7 +698,8 @@ function vJudge(){
   }else if(S.phase==='turn'){
     status=`${team} spiller`;
     return header(true)+`<span class="pill">⚖️ Dommer · Runde ${S.round+1} av 3 · ${r.name}</span>
-      <div class="card" style="text-align:center;padding:30px 18px;margin-top:18px"><p class="label" style="margin:0">${team} spiller</p><div class="tbig tleft" style="font-size:110px"></div></div>`;
+      <div class="card" style="text-align:center;padding:24px 18px;margin-top:18px"><p class="label" style="margin:0">${team} spiller</p>
+      <div class="jring"><svg viewBox="0 0 200 200"><circle class="trk" cx="100" cy="100" r="90"/><circle class="prg" cx="100" cy="100" r="90" style="stroke-dasharray:${565.49*timeFrac()} 600"/></svg><div class="tbig tleft num" style="font-size:96px"></div></div></div>`;
   }else if(S.phase==='summary'&&S.steal&&S.steal.open){
     status='Siste lapp kan stjeles';
     const others=S.teams.map((_,i)=>i).filter(i=>i!==S.teamIdx);
