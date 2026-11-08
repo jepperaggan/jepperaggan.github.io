@@ -196,6 +196,7 @@ body[data-role=klokke] .wrap{max-width:none;padding:calc(env(safe-area-inset-top
 .status{font-size:20px;font-weight:800;margin:10px 0 0;font-family:"Bricolage Grotesque",sans-serif}
 .sheet .panel{max-height:85dvh;overflow:auto}
 td .mini{border:0;background:var(--field);border-radius:8px;width:26px;height:26px;font-weight:800;cursor:pointer;margin:0 2px}
+.newer{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 10px);transform:translateX(-50%);z-index:20;border:0;border-radius:999px;padding:12px 18px;background:var(--pink);color:var(--ink);font-weight:800;font-size:14px;box-shadow:var(--shadow);cursor:pointer}
 /* ===== Final show (TV) ===== */
 .tvstage{position:relative;flex:1;min-height:calc(100dvh - 24px)}
 .scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vmin;text-align:center;opacity:0;visibility:hidden;transition:opacity 450ms cubic-bezier(0.23,1,0.32,1),visibility 0s 450ms}
@@ -267,6 +268,7 @@ const SB='https://qcxxtvzarpxstlmyguqi.supabase.co/rest/v1/';
 const KEY='sb_publishable_5m5Hsz9YfHSPK1MZhsXiHA_GjlwYQrW';
 const H={apikey:KEY,'Content-Type':'application/json'};
 const LKEY='gulbolle_v2';
+const BUILD='20261108231115';
 const ROUNDS=[
   {name:'Forklar',verb:'forklare',rule:'Forklar med ord, men ikke si selve ordet.'},
   {name:'Mime',verb:'mime',rule:'Ingen ord og ingen lyder. Bare miming.'},
@@ -587,25 +589,25 @@ function vSetup(){
 }
 
 /* ---------- WORDS ---------- */
-let BONUS=false;
+let BONUS=false,TOPUP=0;
 function wordInputs(){
-  const n=S.perPerson+(BONUS?1:0);let h='';
-  if(S.useNames)h+=`<input class="field" id="pname" maxlength="30" autocomplete="off" placeholder="${EXTRA?'Navnet til den som skriver':'Ditt navn'}" value="${MODE==='online'&&!EXTRA?esc(ls('gb_name')||''):''}" style="font-weight:800">`;
-  for(let i=0;i<n;i++)h+=`<input class="field" id="w${i}" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="${i<S.perPerson?'Lapp '+(i+1):'Bonuslapp (valgfri)'}" enterkeyhint="${i<n-1?'next':'done'}" onkeydown="wordKey(event,${i})">`;
+  const base=TOPUP||S.perPerson;const n=base+(BONUS?1:0);let h='';
+  if(S.useNames)h+=`<input class="field" id="pname" maxlength="30" autocomplete="off" placeholder="${EXTRA&&!TOPUP?'Navnet til den som skriver':'Ditt navn'}" value="${MODE==='online'&&(!EXTRA||TOPUP)?esc(ls('gb_name')||''):''}" style="font-weight:800">`;
+  for(let i=0;i<n;i++)h+=`<input class="field" id="w${i}" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="${i<base?'Lapp '+(i+1):'Bonuslapp (valgfri)'}" enterkeyhint="${i<n-1?'next':'done'}" onkeydown="wordKey(event,${i})">`;
   if(!BONUS)h+=`<button class="btn ghost" style="margin-top:6px" onclick="addBonus()">+ Én til, jeg har en god en</button>`;
   return h;
 }
-function addBonus(){BONUS=true;render();const el=$('w'+S.perPerson);if(el)el.focus()}
+function addBonus(){BONUS=true;render();const el=$('w'+(TOPUP||S.perPerson));if(el)el.focus()}
 function readWords(){const got=[];for(let i=0;i<S.perPerson+1;i++){const el=$('w'+i);const v=el?(el.value||'').trim().slice(0,80):'';if(v)got.push(v)}return got}
 function clearWords(){for(let i=0;i<S.perPerson+1;i++){const el=$('w'+i);if(el)el.value=''}BONUS=false}
 function wordKey(e,i){if(e.key==='Enter'){e.preventDefault();const nx=$('w'+(i+1));if(nx)nx.focus();else MODE==='local'?addBatch():sendWords()}}
 function vWordForm(){
-  return header(false)+`<h1>${EXTRA?'Lapper for en til':'Skriv dine '+S.perPerson+' lapper'}</h1>
+  return header(false)+`<h1>${TOPUP?'Skriv '+TOPUP+' lapper til':EXTRA?'Lapper for en til':'Skriv dine '+S.perPerson+' lapper'}</h1>
   <p class="lede">Ting, personer, filmer, steder … alt som kan forklares, mimes og lages én lyd av. Ingen andre ser hva du skriver.</p>
   <div class="card">${wordInputs()}<button class="btn primary" ${BUSY?'disabled':''} onclick="sendWords()">Legg i bollen</button></div>
   <div class="count"><b id="lcount">${slipCount()}</b><span>lapper i bollen så langt</span></div>
   <div class="spacer"></div>
-  ${EXTRA?'<button class="btn ghost" onclick="EXTRA=false;render()">Avbryt</button>':`<button class="btn ghost" onclick="ls(sentKey(),'1');render()">Jeg har allerede skrevet lapper</button>
+  ${EXTRA?'<button class="btn ghost" onclick="EXTRA=false;TOPUP=0;render()">Avbryt</button>':`<button class="btn ghost" onclick="ls(sentKey(),'1');render()">Jeg har allerede skrevet lapper</button>
   <button class="btn ghost" style="margin-top:0" onclick="setRole('klokke')">🖥️ Denne skjermen er TV-en</button>`}`;
 }
 function readName(){
@@ -617,10 +619,10 @@ function readName(){
 function sendWords(){
   const got=readWords();if(!got.length){toast('Skriv minst én lapp');return}
   const by=readName();if(by==null)return;
-  if(by&&!EXTRA)ls('gb_name',by);
+  if(by&&(!EXTRA||TOPUP))ls('gb_name',by);
   clearWords();const nm=$('pname');if(nm&&EXTRA)nm.value='';
   act(s=>{if(s.phase!=='words')return;(s.slips=s.slips||[]).push(...got.map(t=>({t,by})))});
-  ls(sentKey(),'1');EXTRA=false;buzz(25);render();
+  ls(sentKey(),'1');EXTRA=false;TOPUP=0;buzz(25);render();
   toast(got.length+' '+(got.length===1?'lapp':'lapper')+' i bollen!');document.activeElement&&document.activeElement.blur();
 }
 function isHost(){return MODE==='online'&&S&&ls('gb_host_'+ROOM+'_'+(S.gen||''))==='1'}
@@ -656,14 +658,20 @@ function vTvLobby(){
       :`<p class="tvcount">${n} ${n===1?'lapp':'lapper'} i bollen</p>`}${tap}
   </div>${btns}`;
 }
+function myMissing(){
+  if(!S.useNames)return 0;const me=(ls('gb_name')||'').trim().toLowerCase();if(!me)return 0;
+  const mine=(S.slips||[]).filter(x=>(x.by||'').trim().toLowerCase()===me).length;
+  return mine?Math.max(0,S.perPerson-mine):0;
+}
 function vLobby(){
   return header(false)+`<span class="pill">Kode ${ROOM}</span>
   <h1 style="margin-top:12px">Bollen fylles</h1>
   <p class="lede">Alle går inn på <b>raggan.no/gulbolle</b>, trykker «Bli med» og skriver koden <b>${ROOM}</b>.</p>
   <div class="count"><b id="lcount">${slipCount()}</b><span>lapper i bollen<br>oppdateres av seg selv</span></div>
   ${S.useNames&&players(S).length?`<p class="small" style="margin:10px 2px 0"><b>Har skrevet:</b> ${players(S).map(esc).join(', ')}</p>`:''}
+  ${myMissing()?`<button class="btn primary" onclick="EXTRA=true;TOPUP=${myMissing()};render()">Lengden er nå ${S.perPerson}: skriv ${myMissing()} til</button>`:''}
   <button class="btn outline" onclick="shareLink()">Del lenken</button>
-  <button class="btn ghost" onclick="EXTRA=true;render()">Skriv lapper for en uten mobil</button>
+  <button class="btn ghost" onclick="EXTRA=true;TOPUP=0;render()">Skriv lapper for en uten mobil</button>
   ${rosterCard()}
   ${canEdit()?teamsCard():''}<div class="spacer"></div>
   ${canEdit()?`<button class="btn dark" ${slipCount()<2||BUSY?'disabled':''} onclick="startOnline()">Alle er ferdige, start spillet</button>`
@@ -1176,6 +1184,19 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='ArrowLeft'){e.preventDefault();skip()}
   }else if(S.phase==='ready'&&(e.key===' '||e.key==='Enter')){e.preventDefault();startTurn()}
 });
+
+/* ---------- NEW VERSION CHECK ---------- */
+let NEWER=false;
+async function checkVersion(){
+  if(NEWER||document.hidden)return;
+  try{const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text();
+    const m=t.match(/const BUILD='(\d+)'/);if(m&&m[1]!==BUILD){NEWER=true;showNewer()}}catch(e){}
+}
+function showNewer(){
+  if($('newer'))return;const d=document.createElement('button');d.id='newer';d.className='newer';
+  d.textContent='Ny versjon av appen – trykk for å oppdatere';d.onclick=()=>location.reload();document.body.appendChild(d);
+}
+setInterval(checkVersion,60000);setTimeout(checkVersion,4000);
 
 /* ---------- BOOT ---------- */
 (function(){const q=new URLSearchParams(location.search).get('r');render();if(q)joinRoom(q)})();
