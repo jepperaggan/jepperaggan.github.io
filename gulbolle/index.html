@@ -364,17 +364,17 @@ async function createRoom(){
   BUSY=true;render();const st=freshState();st.gen=Math.random().toString(36).slice(2,8);
   try{
     if(raw){
-      try{await api('gulbolle_rom',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({kode:raw,state:st,versjon:0})});BUSY=false;HOSTSETUP=true;enterRoom(raw,st,0);return}
+      try{await api('gulbolle_rom',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({kode:raw,state:st,versjon:0})});BUSY=false;HOSTSETUP=true;ls('gb_host_'+raw+'_'+st.gen,'1');enterRoom(raw,st,0);return}
       catch(e){if(e.status!==409)throw e}
       // the code was used before: offer to start a fresh game on it
       if(!confirm('Koden '+raw+' er brukt før. Starte et nytt spill på den? Det gamle spillet med denne koden forsvinner.')){BUSY=false;render();return}
       const cur=await api(`gulbolle_rom?kode=eq.${raw}&select=versjon`);const v=cur&&cur[0]?cur[0].versjon:0;
       const j=await api(`gulbolle_rom?kode=eq.${raw}&versjon=eq.${v}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({state:st,versjon:v+1})});
       if(!j||!j.length)throw new Error('Noen andre endret spillet akkurat nå, prøv igjen');
-      BUSY=false;HOSTSETUP=true;enterRoom(raw,st,v+1);return;
+      BUSY=false;HOSTSETUP=true;ls('gb_host_'+raw+'_'+st.gen,'1');enterRoom(raw,st,v+1);return;
     }
     for(let k=0;k<6;k++){const code=genCode();
-      try{await api('gulbolle_rom',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({kode:code,state:st,versjon:0})});BUSY=false;HOSTSETUP=true;enterRoom(code,st,0);return}
+      try{await api('gulbolle_rom',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({kode:code,state:st,versjon:0})});BUSY=false;HOSTSETUP=true;ls('gb_host_'+code+'_'+st.gen,'1');enterRoom(code,st,0);return}
       catch(e){if(e.status===409)continue;throw e}}
     throw new Error('Fant ingen ledig kode');
   }catch(e){BUSY=false;render();toast(DBERR?'Databasen er ikke satt opp ennå':'Klarte ikke å lage spill: '+e.message)}
@@ -571,7 +571,7 @@ function setupCards(){
 function setTeams(d){if(!canEdit())return;act(s=>{const n=Math.min(6,Math.max(2,s.teams.length+d));while(s.teams.length<n)s.teams.push('Lag '+(s.teams.length+1));s.teams.length=n})}
 function renameTeam(i,v){if(!canEdit())return;act(s=>{s.teams[i]=(v||'').trim()||('Lag '+(i+1))})}
 function lenLabel(n){return (n<=3?'Kort':n>=6?'Langt':'Middels')+' · '+n+' lapper per person'}
-function setPerTo(n){if(!canEdit()&&!HOSTSETUP)return;act(s=>{s.perPerson=Math.min(6,Math.max(3,n))})}
+function setPerTo(n){if(!canEdit()&&!HOSTSETUP&&!(isHost()&&!slipCount()))return;act(s=>{s.perPerson=Math.min(6,Math.max(3,n))})}
 function setPer(d){act(s=>{s.perPerson=Math.min(6,Math.max(1,s.perPerson+d))})}
 function setPeople(d){act(s=>{s.people=Math.min(40,Math.max(2,(s.people||8)+d))})}
 function splitText(n,T){if(n<T)return `${n} personer på ${T} lag gir tomme lag. Velg færre lag.`;const b=Math.floor(n/T),x=n%T;const sz=Array.from({length:T},(_,i)=>b+(i<x?1:0));
@@ -623,6 +623,7 @@ function sendWords(){
   ls(sentKey(),'1');EXTRA=false;buzz(25);render();
   toast(got.length+' '+(got.length===1?'lapp':'lapper')+' i bollen!');document.activeElement&&document.activeElement.blur();
 }
+function isHost(){return MODE==='online'&&S&&ls('gb_host_'+ROOM+'_'+(S.gen||''))==='1'}
 function canEdit(){return MODE==='local'||ROLE==='dommer'}
 function vHostSetup(){
   return header(false)+`<span class="pill">Kode ${ROOM}</span>
@@ -649,6 +650,8 @@ function vTvLobby(){
     <div class="tvteam sm">raggan.no/gulbolle</div>
     <p class="clabel" style="margin-top:2vmin">Kode</p>
     <div class="tvteam" style="letter-spacing:.12em">${ROOM}</div>
+    ${isHost()&&!n?`<div style="display:flex;gap:1vmin;align-items:center;margin-top:1vmin"><span class="tvsub" style="margin:0">Lapper per person:</span>${[3,4,5,6].map(k=>`<button class="btn ${S.perPerson===k?'primary':'outline'}" style="width:auto;margin:0;padding:10px 18px" onclick="setPerTo(${k})">${k}</button>`).join('')}</div>`
+      :`<p class="tvsub" style="margin:1vmin 0 0">${lenLabel(S.perPerson)}</p>`}
     ${S.useNames?(ps.length?`<p class="clabel" style="margin-top:3vmin">Har levert</p><p class="tvexp" style="max-width:86vw;line-height:1.35">${ps.map(esc).join(' · ')}</p>`:'<p class="tvsub" style="margin-top:3vmin">Venter på de første lappene …</p>')
       :`<p class="tvcount">${n} ${n===1?'lapp':'lapper'} i bollen</p>`}${tap}
   </div>${btns}`;
