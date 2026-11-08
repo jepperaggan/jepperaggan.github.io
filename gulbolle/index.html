@@ -445,7 +445,7 @@ function vHome(){
   const last=ls('gb_room');let local=null;try{local=JSON.parse(ls(LKEY))}catch(e){}
   return header(false)+`
   <h1>Gul bolle</h1>
-  <p class="lede">Alle skriver lappene sine på egen mobil. Så går én mobil rundt på scenen, og en dommer kan styre tid og poeng.</p>
+  <p class="lede">Alle skriver lappene sine på egen mobil. Så bruker performeren én skjerm, dommeren en annen, og TV-en viser klokka.</p>
   ${DBERR?'<div class="card" style="background:var(--yellow-soft)"><b>Databasen er ikke satt opp ennå.</b><p class="small" style="margin:6px 0 0">Kjør SQL-en i Supabase, eller spill på én mobil inntil videre.</p></div>':''}
   <div class="card"><p class="label">Starte et spill</p>
     <p class="small" style="margin:0">Én person lager spillet og deler koden med resten.</p>
@@ -466,6 +466,10 @@ function teamsCard(){
   return `<div class="card">
     <div class="stepper"><p class="label" style="margin:0">Antall lag</p>
       <div class="ctl"><button onclick="setTeams(-1)">−</button><output>${S.teams.length}</output><button onclick="setTeams(1)">+</button></div></div>
+    ${S.useNames&&players(S).length?`<p class="small" style="margin:12px 0 0">${players(S).length} har skrevet seg på så langt</p>`
+      :`<div class="stepper" style="margin-top:12px"><p class="label" style="margin:0">Hvor mange er dere?</p>
+      <div class="ctl"><button onclick="setPeople(-1)">−</button><output>${S.people||8}</output><button onclick="setPeople(1)">+</button></div></div>`}
+    <p class="small" style="margin:10px 0 4px"><b>${splitText(S.useNames&&players(S).length?players(S).length:(S.people||8),S.teams.length)}</b>${S.useNames?' Appen fordeler tilfeldig.':''}</p>
     ${S.teams.map((t,i)=>`<input class="field" id="team${i}" data-keep="0" value="${esc(t)}" placeholder="Lag ${i+1}" onchange="renameTeam(${i},this.value)" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.blur()">`).join('')}
   </div>
   <div class="card"><label class="tgl"><input type="checkbox" ${S.useNames?'checked':''} onchange="setNames(this.checked)"><span><b>Bruk navn</b>
@@ -481,6 +485,9 @@ function renameTeam(i,v){act(s=>{s.teams[i]=(v||'').trim()||('Lag '+(i+1))})}
 function lenLabel(n){return (n<=3?'Kort':n>=6?'Langt':'Middels')+' · '+n+' lapper per person'}
 function setPerTo(n){act(s=>{s.perPerson=Math.min(6,Math.max(3,n))})}
 function setPer(d){act(s=>{s.perPerson=Math.min(6,Math.max(1,s.perPerson+d))})}
+function setPeople(d){act(s=>{s.people=Math.min(40,Math.max(2,(s.people||8)+d))})}
+function splitText(n,T){const b=Math.floor(n/T),x=n%T;const sz=Array.from({length:T},(_,i)=>b+(i<x?1:0));
+  if(!x)return `${T} lag med ${b} på hvert.`;return `${T} lag: ${sz.join(', ').replace(/, (\d+)$/,' og $1')} personer.`}
 function setNames(v){act(s=>{s.useNames=!!v})}
 function setDur(d){act(s=>{s.dur=Math.min(180,Math.max(20,(s.dur||60)+d))})}
 function vSetup(){
@@ -766,9 +773,9 @@ function tAdd(ms){act(s=>{const t=s.timer;if(s.phase!=='turn'||!t)return;if(t.ru
 function vRole(){
   return header(false)+`<h1>Hva skal denne skjermen være?</h1>
   <p class="lede">Du kan bytte senere under «Meny».</p>
-  <button class="role" onclick="setRole('scene')"><span class="em">🎤</span><span><b>Scene</b><span>Mobilen, iPaden eller Macen den som skal forklare bruker. Bare ordet og to knapper.</span></span></button>
+  <button class="role" onclick="setRole('scene')"><span class="em">🎤</span><span><b>Performer</b><span>Mobilen, iPaden eller Macen den som skal forklare bruker. Bare ordet og to knapper.</span></span></button>
   <button class="role" onclick="setRole('dommer')"><span class="em">⚖️</span><span><b>Dommer 🔒</b><span>Krever passord. Fikser lapper etter turen: diskvalifiser, slett eller rett skrivefeil. Ser aldri lapper som ikke er tatt.</span></span></button>
-  <button class="role" onclick="setRole('klokke')"><span class="em">🖥️</span><span><b>Klokke på TV</b><span>Bare tiden, stort. Fint på en Mac eller iPad koblet til TV-en.</span></span></button>
+  <button class="role" onclick="setRole('klokke')"><span class="em">🖥️</span><span><b>TV</b><span>Macen koblet til TV-en. Viser klokka stort, poengtavla mellom turene og prisene til slutt.</span></span></button>
   <button class="role" onclick="setRole('tilskuer')"><span class="em">👀</span><span><b>Tilskuer</b><span>Ser poeng, klokke og hvem som spiller.</span></span></button>`;
 }
 
@@ -820,7 +827,7 @@ function vScene(){
   }
   return vAudience();
 }
-function takeOver(){if(confirm('Ta over turen her? Bruk dette bare hvis scene-mobilen har problemer.'))act(s=>{s.turnDev=DEV;if(s.current==null)draw(s)})}
+function takeOver(){if(confirm('Ta over turen her? Bruk dette bare hvis performer-skjermen har problemer.'))act(s=>{s.turnDev=DEV;if(s.current==null)draw(s)})}
 function turnNet(){return (S.turnGot||[]).length-(S.turnSkipped||[]).length}
 function doneBlock(big){
   const team=esc(S.teams[S.teamIdx]),empty=!S.bowl.length,net=turnNet(),st=S.steal;
@@ -978,7 +985,7 @@ function vFinal(){
 
 /* ---------- MENU ---------- */
 function openMenu(){
-  const R=[['scene','🎤 Scene'],['dommer','⚖️ Dommer'],['klokke','🖥️ Klokke'],['tilskuer','👀 Tilskuer']];
+  const R=[['scene','🎤 Performer'],['dommer','⚖️ Dommer'],['klokke','🖥️ TV'],['tilskuer','👀 Tilskuer']];
   $('menuPanel').innerHTML=`<h2>Meny</h2>
     <p class="label" style="margin:16px 0 0">Denne skjermen er</p>
     <div class="row2">${R.map(([k,l])=>`<button class="btn ${ROLE===k?'primary':'outline'}" onclick="setRole('${k}')">${l}</button>`).join('')}</div>
