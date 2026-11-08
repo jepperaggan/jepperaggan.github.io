@@ -131,6 +131,9 @@ body[data-role=scene] .wrap{max-width:min(1100px,100%)}
 body[data-role=klokke] .wrap{max-width:none;padding:calc(env(safe-area-inset-top) + 12px) 20px calc(env(safe-area-inset-bottom) + 12px)}
 @media (min-width:700px){body[data-role=scene] .big-team{font-size:76px}body[data-role=scene] .xl{font-size:28px;padding:30px}body[data-role=scene] .rule{font-size:20px}}
 .kbd{display:none;text-align:center}
+.len{width:100%;margin:16px 0 4px;accent-color:var(--yellow-deep);height:28px}
+.lenticks{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--muted)}
+
 @media (hover:hover) and (pointer:fine){.kbd{display:block}}
 .tv{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1vmin}
 .clabel{font-size:min(5vmin,44px);font-weight:800;color:var(--muted);margin:0}
@@ -198,6 +201,7 @@ function rm(arr,w){if(!arr)return;const i=arr.indexOf(w);if(i>=0)arr.splice(i,1)
 const DEV=(()=>{let d=ls('gb_dev');if(!d){d=Math.random().toString(36).slice(2,10);ls('gb_dev',d)}return d})();
 
 /* ===== State ===== */
+let HOSTSETUP=false;
 let MODE=null, ROOM=null, VER=0, LCOUNT=0, DBERR=false, BUSY=false, EXTRA=false, ROLE=null, SHOWALL=false;
 let S=null;
 function freshState(teams){
@@ -276,7 +280,7 @@ async function createRoom(){
   if(BUSY)return;BUSY=true;render();const st=freshState();
   try{
     for(let k=0;k<6;k++){const code=genCode();
-      try{await api('gulbolle_rom',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({kode:code,state:st,versjon:0})});BUSY=false;enterRoom(code,st,0);return}
+      try{await api('gulbolle_rom',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({kode:code,state:st,versjon:0})});BUSY=false;HOSTSETUP=true;enterRoom(code,st,0);return}
       catch(e){if(e.status===409)continue;throw e}}
     throw new Error('Fant ingen ledig kode');
   }catch(e){BUSY=false;render();toast(DBERR?'Databasen er ikke satt opp ennå':'Klarte ikke å lage spill: '+e.message)}
@@ -387,6 +391,7 @@ function header(game){
 function view(){
   if(!MODE)return vHome();
   if(S.phase==='setup')return vSetup();
+  if(S.phase==='words'&&HOSTSETUP&&MODE==='online')return vHostSetup();
   if(S.phase==='words')return MODE==='local'?vLocalWords():((ls(sentKey())&&!EXTRA)?vLobby():vWordForm());
   if(S.phase==='final')return vFinal();
   if(!ROLE)return vRole();
@@ -438,12 +443,15 @@ function teamsCard(){
     ${S.teams.map((t,i)=>`<input class="field" id="team${i}" data-keep="0" value="${esc(t)}" placeholder="Lag ${i+1}" onchange="renameTeam(${i},this.value)" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.blur()">`).join('')}
   </div>
   <div class="card">
-    <div class="stepper"><p class="label" style="margin:0">Lapper per person</p>
-      <div class="ctl"><button onclick="setPer(-1)">−</button><output>${S.perPerson}</output><button onclick="setPer(1)">+</button></div></div>
+    <p class="label" style="margin:0">Lengde på spillet</p><b id="lenlbl" style="display:block;margin-top:6px;font-size:18px">${lenLabel(S.perPerson)}</b>
+    <input type="range" class="len" id="lenr" data-keep="0" min="3" max="6" step="1" value="${S.perPerson}" oninput="$('lenlbl').textContent=lenLabel(+this.value)" onchange="setPerTo(+this.value)">
+    <div class="lenticks"><span>Kort</span><span>Middels</span><span>Langt</span></div>
   </div>`;
 }
 function setTeams(d){act(s=>{const n=Math.min(6,Math.max(2,s.teams.length+d));while(s.teams.length<n)s.teams.push('Lag '+(s.teams.length+1));s.teams.length=n})}
 function renameTeam(i,v){act(s=>{s.teams[i]=(v||'').trim()||('Lag '+(i+1))})}
+function lenLabel(n){return (n<=3?'Kort':n>=6?'Langt':'Middels')+' · '+n+' lapper per person'}
+function setPerTo(n){act(s=>{s.perPerson=Math.min(6,Math.max(3,n))})}
 function setPer(d){act(s=>{s.perPerson=Math.min(6,Math.max(1,s.perPerson+d))})}
 function setDur(d){act(s=>{s.dur=Math.min(180,Math.max(20,(s.dur||60)+d))})}
 function vSetup(){
@@ -481,6 +489,15 @@ async function sendWords(){
     BUSY=false;clearWords();ls(sentKey(),'1');EXTRA=false;buzz(25);render();
     toast(got.length+' '+(got.length===1?'lapp':'lapper')+' i bollen!');pullCount();document.activeElement&&document.activeElement.blur();
   }catch(e){BUSY=false;render();toast('Klarte ikke å sende, prøv igjen')}
+}
+function vHostSetup(){
+  return header(false)+`<span class="pill">Kode ${ROOM}</span>
+  <h1 style="margin-top:12px">Nytt spill</h1>
+  <p class="lede">Velg lengde og lag. Så kan alle bli med på <b>raggan.no/gulbolle</b> med koden <b>${ROOM}</b>.</p>
+  ${teamsCard()}
+  <button class="btn outline" onclick="shareLink()">Del lenken</button>
+  <div class="spacer"></div>
+  <button class="btn primary" onclick="HOSTSETUP=false;render()">Videre: skriv dine lapper</button>`;
 }
 function vLobby(){
   return header(false)+`<span class="pill">Kode ${ROOM}</span>
