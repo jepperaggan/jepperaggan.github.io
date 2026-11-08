@@ -296,7 +296,8 @@ function freshState(teams){
 function total(i){return ((S.scores||[])[i]||[]).reduce((a,b)=>a+b,0)}
 function nextTeam(i){return (i+1)%S.teams.length}
 function myTurn(){return MODE==='local'||S.turnDev===DEV}
-function sentKey(){return 'gb_sent_'+ROOM+'_'+(S.parti||1)}
+function sentKey(){return 'gb_sent_'+ROOM+(S.gen?'_'+S.gen:'')+'_'+(S.parti||1)}
+function roleKey(){return 'gb_role_'+ROOM+(S&&S.gen?'_'+S.gen:'')}
 function setRole(r){
   if(r==='dommer'&&ls('gb_judge_ok')!=='1'){
     const pw=prompt('Passord for dommer:');
@@ -304,7 +305,7 @@ function setRole(r){
     if(pw.trim().toLowerCase()!=='gutta'){toast('Feil passord');return}
     ls('gb_judge_ok','1');
   }
-  ROLE=r;if(MODE==='online')ls('gb_role_'+ROOM,r);closeSheet('menu');render()}
+  ROLE=r;if(MODE==='online')ls(roleKey(),r);closeSheet('menu');render()}
 function leftOf(s){const t=s&&s.timer;if(!t)return null;return t.running?t.endsAt-Date.now():(t.left??null)}
 function fmt(ms){if(ms==null)return '';const s=Math.max(0,Math.ceil(ms/1000));return s>=60?Math.floor(s/60)+':'+String(s%60).padStart(2,'0'):String(s)}
 
@@ -341,7 +342,7 @@ async function pull(){
   try{
     const j=await api(`gulbolle_rom?kode=eq.${ROOM}&select=state,versjon`);
     if(!j||!j.length||inflight||OPS.length)return;
-    if(j[0].versjon>VER){VER=j[0].versjon;S=j[0].state;render()}
+    if(j[0].versjon>VER){const g=S&&S.gen;VER=j[0].versjon;S=j[0].state;if(S.gen!==g){ROLE=ls(roleKey());EXTRA=false;HOSTSETUP=false}render()}
   }catch(e){}
 }
 async function pullCount(){} /* slips now live in the room state */
@@ -357,8 +358,21 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&MODE==='o
 /* ===== Rooms ===== */
 function genCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ';let c='';for(let i=0;i<4;i++)c+=a[Math.floor(Math.random()*a.length)];return c}
 async function createRoom(){
-  if(BUSY)return;BUSY=true;render();const st=freshState();
+  if(BUSY)return;
+  const raw=(($('newcode')||{}).value||'').trim().toUpperCase().replace(/\s+/g,'');
+  if(raw&&!/^[A-Z0-9]{4,6}$/.test(raw)){toast(/[ÆØÅ]/.test(raw)?'Koden kan ikke ha Æ, Ø eller Å':'Koden må være 4–6 bokstaver eller tall');return}
+  BUSY=true;render();const st=freshState();st.gen=Math.random().toString(36).slice(2,8);
   try{
+    if(raw){
+      try{await api('gulbolle_rom',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({kode:raw,state:st,versjon:0})});BUSY=false;HOSTSETUP=true;enterRoom(raw,st,0);return}
+      catch(e){if(e.status!==409)throw e}
+      // the code was used before: offer to start a fresh game on it
+      if(!confirm('Koden '+raw+' er brukt før. Starte et nytt spill på den? Det gamle spillet med denne koden forsvinner.')){BUSY=false;render();return}
+      const cur=await api(`gulbolle_rom?kode=eq.${raw}&select=versjon`);const v=cur&&cur[0]?cur[0].versjon:0;
+      const j=await api(`gulbolle_rom?kode=eq.${raw}&versjon=eq.${v}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({state:st,versjon:v+1})});
+      if(!j||!j.length)throw new Error('Noen andre endret spillet akkurat nå, prøv igjen');
+      BUSY=false;HOSTSETUP=true;enterRoom(raw,st,v+1);return;
+    }
     for(let k=0;k<6;k++){const code=genCode();
       try{await api('gulbolle_rom',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({kode:code,state:st,versjon:0})});BUSY=false;HOSTSETUP=true;enterRoom(code,st,0);return}
       catch(e){if(e.status===409)continue;throw e}}
@@ -376,7 +390,7 @@ async function joinRoom(code){
 }
 function enterRoom(code,st,ver){
   MODE='online';ROOM=code;S=st;VER=ver;LCOUNT=0;EXTRA=false;OPS=[];
-  ROLE=ls('gb_role_'+code);
+  ROLE=ls(roleKey());
   ls('gb_room',code);try{history.replaceState(null,'','?r='+code)}catch(e){}
   render();pullCount();
 }
@@ -522,6 +536,7 @@ function vHome(){
   ${DBERR?'<div class="card" style="background:var(--yellow-soft)"><b>Databasen er ikke satt opp ennå.</b><p class="small" style="margin:6px 0 0">Kjør SQL-en i Supabase, eller spill på én mobil inntil videre.</p></div>':''}
   <div class="card"><p class="label">Starte et spill</p>
     <p class="small" style="margin:0">Én person lager spillet og deler koden med resten.</p>
+    <input class="field" id="newcode" placeholder="Egen kode (valgfritt), f.eks. GUTTA" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="6" style="text-transform:uppercase;letter-spacing:.12em;font-weight:800;text-align:center" onkeydown="if(event.key==='Enter')createRoom()">
     <button class="btn primary" ${BUSY?'disabled':''} onclick="createRoom()">Lag nytt spill</button></div>
   <div class="card"><p class="label">Bli med</p>
     <input class="field" id="code" placeholder="Kode, f.eks. KQBT" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="6" style="text-transform:uppercase;letter-spacing:.15em;font-weight:800;text-align:center;font-size:22px" onkeydown="if(event.key==='Enter')joinRoom(this.value)">
