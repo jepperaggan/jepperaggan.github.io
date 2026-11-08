@@ -542,8 +542,10 @@ function teamsCard(){
     ${S.useNames?(players(S).length?`<p class="small" style="margin:12px 0 4px">${players(S).length} har skrevet seg på: <b>${splitText(players(S).length,S.teams.length)}</b> Appen fordeler tilfeldig.</p>`
       :'<p class="small" style="margin:12px 0 4px">Antallet per lag vises her når folk har skrevet seg på.</p>'):''}
     ${S.teams.map((t,i)=>`<input class="field" id="team${i}" data-keep="0" value="${esc(t)}" placeholder="Lag ${i+1}" onchange="renameTeam(${i},this.value)" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.blur()">`).join('')}
-  </div>
-  <div class="card"><label class="tgl"><input type="checkbox" ${S.useNames?'checked':''} onchange="setNames(this.checked)"><span><b>Bruk navn</b>
+  </div>${setupCards()}`;
+}
+function setupCards(){
+  return `<div class="card"><label class="tgl"><input type="checkbox" ${S.useNames?'checked':''} onchange="setNames(this.checked)"><span><b>Bruk navn</b>
     <small>Alle skriver navnet sitt. Appen fordeler lagene, bestemmer hvem som forklarer, og viser kveldens priser og hvem som skrev hva til slutt.</small></span></label></div>
   <div class="card">
     <p class="label" style="margin:0">Lengde på spillet</p><b id="lenlbl" style="display:block;margin-top:6px;font-size:18px">${lenLabel(S.perPerson)}</b>
@@ -554,12 +556,12 @@ function teamsCard(){
 function setTeams(d){if(!canEdit())return;act(s=>{const n=Math.min(6,Math.max(2,s.teams.length+d));while(s.teams.length<n)s.teams.push('Lag '+(s.teams.length+1));s.teams.length=n})}
 function renameTeam(i,v){if(!canEdit())return;act(s=>{s.teams[i]=(v||'').trim()||('Lag '+(i+1))})}
 function lenLabel(n){return (n<=3?'Kort':n>=6?'Langt':'Middels')+' · '+n+' lapper per person'}
-function setPerTo(n){if(!canEdit())return;act(s=>{s.perPerson=Math.min(6,Math.max(3,n))})}
+function setPerTo(n){if(!canEdit()&&!HOSTSETUP)return;act(s=>{s.perPerson=Math.min(6,Math.max(3,n))})}
 function setPer(d){act(s=>{s.perPerson=Math.min(6,Math.max(1,s.perPerson+d))})}
 function setPeople(d){act(s=>{s.people=Math.min(40,Math.max(2,(s.people||8)+d))})}
 function splitText(n,T){if(n<T)return `${n} personer på ${T} lag gir tomme lag. Velg færre lag.`;const b=Math.floor(n/T),x=n%T;const sz=Array.from({length:T},(_,i)=>b+(i<x?1:0));
   if(!x)return `${T} lag med ${b} på hvert.`;return `${T} lag: ${sz.join(', ').replace(/, (\d+)$/,' og $1')} personer.`}
-function setNames(v){if(!canEdit())return;act(s=>{s.useNames=!!v})}
+function setNames(v){if(!canEdit()&&!HOSTSETUP)return;act(s=>{s.useNames=!!v})}
 function setDur(d){act(s=>{s.dur=Math.min(180,Math.max(20,(s.dur||60)+d))})}
 function vSetup(){
   return header(false)+`<h1>Lag og lapper</h1>
@@ -610,8 +612,8 @@ function canEdit(){return MODE==='local'||ROLE==='dommer'}
 function vHostSetup(){
   return header(false)+`<span class="pill">Kode ${ROOM}</span>
   <h1 style="margin-top:12px">Nytt spill</h1>
-  <p class="lede">Alle kan bli med på <b>raggan.no/gulbolle</b> med koden <b>${ROOM}</b>. ${canEdit()?'Velg lengde og lag.':'Bare dommeren kan endre lag og lengde.'}</p>
-  ${canEdit()?teamsCard():`<button class="btn dark" onclick="setRole('dommer')">⚖️ Jeg er dommer</button>`}
+  <p class="lede">Velg lengde før folk begynner å skrive. ${canEdit()?'':'Lagene fordeler dommeren senere.'}</p>
+  ${canEdit()?teamsCard():setupCards()}
   <button class="btn outline" onclick="shareLink()">Del lenken</button>
   <div class="spacer"></div>
   <button class="btn outline" onclick="HOSTSETUP=false;setRole('klokke')">🖥️ Denne skjermen er TV-en</button>
