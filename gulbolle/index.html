@@ -127,6 +127,22 @@ details.card summary::-webkit-details-marker{display:none}
 .jring .num{position:absolute;inset:0;display:grid;place-items:center;margin:0}
 #edge.low .prg,.jring.low .prg{stroke:var(--red)}
 @media (prefers-reduced-motion: reduce){#edge,#edge .prg,.jring .prg{transition:none}}
+body[data-role=scene] .wrap{max-width:min(1100px,100%)}
+body[data-role=klokke] .wrap{max-width:none;padding:calc(env(safe-area-inset-top) + 12px) 20px calc(env(safe-area-inset-bottom) + 12px)}
+@media (min-width:700px){body[data-role=scene] .big-team{font-size:76px}body[data-role=scene] .xl{font-size:28px;padding:30px}body[data-role=scene] .rule{font-size:20px}}
+.kbd{display:none;text-align:center}
+@media (hover:hover) and (pointer:fine){.kbd{display:block}}
+.tv{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1vmin}
+.clabel{font-size:min(5vmin,44px);font-weight:800;color:var(--muted);margin:0}
+.tvteam{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:min(16vmin,190px);line-height:1.02;letter-spacing:-.03em}
+.tvsub{font-size:min(4vmin,34px);color:var(--muted);font-weight:600;margin:1vmin 0 0;max-width:24ch}
+.jring.tv{width:min(76vmin,780px);margin:0}
+.jring.tv .num{font-size:min(28vmin,290px)!important}
+.jring.tv .trk,.jring.tv .prg{stroke-width:12}
+.tvnum.cd{font-size:min(32vmin,320px)}
+.tvnum.cd.done{font-size:min(10vmin,96px)}
+.tvbtns{position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom) + 14px);display:flex;gap:8px;opacity:.45}
+.tvbtns:hover{opacity:1}
 .tbig{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:76px;line-height:1;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:-.03em;margin:4px 0}
 .tbig.low,.tsm.low{color:var(--red)}
 .tsm{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
@@ -246,7 +262,12 @@ async function pullCount(){
     const n=dedupe(j.map(x=>x.tekst)).length;
     if(n!==LCOUNT){LCOUNT=n;render()}}catch(e){}
 }
-setInterval(()=>{if(MODE==='online'&&!document.hidden){pull();if(S.phase==='words')pullCount()}},1000);
+let pollN=0;
+setInterval(()=>{
+  if(MODE!=='online'||document.hidden||!S)return;pollN++;
+  if(S.phase==='words'){if(pollN%2===0){pull();pullCount()}return}
+  pull(); // every 0.5 s during the game, so the clock appears quickly on every screen
+},500);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&MODE==='online'){pull();pullCount()}});
 
 /* ===== Rooms ===== */
@@ -371,6 +392,7 @@ function view(){
   if(!ROLE)return vRole();
   if(ROLE==='dommer')return vJudge();
   if(ROLE==='tilskuer')return vAudience();
+  if(ROLE==='klokke')return vClock();
   return vScene();
 }
 function render(){
@@ -380,10 +402,12 @@ function render(){
   app.innerHTML=view();
   for(const id in keep){const el=$(id);if(el&&(el.dataset.keep!=='0'||id===focusId))el.value=keep[id]}
   if(focusId){const el=$(focusId);if(el){el.focus();try{el.setSelectionRange(sel,sel)}catch(e){}}}
+  document.body.dataset.role=(MODE&&S&&!['words','setup','final'].includes(S.phase)&&ROLE)||'';
   fitWord();clockTick();
   keepAwake(!!(S&&MODE&&!['words','setup','final'].includes(S.phase)));
 }
-function fitWord(){const el=$('word');if(!el)return;const n=(el.textContent||'').length;el.style.fontSize=(n<=8?58:n<=14?48:n<=22?40:n<=36?32:26)+'px'}
+function fitWord(){const el=$('word');if(!el)return;const n=(el.textContent||'').length;const k=Math.min(2.4,Math.max(1,innerWidth/430));el.style.fontSize=Math.round((n<=8?58:n<=14?48:n<=22?40:n<=36?32:26)*k)+'px'}
+addEventListener('resize',fitWord);
 
 /* ---------- HOME ---------- */
 function vHome(){
@@ -498,7 +522,7 @@ function beginGame(s){
   const del=s.deleted||[];s.words=s.words.filter((_,i)=>!del.includes(i));s.deleted=[];
   const before=s.words.length;s.words=dedupe(s.words);const gone=before-s.words.length;
   if(gone)setTimeout(()=>toast(gone+(gone===1?' duplikat':' duplikater')+' fjernet'),50);
-  s.seen=[];s.scores=s.teams.map(()=>[0,0,0]);s.round=0;s.teamIdx=0;s.carry=false;s.carryLeft=0;s.dur=s.dur||60;fillBowl(s);s.phase='ready';
+  s.seen=[];s.history=[];s.scores=s.teams.map(()=>[0,0,0]);s.round=0;s.teamIdx=0;s.carry=false;s.carryLeft=0;s.dur=s.dur||60;fillBowl(s);s.phase='ready';
 }
 function draw(s){
   if(!s.bowl.length){s.current=null;return}
@@ -549,14 +573,19 @@ function steal(i){
     if(i>=0&&s.bowl.includes(st.w)){takeWord(s,st.w,i);s.steal={w:st.w,open:false,by:i}}else s.steal={w:st.w,open:false,by:null}});
   if(i>=0){buzz(30);toast(S.teams[i]+' stjal lappen!')}
 }
-function nextTurn(){const ti=S.teamIdx;act(s=>{if(s.phase!=='summary'||s.teamIdx!==ti)return;s.teamIdx=nextTeam(ti);resetTurn(s);s.phase='ready'})}
-function nextRound(carry){const rd=S.round;act(s=>{if(s.phase!=='summary'||s.round!==rd||s.bowl.length)return;s.round++;fillBowl(s);
+function archiveTurn(s){
+  const st=s.steal;const stolen=st&&st.by!=null?{w:st.w,by:st.by}:null;
+  if(!s.turnDev&&!(s.turnGot||[]).length&&!(s.turnSkipped||[]).length&&!stolen)return;
+  (s.history=s.history||[]).push({team:s.teamIdx,round:s.round,got:(s.turnGot||[]).slice(),skipped:(s.turnSkipped||[]).slice(),stolen});
+}
+function nextTurn(){const ti=S.teamIdx;act(s=>{if(s.phase!=='summary'||s.teamIdx!==ti)return;archiveTurn(s);s.teamIdx=nextTeam(ti);resetTurn(s);s.phase='ready'})}
+function nextRound(carry){const rd=S.round;act(s=>{if(s.phase!=='summary'||s.round!==rd||s.bowl.length)return;archiveTurn(s);s.round++;fillBowl(s);
   s.carry=!!carry&&s.carryLeft>1000;if(!s.carry){s.carryLeft=0;s.teamIdx=nextTeam(s.teamIdx)}s.phase='ready'})}
-function toFinal(){act(s=>{if(s.phase==='summary'&&!s.bowl.length)s.phase='final'})}
+function toFinal(){act(s=>{if(s.phase==='summary'&&!s.bowl.length){archiveTurn(s);s.phase='final'}})}
 function endRoundEarly(){
   closeSheet('menu');if(!S||['setup','words','final'].includes(S.phase))return;
   if(!confirm('Avslutte runde '+(S.round+1)+' nå? Lappene som er igjen teller ikke.'))return;
-  const rd=S.round;act(s=>{if(s.round!==rd)return;if(s.round<2){s.round++;fillBowl(s);s.carry=false;s.carryLeft=0;s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'}else s.phase='final'});
+  const rd=S.round;act(s=>{if(s.round!==rd)return;if(s.phase==='summary')archiveTurn(s);if(s.round<2){s.round++;fillBowl(s);s.carry=false;s.carryLeft=0;s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'}else s.phase='final'});
 }
 function restartSameTeams(ask=true){
   closeSheet('menu');
@@ -600,6 +629,44 @@ function openWord(w){
     <button class="btn ghost" onclick="closeSheet('wsheet')">Lukk</button>`;
   $('wsheet').classList.add('open');
 }
+function fixHistS(s,hi,w,kind){
+  const h=(s.history||[])[hi];if(!h)return;
+  const same=h.round===s.round&&s.phase!=='final';
+  if(kind==='bowl'||kind==='del'){
+    let team=null;
+    if(h.got.includes(w)){team=h.team;rm(h.got,w)}else if(h.stolen&&h.stolen.w===w){team=h.stolen.by;h.stolen=null}
+    if(team==null)return;
+    s.scores[team][h.round]--;
+    if(same){delete (s.roundTaken||{})[w];if(kind==='bowl')place(s,w,true)}
+    if(kind==='del')place(s,w,false);
+  }else{
+    if(!h.skipped.includes(w))return;
+    rm(h.skipped,w);s.scores[h.team][h.round]++;
+    if(same){delete (s.roundSkipped||{})[w];if(kind==='unskip')place(s,w,true)}
+    if(kind==='unskipdel')place(s,w,false);
+  }
+}
+function fixHist(hi,w,kind){act(s=>fixHistS(s,hi,w,kind));closeSheet('wsheet');toast({bowl:'Annullert',del:'Annullert og slettet',unskip:'+1 tilbake',unskipdel:'+1 og slettet'}[kind])}
+function histItems(h){const a=h.got.map(w=>({w,k:'got'}));if(h.stolen)a.push({w:h.stolen.w,k:'stolen'});h.skipped.forEach(w=>a.push({w,k:'skip'}));return a}
+function histList(hi){
+  const h=S.history[hi];const items=histItems(h);
+  if(!items.length)return '<p class="empty">Ingen lapper.</p>';
+  return `<ul class="list tap">${items.map(({w,k})=>`<li onclick="openHist(${hi},${w})"><span>${label(w)}</span>${k==='got'?'<span class="chip tatt">Tatt</span>':k==='stolen'?`<span class="chip tatt">Stjålet · ${esc(S.teams[h.stolen.by])}</span>`:'<span class="chip hoppet">Hoppet over</span>'}</li>`).join('')}</ul>`;
+}
+function histNet(h){return h.got.length-h.skipped.length}
+function openHist(hi,w){
+  const h=S.history[hi];if(!h)return;const same=h.round===S.round;
+  const taken=h.got.includes(w)||(h.stolen&&h.stolen.w===w);let b='';
+  if(taken)b=same?`<button class="btn primary" onclick="fixHist(${hi},${w},'bowl')">Annuller: tilbake i bollen</button><button class="btn bad" onclick="fixHist(${hi},${w},'del')">Annuller: slett lappen</button>`
+    :`<button class="btn primary" onclick="fixHist(${hi},${w},'bowl')">Fjern poenget</button><button class="btn bad" onclick="fixHist(${hi},${w},'del')">Fjern poenget og slett lappen</button>`;
+  else b=same?`<button class="btn primary" onclick="fixHist(${hi},${w},'unskip')">Angre hopp: tilbake i bollen (+1)</button><button class="btn bad" onclick="fixHist(${hi},${w},'unskipdel')">Slett lappen (+1)</button>`
+    :`<button class="btn primary" onclick="fixHist(${hi},${w},'unskip')">Fjern minuspoenget (+1)</button>`;
+  $('wpanel').innerHTML=`<p class="label">Runde ${h.round+1} · ${esc(S.teams[h.team])}</p><h2 style="word-break:break-word">${label(w)}</h2>${b}
+    ${seen(w)?`<p class="label" style="margin:20px 0 0">Rett skrivefeil</p><input class="field" id="editw" value="${esc(S.words[w])}" autocomplete="off" autocorrect="off" spellcheck="false"><button class="btn outline" onclick="saveEdit(${w})">Lagre endring</button>`:''}
+    <button class="btn ghost" onclick="closeSheet('wsheet')">Lukk</button>`;
+  $('wsheet').classList.add('open');
+}
+let SHOWHIST=false;
 function adjScore(i,d){const rd=S.round;act(s=>{if(s.round===rd)s.scores[i][rd]+=d})}
 /* judge timer controls */
 function tPause(){act(s=>{const t=s.timer;if(s.phase!=='turn'||!t||!t.running)return;t.left=Math.max(0,t.endsAt-Date.now());t.running=false;t.endsAt=null})}
@@ -608,28 +675,31 @@ function tAdd(ms){act(s=>{const t=s.timer;if(s.phase!=='turn'||!t)return;if(t.ru
 
 /* ---------- ROLE PICKER ---------- */
 function vRole(){
-  return header(false)+`<h1>Hva skal denne mobilen være?</h1>
+  return header(false)+`<h1>Hva skal denne skjermen være?</h1>
   <p class="lede">Du kan bytte senere under «Meny».</p>
-  <button class="role" onclick="setRole('scene')"><span class="em">🎤</span><span><b>Scene</b><span>Mobilen som går rundt til den som skal forklare. Enkel visning med ordet og to knapper.</span></span></button>
+  <button class="role" onclick="setRole('scene')"><span class="em">🎤</span><span><b>Scene</b><span>Mobilen, iPaden eller Macen den som skal forklare bruker. Bare ordet og to knapper.</span></span></button>
   <button class="role" onclick="setRole('dommer')"><span class="em">⚖️</span><span><b>Dommer 🔒</b><span>Krever passord. Fikser lapper etter turen: diskvalifiser, slett eller rett skrivefeil. Ser aldri lapper som ikke er tatt.</span></span></button>
+  <button class="role" onclick="setRole('klokke')"><span class="em">🖥️</span><span><b>Klokke på TV</b><span>Bare tiden, stort. Fint på en Mac eller iPad koblet til TV-en.</span></span></button>
   <button class="role" onclick="setRole('tilskuer')"><span class="em">👀</span><span><b>Tilskuer</b><span>Ser poeng, klokke og hvem som spiller.</span></span></button>`;
 }
 
 /* ---------- SCENE (simple, for the performer) ---------- */
+function sceneTop(){return `<div class="top" style="justify-content:flex-end;margin-bottom:8px"><div class="hdrbtns"><button class="iconbtn" onclick="toggleSound()" aria-label="Lyd">${SOUND?'🔊':'🔇'}</button><button class="iconbtn" onclick="openMenu()">Meny</button></div></div>`}
 function vScene(){
   const r=ROUNDS[S.round],team=esc(S.teams[S.teamIdx]);
   if(S.phase==='ready'){
-    return header(true)+`<span class="pill">Runde ${S.round+1} av 3 · ${r.name}</span>
+    return sceneTop()+`<span class="pill">Runde ${S.round+1} av 3 · ${r.name}</span>
     <div class="card" style="text-align:center;padding:30px 18px;margin-top:18px">
       <p class="label" style="margin:0">${S.carry?'Fortsetter med resten av tiden':'Nå er det'}</p>
       <h1 class="big-team">${team}</h1>
       <p class="rule" style="margin-top:14px">${r.rule}</p>
       <button class="btn primary xl" onclick="startTurn()">Start${S.carry&&S.carryLeft>1000?' ('+fmt(S.carryLeft)+' s)':''}</button>
     </div>
-    <p class="small" style="text-align:center;margin-top:14px">${S.bowl.length} lapper igjen i bollen</p>`;
+    <p class="small" style="text-align:center;margin-top:14px">${S.bowl.length} lapper igjen i bollen</p>
+    <p class="small kbd">Tastatur: mellomrom for å starte</p>`;
   }
   if(S.phase==='turn'){
-    if(!myTurn())return header(true)+`<span class="pill">Runde ${S.round+1} · ${r.name}</span>
+    if(!myTurn())return sceneTop()+`<span class="pill">Runde ${S.round+1} · ${r.name}</span>
       <div class="card" style="text-align:center;padding:30px 18px;margin-top:18px"><p class="label" style="margin:0">Spiller nå</p><h1 class="big-team">${team}</h1>
       <div class="tbig tleft"></div><p class="small">${S.bowl.length} lapper igjen</p></div>
       <div class="spacer"></div><button class="btn ghost" onclick="takeOver()">Ta over turen på denne mobilen</button>`;
@@ -641,13 +711,14 @@ function vScene(){
         <button class="btn good xl" onclick="correct()">Riktig ✓</button>
       </div>
       <div class="links">${(S.turnLog||[]).length?'<button onclick="undoLast()">Angre siste</button>':''}</div>
+      <p class="small kbd">→ eller mellomrom = Riktig · ← = Hopp over</p>
     </div>`;
   }
   if(S.phase==='summary'){
     const st=S.steal;
     if(st&&st.open){
       const others=S.teams.map((_,i)=>i).filter(i=>i!==S.teamIdx);
-      return header(true)+`<span class="pill">Tiden er ute!</span>
+      return sceneTop()+`<span class="pill">Tiden er ute!</span>
       <div class="card steal" style="text-align:center">
         <p class="label">Siste lapp: de andre lagene kan stjele</p>
         ${myTurn()?`<div class="stealword">${esc(S.words[st.w])}</div>`:''}
@@ -655,7 +726,7 @@ function vScene(){
         ${others.map(i=>`<button class="btn good" onclick="steal(${i})">${esc(S.teams[i])} tok den</button>`).join('')}
         <button class="btn outline" onclick="steal(-1)">Ingen tok den</button></div>`;
     }
-    return header(true)+doneBlock(true);
+    return sceneTop()+doneBlock(true);
   }
   return vAudience();
 }
@@ -712,15 +783,32 @@ function vJudge(){
   }
   const turnWords=[...(S.turnGot||[]),...(S.turnSkipped||[])];
   if(S.steal&&S.steal.by!=null)turnWords.push(S.steal.w);
-  const stealOpen=!!(S.steal&&S.steal.open);
+  const stealOpen=!!(S.steal&&S.steal.open);const H=S.history||[];
   const all=S.words.map((_,i)=>i).filter(w=>seen(w));const hidden=S.words.length-all.length;
   return header(true)+`<span class="pill">⚖️ Dommer · Runde ${S.round+1} av 3 · ${r.name}</span>
   <p class="status">${status}</p>
   ${main}
-  ${S.phase==='ready'||stealOpen?'':`<div class="card"><p class="label">Forrige tur · trykk på en lapp for å fikse</p>${wordList(turnWords,'Ingen lapper denne turen.')}</div>`}
+  ${stealOpen?'':S.phase==='summary'?`<div class="card"><p class="label">Turen som akkurat var · trykk for å fikse</p>${wordList(turnWords,'Ingen lapper denne turen.')}</div>`
+    :(H.length?`<div class="card"><p class="label">Forrige tur · ${esc(S.teams[H[H.length-1].team])} ${histNet(H[H.length-1])>=0?'+':''}${histNet(H[H.length-1])} · trykk for å fikse</p>${histList(H.length-1)}</div>`:'')}
   <div class="card"><p class="label">Poeng · − og + justerer denne runden</p>${scoreTable(true)}</div>
   ${stealOpen?'':`<div class="card"><button class="btn outline" style="margin:0" onclick="SHOWALL=!SHOWALL;render()">${SHOWALL?'Skjul':'Vis'} tatte lapper (${all.length})</button>
-    ${SHOWALL?`<p class="small" style="margin:12px 0">Bare lapper som er tatt vises${hidden?'; '+hidden+' er fortsatt skjult':''}. Trykk på en lapp for å fikse den.</p>${wordList(all,'Ingen lapper er tatt ennå.')}`:''}</div>`}`;
+    ${SHOWALL?`<p class="small" style="margin:12px 0">Bare lapper som er tatt vises${hidden?'; '+hidden+' er fortsatt skjult':''}. Trykk på en lapp for å slette eller rette den.</p>${wordList(all,'Ingen lapper er tatt ennå.')}`:''}</div>
+  ${H.length?`<div class="card"><button class="btn outline" style="margin:0" onclick="SHOWHIST=!SHOWHIST;render()">${SHOWHIST?'Skjul':'Vis'} alle turer (${H.length})</button>
+    ${SHOWHIST?H.map((h,i)=>i).reverse().map(i=>`<p class="label" style="margin:18px 0 8px">Runde ${H[i].round+1} · ${esc(S.teams[H[i].team])} ${histNet(H[i])>=0?'+':''}${histNet(H[i])}</p>${histList(i)}`).join(''):''}</div>`:''}`}`;
+}
+
+/* ---------- CLOCK (TV) ---------- */
+function goFull(){const d=document.documentElement;try{(d.requestFullscreen||d.webkitRequestFullscreen).call(d)}catch(e){}}
+function vClock(){
+  const r=ROUNDS[S.round],team=esc(S.teams[S.teamIdx]);let mid;
+  if(S.phase==='turn')mid=`<p class="clabel">${team} · ${r.name}</p>
+    <div class="jring tv"><svg viewBox="0 0 200 200"><circle class="trk" cx="100" cy="100" r="90"/><circle class="prg" cx="100" cy="100" r="90" style="stroke-dasharray:${565.49*timeFrac()} 600"/></svg><div class="tbig tleft num"></div></div>`;
+  else if(S.phase==='summary'&&S.steal&&S.steal.open)mid=`<p class="clabel">Siste lapp kan stjeles!</p><div class="tvnum cd sleft">10</div>`;
+  else if(S.phase==='summary'){const net=turnNet();mid=`<p class="clabel">${S.bowl.length?'Tiden er ute':'Runde '+(S.round+1)+' ferdig'}</p><div class="tvteam">${team} ${net>=0?'+':''}${net}</div>`}
+  else mid=`<p class="clabel">Runde ${S.round+1} av 3 · ${r.name}</p><div class="tvteam">${team}</div><p class="tvsub">${r.rule}</p>`;
+  const needTap=SOUND&&(!AC||AC.state!=='running');
+  return `<div class="tv">${mid}${needTap?'<p class="small">Trykk på skjermen for å slå på lyden</p>':''}</div>
+  <div class="tvbtns">${document.fullscreenEnabled||document.webkitFullscreenEnabled?'<button class="iconbtn" onclick="goFull()">Fullskjerm</button>':''}<button class="iconbtn" onclick="toggleSound()">${SOUND?'🔊':'🔇'}</button><button class="iconbtn" onclick="openMenu()">Meny</button></div>`;
 }
 
 /* ---------- AUDIENCE ---------- */
@@ -748,10 +836,10 @@ function vFinal(){
 
 /* ---------- MENU ---------- */
 function openMenu(){
-  const R=[['scene','🎤 Scene'],['dommer','⚖️ Dommer'],['tilskuer','👀 Tilskuer']];
+  const R=[['scene','🎤 Scene'],['dommer','⚖️ Dommer'],['klokke','🖥️ Klokke'],['tilskuer','👀 Tilskuer']];
   $('menuPanel').innerHTML=`<h2>Meny</h2>
-    <p class="label" style="margin:16px 0 0">Denne mobilen er</p>
-    <div class="row3">${R.map(([k,l])=>`<button class="btn ${ROLE===k?'primary':'outline'}" onclick="setRole('${k}')">${l}</button>`).join('')}</div>
+    <p class="label" style="margin:16px 0 0">Denne skjermen er</p>
+    <div class="row2">${R.map(([k,l])=>`<button class="btn ${ROLE===k?'primary':'outline'}" onclick="setRole('${k}')">${l}</button>`).join('')}</div>
     <button class="btn outline" onclick="toggleSound();openMenu()">Lyd: ${SOUND?'på 🔊':'av 🔇'}</button>
     ${MODE==='online'?`<button class="btn outline" onclick="shareLink()">Del lenken (kode ${ROOM})</button>`:''}
     <button class="btn outline" onclick="endRoundEarly()">Avslutt denne runden nå</button>
@@ -761,6 +849,17 @@ function openMenu(){
   $('menu').classList.add('open');
 }
 function closeSheet(id){$(id).classList.remove('open')}
+
+/* ---------- KEYBOARD (scene on Mac / iPad with keyboard) ---------- */
+document.addEventListener('keydown',e=>{
+  if(!S||ROLE!=='scene'||e.metaKey||e.ctrlKey||e.altKey)return;
+  const tag=(document.activeElement&&document.activeElement.tagName)||'';if(tag==='INPUT'||tag==='TEXTAREA')return;
+  if($('menu').classList.contains('open')||$('wsheet').classList.contains('open'))return;
+  if(S.phase==='turn'&&myTurn()){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='Enter'){e.preventDefault();correct()}
+    else if(e.key==='ArrowLeft'){e.preventDefault();skip()}
+  }else if(S.phase==='ready'&&(e.key===' '||e.key==='Enter')){e.preventDefault();startTurn()}
+});
 
 /* ---------- BOOT ---------- */
 (function(){const q=new URLSearchParams(location.search).get('r');render();if(q)joinRoom(q)})();
