@@ -115,32 +115,46 @@ details.card summary::-webkit-details-marker{display:none}
 .steal{box-shadow:inset 0 0 0 3px var(--yellow-deep),var(--shadow)}
 .fade{animation:fade .25s ease}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.tbig{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:76px;line-height:1;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:-.03em;margin:4px 0}
+.tbig.low,.tsm.low{color:var(--red)}
+.tsm{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.row2 .btn,.row3 .btn{margin-top:10px;padding:15px 8px;font-size:16px}
+.links{display:flex;justify-content:center;gap:22px;margin-top:6px}
+.links button{border:0;background:none;color:var(--muted);font-weight:700;font-size:15px;padding:10px 4px;cursor:pointer}
+.chip{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:4px 9px;background:var(--card);color:var(--muted);white-space:nowrap}
+.chip.tatt{background:#DDF0E3;color:#1F6B3E}.chip.hoppet{background:#FBE3E0;color:#A12C24}.chip.slettet{background:#EEE;color:#888;text-decoration:line-through}.chip.scene{background:var(--yellow);color:#1E1A12}
+@media (prefers-color-scheme: dark){.chip.tatt{background:#1F3A28;color:#7FD39F}.chip.hoppet{background:#40211E;color:#F08A80}.chip.slettet{background:#333;color:#999}}
+.tap li{cursor:pointer}
+.tap li:active{transform:scale(.99)}
+.role{display:flex;gap:14px;align-items:flex-start;text-align:left;width:100%;border:0;background:var(--card);box-shadow:var(--shadow);border-radius:20px;padding:18px;margin-top:12px;cursor:pointer}
+.role .em{font-size:30px;line-height:1}
+.role b{display:block;font-size:18px;font-family:"Bricolage Grotesque",sans-serif}
+.role span{color:var(--muted);font-size:14px;line-height:1.4;font-weight:600}
+.role.on{box-shadow:inset 0 0 0 3px var(--yellow-deep),var(--shadow)}
+.hdrbtns{display:flex;gap:8px}
+.status{font-size:20px;font-weight:800;margin:10px 0 0;font-family:"Bricolage Grotesque",sans-serif}
+.sheet .panel{max-height:85dvh;overflow:auto}
+td .mini{border:0;background:var(--field);border-radius:8px;width:26px;height:26px;font-weight:800;cursor:pointer;margin:0 2px}
 </style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
 <div class="toast" id="toast"></div>
-<div class="sheet" id="menu" onclick="if(event.target===this)closeMenu()">
-  <div class="panel">
-    <h2>Meny</h2>
-    <div id="menuScores" style="margin-top:14px"></div>
-    <button class="btn outline" onclick="closeMenu();endRoundEarly()">Avslutt denne runden nå</button>
-    <button class="btn outline" onclick="closeMenu();restartSameTeams()">Start på nytt med nye lapper</button>
-    <button class="btn bad" onclick="closeMenu();leaveGame()">Forlat spillet</button>
-    <button class="btn ghost" onclick="closeMenu()">Lukk</button>
-  </div>
-</div>
+<div class="sheet" id="menu" onclick="if(event.target===this)closeSheet('menu')"><div class="panel" id="menuPanel"></div></div>
+<div class="sheet" id="wsheet" onclick="if(event.target===this)closeSheet('wsheet')"><div class="panel" id="wpanel"></div></div>
 
 <script>
 /* ===== Config ===== */
 const SB='https://qcxxtvzarpxstlmyguqi.supabase.co/rest/v1/';
 const KEY='sb_publishable_5m5Hsz9YfHSPK1MZhsXiHA_GjlwYQrW';
 const H={apikey:KEY,'Content-Type':'application/json'};
-const LKEY='gulbolle_v1';
+const LKEY='gulbolle_v2';
 const ROUNDS=[
-  {name:'Forklar',short:'Forklar',verb:'forklare',rule:'Forklar ordet med ord, men uten å si selve ordet (eller deler av det).'},
-  {name:'Mime',short:'Mime',verb:'mime',rule:'Ingen ord og ingen lyder. Bare kroppsspråk og miming.'},
-  {name:'Én lyd',short:'Én lyd',verb:'lage lyden',rule:'Du får bare lage én lyd. Ingen ord.'}
+  {name:'Forklar',verb:'forklare',rule:'Forklar med ord, men ikke si selve ordet.'},
+  {name:'Mime',verb:'mime',rule:'Ingen ord og ingen lyder. Bare miming.'},
+  {name:'Én lyd',verb:'lage lyden',rule:'Bare én lyd. Ingen ord.'}
 ];
 const BOWL_SVG='<svg class="bowl" viewBox="0 0 32 32" aria-hidden="true"><ellipse cx="16" cy="13" rx="13" ry="3.4" fill="#E8AE17"/><path d="M3 13c0 7.5 5.8 13 13 13s13-5.5 13-13" fill="#F7C948"/><ellipse cx="16" cy="13" rx="10.5" ry="2.2" fill="#B9860A" opacity=".45"/><path d="M11 12.4l3-3.6M17 12.6l1.5-4.6M21 12.2l-.8-3.4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
@@ -151,88 +165,85 @@ function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null
 function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),1800)}
 function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function rm(arr,w){if(!arr)return;const i=arr.indexOf(w);if(i>=0)arr.splice(i,1)}
 const DEV=(()=>{let d=ls('gb_dev');if(!d){d=Math.random().toString(36).slice(2,10);ls('gb_dev',d)}return d})();
 
 /* ===== State ===== */
-let MODE=null;      // 'online' | 'local' | null (home)
-let ROOM=null, VER=0, LCOUNT=0, DBERR=false, BUSY=false, EXTRA=false;
+let MODE=null, ROOM=null, VER=0, LCOUNT=0, DBERR=false, BUSY=false, EXTRA=false, ROLE=null, SHOWALL=false;
 let S=null;
 function freshState(teams){
-  return {phase:'words',teams:teams||['Lag 1','Lag 2','Lag 3'],perPerson:3,words:[],batches:[],parti:1,
-    round:0,bowl:[],current:null,teamIdx:0,turnGot:[],scores:[],carry:false,turnDev:null};
+  return {phase:'words',teams:teams||['Lag 1','Lag 2','Lag 3'],perPerson:3,dur:60,words:[],batches:[],parti:1,
+    round:0,bowl:[],current:null,teamIdx:0,carry:false,carryLeft:0,turnDev:null,timer:null,
+    turnGot:[],turnSkipped:[],turnLog:[],roundTaken:{},roundSkipped:{},deleted:[],scores:[],steal:null};
 }
 function total(i){return ((S.scores||[])[i]||[]).reduce((a,b)=>a+b,0)}
 function nextTeam(i){return (i+1)%S.teams.length}
 function myTurn(){return MODE==='local'||S.turnDev===DEV}
 function sentKey(){return 'gb_sent_'+ROOM+'_'+(S.parti||1)}
+function setRole(r){
+  if(r==='dommer'&&ls('gb_judge_ok')!=='1'){
+    const pw=prompt('Passord for dommer:');
+    if(pw==null)return;
+    if(pw.trim().toLowerCase()!=='gutta'){toast('Feil passord');return}
+    ls('gb_judge_ok','1');
+  }
+  ROLE=r;if(MODE==='online')ls('gb_role_'+ROOM,r);closeSheet('menu');render()}
+function leftOf(s){const t=s&&s.timer;if(!t)return null;return t.running?t.endsAt-Date.now():(t.left??null)}
+function fmt(ms){if(ms==null)return '';const s=Math.max(0,Math.ceil(ms/1000));return s>=60?Math.floor(s/60)+':'+String(s%60).padStart(2,'0'):String(s)}
 
 /* ===== Supabase ===== */
 async function api(path,opt={}){
   const r=await fetch(SB+path,{...opt,headers:{...H,...(opt.headers||{})}});
   const txt=await r.text();let body=null;try{body=txt?JSON.parse(txt):null}catch(e){}
   if(!r.ok){const e=new Error((body&&body.message)||('HTTP '+r.status));e.status=r.status;e.code=body&&body.code;
-    if(r.status===404||e.code==='PGRST205'||e.code==='42P01'||e.code==='42501'){DBERR=true}
-    throw e}
+    if(r.status===404||e.code==='PGRST205'||e.code==='42P01'||e.code==='42501')DBERR=true;throw e}
   return body;
 }
-let inflight=false,dirty=false;
-async function push(){
-  if(MODE!=='online')return;
-  if(inflight){dirty=true;return}
-  inflight=true;dirty=false;
-  try{
-    const j=await api(`gulbolle_rom?kode=eq.${ROOM}&versjon=eq.${VER}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({state:S,versjon:VER+1})});
-    inflight=false;
-    if(!j||!j.length){dirty=false;await pull(true);toast('Noen andre trykket samtidig. Prøv igjen.');return}
-    VER=j[0].versjon;
-  }catch(e){
-    inflight=false;toast('Nettfeil, prøver igjen …');setTimeout(push,1500);return;
-  }
-  if(dirty){dirty=false;push()}
+/* Every change is an operation. If another phone wrote first, we fetch the
+   newest state and re-apply our pending operations on top of it. */
+let OPS=[],inflight=false;
+function act(fn){
+  try{fn(S)}catch(e){console.error(e)}
+  if(MODE==='local'){ls(LKEY,JSON.stringify(S));render();return}
+  OPS.push(fn);render();push();
 }
-async function pull(force){
-  if(MODE!=='online'||(!force&&(inflight||dirty)))return;
+async function push(){
+  if(MODE!=='online'||inflight||!OPS.length)return;
+  inflight=true;const n=OPS.length,v=VER;
+  try{
+    const j=await api(`gulbolle_rom?kode=eq.${ROOM}&versjon=eq.${v}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({state:S,versjon:v+1})});
+    if(j&&j.length){VER=j[0].versjon;OPS.splice(0,n);inflight=false;if(OPS.length)push();return}
+    const r=await api(`gulbolle_rom?kode=eq.${ROOM}&select=state,versjon`);
+    inflight=false;
+    if(r&&r.length){VER=r[0].versjon;S=r[0].state;for(const f of OPS){try{f(S)}catch(e){}}render()}
+    push();
+  }catch(e){inflight=false;toast('Nettfeil, prøver igjen …');setTimeout(push,1200)}
+}
+async function pull(){
+  if(MODE!=='online'||inflight||OPS.length)return;
   try{
     const j=await api(`gulbolle_rom?kode=eq.${ROOM}&select=state,versjon`);
-    if(!j||!j.length)return;
-    if(!force&&(inflight||dirty))return;
-    if(force||j[0].versjon>VER){VER=j[0].versjon;S=j[0].state;render()}
+    if(!j||!j.length||inflight||OPS.length)return;
+    if(j[0].versjon>VER){VER=j[0].versjon;S=j[0].state;render()}
   }catch(e){}
 }
 async function pullCount(){
   if(MODE!=='online'||S.phase!=='words')return;
   try{const j=await api(`gulbolle_lapper?rom=eq.${ROOM}&parti=eq.${S.parti||1}&select=tekst`);
     const n=dedupe(j.map(x=>x.tekst)).length;
-    if(n!==LCOUNT){LCOUNT=n;const el=$('lcount');if(el)el.textContent=LCOUNT;else render()}}catch(e){}
+    if(n!==LCOUNT){LCOUNT=n;render()}}catch(e){}
 }
-let tickN=0;
-setInterval(()=>{
-  if(MODE!=='online'||document.hidden)return;
-  tickN++;
-  if(S.phase==='turn'&&S.turnDev===DEV&&tickN%5)return; // active phone polls rarely
-  pull();pullCount();
-},1500);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&MODE==='online'){pull();pullCount()}if(!document.hidden&&S&&S.phase==='turn')keepAwake(true)});
-
-/* apply a change to the shared state */
-function act(fn){
-  fn(S);
-  if(MODE==='local')ls(LKEY,JSON.stringify(S));else push();
-  render();
-}
+setInterval(()=>{if(MODE==='online'&&!document.hidden){pull();if(S.phase==='words')pullCount()}},1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&MODE==='online'){pull();pullCount()}});
 
 /* ===== Rooms ===== */
 function genCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ';let c='';for(let i=0;i<4;i++)c+=a[Math.floor(Math.random()*a.length)];return c}
 async function createRoom(){
-  if(BUSY)return;BUSY=true;render();
-  const st=freshState();
+  if(BUSY)return;BUSY=true;render();const st=freshState();
   try{
-    for(let k=0;k<6;k++){
-      const code=genCode();
-      try{await api('gulbolle_rom',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({kode:code,state:st,versjon:0})});
-        BUSY=false;enterRoom(code,st,0);return}
-      catch(e){if(e.status===409)continue;throw e}
-    }
+    for(let k=0;k<6;k++){const code=genCode();
+      try{await api('gulbolle_rom',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({kode:code,state:st,versjon:0})});BUSY=false;enterRoom(code,st,0);return}
+      catch(e){if(e.status===409)continue;throw e}}
     throw new Error('Fant ingen ledig kode');
   }catch(e){BUSY=false;render();toast(DBERR?'Databasen er ikke satt opp ennå':'Klarte ikke å lage spill: '+e.message)}
 }
@@ -240,59 +251,93 @@ async function joinRoom(code){
   code=(code||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(code.length<4){toast('Skriv inn koden (4 bokstaver)');return}
   BUSY=true;render();
-  try{
-    const j=await api(`gulbolle_rom?kode=eq.${code}&select=state,versjon`);
-    BUSY=false;
+  try{const j=await api(`gulbolle_rom?kode=eq.${code}&select=state,versjon`);BUSY=false;
     if(!j.length){render();toast('Fant ikke spillet '+code);return}
     enterRoom(code,j[0].state,j[0].versjon);
   }catch(e){BUSY=false;render();toast(DBERR?'Databasen er ikke satt opp ennå':'Nettfeil: '+e.message)}
 }
 function enterRoom(code,st,ver){
-  MODE='online';ROOM=code;S=st;VER=ver;LCOUNT=0;EXTRA=false;
-  ls('gb_room',code);
-  try{history.replaceState(null,'','?r='+code)}catch(e){}
+  MODE='online';ROOM=code;S=st;VER=ver;LCOUNT=0;EXTRA=false;OPS=[];
+  ROLE=ls('gb_role_'+code);
+  ls('gb_room',code);try{history.replaceState(null,'','?r='+code)}catch(e){}
   render();pullCount();
 }
 function leaveGame(){
   if(!confirm('Forlate spillet på denne mobilen?'))return;
+  closeSheet('menu');
   if(MODE==='local')ls(LKEY,null);else ls('gb_room',null);
-  MODE=null;ROOM=null;S=null;
-  try{history.replaceState(null,'','./')}catch(e){}
+  MODE=null;ROOM=null;S=null;ROLE=null;try{history.replaceState(null,'','./')}catch(e){}
   render();
 }
 function shareLink(){
   const url=location.origin+location.pathname+'?r='+ROOM;
-  if(navigator.share){navigator.share({title:'Gul bolle',text:'Bli med i Gul bolle! Kode '+ROOM,url}).catch(()=>{})}
+  if(navigator.share)navigator.share({title:'Gul bolle',text:'Bli med i Gul bolle! Kode '+ROOM,url}).catch(()=>{});
   else{try{navigator.clipboard.writeText(url);toast('Lenken er kopiert')}catch(e){toast(url)}}
+}
+
+/* ===== Sound ===== */
+let SOUND=ls('gb_sound')!=='0',AC=null;
+function unlockAudio(){
+  if(!SOUND)return;
+  try{if('audioSession' in navigator)navigator.audioSession.type='playback'}catch(e){}
+  try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}
+}
+document.addEventListener('touchend',unlockAudio,{passive:true});document.addEventListener('click',unlockAudio);
+function tone(f,d,v=.25,type='square',delay=0){
+  if(!SOUND||!AC)return;
+  try{const t=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;
+    g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d+.03)}catch(e){}
+}
+function beep(){tone(880,.09,.2)}
+function horn(){tone(196,1.1,.35,'sawtooth');tone(147,1.1,.3,'sawtooth',.05)}
+function toggleSound(){SOUND=!SOUND;ls('gb_sound',SOUND?'1':'0');if(SOUND){unlockAudio();setTimeout(()=>tone(660,.15),50)}render()}
+
+/* ===== Clock (runs on every phone) ===== */
+let lastSec=null,hornKey=null,stealKey=null;
+setInterval(clockTick,200);
+function clockTick(){
+  if(!S||!MODE)return;
+  if(S.phase==='turn'&&S.timer){
+    const left=leftOf(S);
+    document.querySelectorAll('.tleft').forEach(el=>{el.textContent=S.timer.running?fmt(left):'Pause';el.classList.toggle('low',S.timer.running&&left<=10000)});
+    if(S.timer.running){
+      const sec=Math.ceil(left/1000);
+      if(sec>=1&&sec<=5&&sec!==lastSec){lastSec=sec;beep()}
+      if(left<=0){
+        if(hornKey!==S.timer.endsAt){hornKey=S.timer.endsAt;horn();buzz([250,120,250])}
+        if(myTurn()||(ROLE==='dommer'&&left<-2500))doTimeUp(false);
+      }
+    }
+  }
+  if(S.phase==='summary'&&S.steal&&S.steal.open&&S.steal.endsAt){
+    const left=S.steal.endsAt-Date.now();
+    document.querySelectorAll('.sleft').forEach(el=>{el.textContent=left>0?Math.ceil(left/1000):'Tiden er ute!';el.classList.toggle('done',left<=0)});
+    if(left<=0&&stealKey!==S.steal.endsAt){stealKey=S.steal.endsAt;tone(330,.6,.3,'sawtooth');buzz(200)}
+  }
 }
 
 /* ===== Wake lock ===== */
 let lock=null;
-async function keepAwake(on){
-  try{
-    if(on&&'wakeLock' in navigator&&!lock){lock=await navigator.wakeLock.request('screen');lock.addEventListener('release',()=>lock=null)}
-    if(!on&&lock){await lock.release();lock=null}
-  }catch(e){}
-}
+async function keepAwake(on){try{if(on&&'wakeLock' in navigator&&!lock){lock=await navigator.wakeLock.request('screen');lock.addEventListener('release',()=>lock=null)}if(!on&&lock){await lock.release();lock=null}}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S&&MODE)keepAwake(S.phase!=='words')});
 
 /* ===== Render ===== */
-function header(menu){
-  const right=menu?'<button class="iconbtn" onclick="openMenu()">Meny</button>'
-    :(MODE==='online'&&ROOM?`<button class="iconbtn" onclick="shareLink()">Kode ${ROOM}</button>`:'<a class="iconbtn" href="../" style="display:flex;align-items:center;text-decoration:none">raggan.no</a>');
+function header(game){
+  let right;
+  if(game)right=`<div class="hdrbtns"><button class="iconbtn" onclick="toggleSound()" aria-label="Lyd">${SOUND?'🔊':'🔇'}</button><button class="iconbtn" onclick="openMenu()">Meny</button></div>`;
+  else if(MODE==='online'&&ROOM)right=`<button class="iconbtn" onclick="shareLink()">Kode ${ROOM}</button>`;
+  else right='<a class="iconbtn" href="../" style="display:flex;align-items:center;text-decoration:none">raggan.no</a>';
   return `<div class="top"><span class="brand">${BOWL_SVG}Gul bolle</span>${right}</div>`;
 }
 function view(){
   if(!MODE)return vHome();
   if(S.phase==='setup')return vSetup();
-  if(S.phase==='words'){
-    if(MODE==='local')return vLocalWords();
-    return (ls(sentKey())&&!EXTRA)?vLobby():vWordForm();
-  }
-  if(S.phase==='ready')return vReady();
-  if(S.phase==='turn')return myTurn()?vTurn():vWatch();
-  if(S.phase==='summary')return vSummary();
+  if(S.phase==='words')return MODE==='local'?vLocalWords():((ls(sentKey())&&!EXTRA)?vLobby():vWordForm());
   if(S.phase==='final')return vFinal();
-  return vHome();
+  if(!ROLE)return vRole();
+  if(ROLE==='dommer')return vJudge();
+  if(ROLE==='tilskuer')return vAudience();
+  return vScene();
 }
 function render(){
   const app=$('app');const keep={};let focusId=null,sel=null;
@@ -301,37 +346,33 @@ function render(){
   app.innerHTML=view();
   for(const id in keep){const el=$(id);if(el&&(el.dataset.keep!=='0'||id===focusId))el.value=keep[id]}
   if(focusId){const el=$(focusId);if(el){el.focus();try{el.setSelectionRange(sel,sel)}catch(e){}}}
-  if(S&&S.phase==='turn'&&myTurn())fitWord();
-  keepAwake(!!(S&&S.phase==='turn'&&myTurn()));
-  runCountdown();
+  fitWord();clockTick();
+  keepAwake(!!(S&&MODE&&!['words','setup','final'].includes(S.phase)));
 }
+function fitWord(){const el=$('word');if(!el)return;const n=(el.textContent||'').length;el.style.fontSize=(n<=8?58:n<=14?48:n<=22?40:n<=36?32:26)+'px'}
 
 /* ---------- HOME ---------- */
 function vHome(){
   const last=ls('gb_room');let local=null;try{local=JSON.parse(ls(LKEY))}catch(e){}
   return header(false)+`
   <h1>Gul bolle</h1>
-  <p class="lede">Alle skriver lappene sine på egen mobil. Etterpå spiller hvert lag med én mobil, og klokka tar dere på en annen.</p>
+  <p class="lede">Alle skriver lappene sine på egen mobil. Så går én mobil rundt på scenen, og en dommer kan styre tid og poeng.</p>
   ${DBERR?'<div class="card" style="background:var(--yellow-soft)"><b>Databasen er ikke satt opp ennå.</b><p class="small" style="margin:6px 0 0">Kjør SQL-en i Supabase, eller spill på én mobil inntil videre.</p></div>':''}
-  <div class="card">
-    <p class="label">Starte et spill</p>
+  <div class="card"><p class="label">Starte et spill</p>
     <p class="small" style="margin:0">Én person lager spillet og deler koden med resten.</p>
-    <button class="btn primary" ${BUSY?'disabled':''} onclick="createRoom()">Lag nytt spill</button>
-  </div>
-  <div class="card">
-    <p class="label">Bli med</p>
+    <button class="btn primary" ${BUSY?'disabled':''} onclick="createRoom()">Lag nytt spill</button></div>
+  <div class="card"><p class="label">Bli med</p>
     <input class="field" id="code" placeholder="Kode, f.eks. KQBT" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="6" style="text-transform:uppercase;letter-spacing:.15em;font-weight:800;text-align:center;font-size:22px" onkeydown="if(event.key==='Enter')joinRoom(this.value)">
     <button class="btn dark" ${BUSY?'disabled':''} onclick="joinRoom($('code').value)">Bli med</button>
-    ${last?`<button class="btn ghost" onclick="joinRoom('${esc(last)}')">Fortsett spill ${esc(last)}</button>`:''}
-  </div>
+    ${last?`<button class="btn ghost" onclick="joinRoom('${esc(last)}')">Fortsett spill ${esc(last)}</button>`:''}</div>
   <div class="spacer"></div>
   ${local&&local.phase?'<button class="btn ghost" onclick="resumeLocal()">Fortsett spillet på denne mobilen</button>':''}
   <button class="btn ghost" onclick="startLocal()">Spill på én mobil (uten nett)</button>`;
 }
-function startLocal(){MODE='local';S=freshState();S.phase='setup';ls(LKEY,JSON.stringify(S));render()}
-function resumeLocal(){try{S=JSON.parse(ls(LKEY))}catch(e){}if(S){MODE='local';render()}}
+function startLocal(){MODE='local';ROLE='scene';S=freshState();S.phase='setup';ls(LKEY,JSON.stringify(S));render()}
+function resumeLocal(){try{S=JSON.parse(ls(LKEY))}catch(e){}if(S){MODE='local';ROLE='scene';render()}}
 
-/* ---------- TEAMS (shared by lobby and local setup) ---------- */
+/* ---------- SETTINGS (lobby + local setup) ---------- */
 function teamsCard(){
   return `<div class="card">
     <div class="stepper"><p class="label" style="margin:0">Antall lag</p>
@@ -346,285 +387,325 @@ function teamsCard(){
 function setTeams(d){act(s=>{const n=Math.min(6,Math.max(2,s.teams.length+d));while(s.teams.length<n)s.teams.push('Lag '+(s.teams.length+1));s.teams.length=n})}
 function renameTeam(i,v){act(s=>{s.teams[i]=(v||'').trim()||('Lag '+(i+1))})}
 function setPer(d){act(s=>{s.perPerson=Math.min(6,Math.max(1,s.perPerson+d))})}
-
+function setDur(d){act(s=>{s.dur=Math.min(180,Math.max(20,(s.dur||60)+d))})}
 function vSetup(){
-  return header(false)+`
-  <h1>Lag og lapper</h1>
-  <p class="lede">Én mobil er bollen og sendes rundt. Klokka tar dere på en annen mobil.</p>
-  ${teamsCard()}
-  <div class="spacer"></div>
+  return header(false)+`<h1>Lag og lapper</h1>
+  <p class="lede">Én mobil er bollen og sendes rundt. Klokka starter når du trykker Start (60 sekunder).</p>
+  ${teamsCard()}<div class="spacer"></div>
   <button class="btn primary" onclick="act(s=>s.phase='words')">Neste: skriv lapper</button>
   <button class="btn ghost" onclick="MODE=null;S=null;render()">Tilbake</button>`;
 }
 
-/* ---------- WORD INPUTS ---------- */
+/* ---------- WORDS ---------- */
 let BONUS=false;
 function wordInputs(){
-  const n=S.perPerson+(BONUS?1:0);
-  let h='';for(let i=0;i<n;i++)h+=`<input class="field" id="w${i}" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="${i<S.perPerson?'Lapp '+(i+1):'Bonuslapp (valgfri)'}" enterkeyhint="${i<n-1?'next':'done'}" onkeydown="wordKey(event,${i})">`;
+  const n=S.perPerson+(BONUS?1:0);let h='';
+  for(let i=0;i<n;i++)h+=`<input class="field" id="w${i}" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="${i<S.perPerson?'Lapp '+(i+1):'Bonuslapp (valgfri)'}" enterkeyhint="${i<n-1?'next':'done'}" onkeydown="wordKey(event,${i})">`;
   if(!BONUS)h+=`<button class="btn ghost" style="margin-top:6px" onclick="addBonus()">+ Én til, jeg har en god en</button>`;
   return h;
 }
 function addBonus(){BONUS=true;render();const el=$('w'+S.perPerson);if(el)el.focus()}
 function readWords(){const got=[];for(let i=0;i<S.perPerson+1;i++){const el=$('w'+i);const v=el?(el.value||'').trim().slice(0,80):'';if(v)got.push(v)}return got}
 function clearWords(){for(let i=0;i<S.perPerson+1;i++){const el=$('w'+i);if(el)el.value=''}BONUS=false}
-function wordKey(e,i){if(e.key==='Enter'){e.preventDefault();const nx=$('w'+(i+1));if(nx)nx.focus();else submitWords()}}
-function submitWords(){MODE==='local'?addBatch():sendWords()}
-
-/* online: one person per phone */
+function wordKey(e,i){if(e.key==='Enter'){e.preventDefault();const nx=$('w'+(i+1));if(nx)nx.focus();else MODE==='local'?addBatch():sendWords()}}
 function vWordForm(){
-  return header(false)+`
-  <h1>${EXTRA?'Lapper for en til':'Skriv dine '+S.perPerson+' lapper'}</h1>
+  return header(false)+`<h1>${EXTRA?'Lapper for en til':'Skriv dine '+S.perPerson+' lapper'}</h1>
   <p class="lede">Ting, personer, filmer, steder … alt som kan forklares, mimes og lages én lyd av. Ingen andre ser hva du skriver.</p>
-  <div class="card">${wordInputs()}
-    <button class="btn primary" ${BUSY?'disabled':''} onclick="sendWords()">Legg i bollen</button>
-  </div>
+  <div class="card">${wordInputs()}<button class="btn primary" ${BUSY?'disabled':''} onclick="sendWords()">Legg i bollen</button></div>
   <div class="count"><b id="lcount">${LCOUNT}</b><span>lapper i bollen så langt</span></div>
   <div class="spacer"></div>
   ${EXTRA?'<button class="btn ghost" onclick="EXTRA=false;render()">Avbryt</button>':`<button class="btn ghost" onclick="ls(sentKey(),'1');render()">Jeg har allerede skrevet lapper</button>`}`;
 }
 async function sendWords(){
-  const got=readWords();
-  if(!got.length){toast('Skriv minst én lapp');return}
+  const got=readWords();if(!got.length){toast('Skriv minst én lapp');return}
   BUSY=true;render();
-  try{
-    await api('gulbolle_lapper',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(got.map(t=>({rom:ROOM,parti:S.parti||1,tekst:t})))});
-    BUSY=false;clearWords();ls(sentKey(),'1');EXTRA=false;buzz(25);
-    render();toast(got.length+' '+(got.length===1?'lapp':'lapper')+' i bollen!');pullCount();
-    document.activeElement&&document.activeElement.blur();
+  try{await api('gulbolle_lapper',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(got.map(t=>({rom:ROOM,parti:S.parti||1,tekst:t})))});
+    BUSY=false;clearWords();ls(sentKey(),'1');EXTRA=false;buzz(25);render();
+    toast(got.length+' '+(got.length===1?'lapp':'lapper')+' i bollen!');pullCount();document.activeElement&&document.activeElement.blur();
   }catch(e){BUSY=false;render();toast('Klarte ikke å sende, prøv igjen')}
 }
 function vLobby(){
-  return header(false)+`
-  <span class="pill">Kode ${ROOM}</span>
+  return header(false)+`<span class="pill">Kode ${ROOM}</span>
   <h1 style="margin-top:12px">Bollen fylles</h1>
   <p class="lede">Alle går inn på <b>raggan.no/gulbolle</b>, trykker «Bli med» og skriver koden <b>${ROOM}</b>.</p>
   <div class="count"><b id="lcount">${LCOUNT}</b><span>lapper i bollen<br>oppdateres av seg selv</span></div>
   <button class="btn outline" onclick="shareLink()">Del lenken</button>
   <button class="btn ghost" onclick="EXTRA=true;render()">Skriv lapper for en uten mobil</button>
-  ${teamsCard()}
-  <div class="spacer"></div>
-  <button class="btn dark" ${LCOUNT<2||BUSY?'disabled':''} onclick="startOnline()">Alle er ferdige, start spillet</button>
-  <p class="small" style="text-align:center">Under spillet: én mobil per lag. Den som forklarer holder mobilen, en annen tar tiden.</p>`;
+  ${teamsCard()}<div class="spacer"></div>
+  <button class="btn dark" ${LCOUNT<2||BUSY?'disabled':''} onclick="startOnline()">Alle er ferdige, start spillet</button>`;
 }
 async function startOnline(){
   if(!confirm('Er alle ferdige med lappene? '+LCOUNT+' lapper i bollen.'))return;
   BUSY=true;render();
-  try{
-    const j=await api(`gulbolle_lapper?rom=eq.${ROOM}&parti=eq.${S.parti||1}&select=tekst&order=laget.asc`);
-    BUSY=false;
-    if(dedupe(j.map(x=>x.tekst)).length<2){render();toast('For få lapper');return}
-    act(s=>{s.words=j.map(x=>x.tekst);beginGame(s)});
+  try{const j=await api(`gulbolle_lapper?rom=eq.${ROOM}&parti=eq.${S.parti||1}&select=tekst&order=laget.asc`);BUSY=false;
+    const texts=j.map(x=>x.tekst);if(dedupe(texts).length<2){render();toast('For få lapper');return}
+    act(s=>{if(s.phase!=='words')return;s.words=texts;s.deleted=[];beginGame(s)});
   }catch(e){BUSY=false;render();toast('Nettfeil, prøv igjen')}
 }
-
-/* local: phone passed around */
 function vLocalWords(){
-  return header(false)+`
-  <h1>Skriv lappene</h1>
+  return header(false)+`<h1>Skriv lappene</h1>
   <p class="lede">Hver person skriver ${S.perPerson} ting, trykker «Legg i bollen» og sender mobilen videre.</p>
-  <div class="card">${wordInputs()}
-    <button class="btn primary" onclick="addBatch()">Legg i bollen</button>
-  </div>
+  <div class="card">${wordInputs()}<button class="btn primary" onclick="addBatch()">Legg i bollen</button></div>
   <div class="count"><b>${S.words.length}</b><span>lapper i bollen<br>fra ${S.batches.length} ${S.batches.length===1?'person':'personer'}</span></div>
   ${S.batches.length?'<button class="btn ghost" onclick="undoBatch()">Angre siste person</button>':''}
   <div class="spacer"></div>
   <button class="btn dark" ${S.words.length<2?'disabled':''} onclick="act(beginGame)">Alle er ferdige, start spillet</button>
   <button class="btn ghost" onclick="act(s=>s.phase='setup')">Tilbake til lag</button>`;
 }
-function addBatch(){
-  const got=readWords();if(!got.length){toast('Skriv minst én lapp');return}
-  clearWords();
-  act(s=>{s.words.push(...got);s.batches.push(got.length)});
-  buzz(20);toast(got.length+' i bollen. Send mobilen videre!');
-  document.activeElement&&document.activeElement.blur();
-}
+function addBatch(){const got=readWords();if(!got.length){toast('Skriv minst én lapp');return}clearWords();act(s=>{s.words.push(...got);s.batches.push(got.length)});buzz(20);toast(got.length+' i bollen. Send mobilen videre!');document.activeElement&&document.activeElement.blur()}
 function undoBatch(){act(s=>{const k=s.batches.pop();if(k)s.words.splice(s.words.length-k,k)})}
 
-/* ---------- GAME ---------- */
-function fillBowl(s){const del=s.deleted||[];s.bowl=shuffle(s.words.map((_,i)=>i).filter(i=>!del.includes(i)));s.current=null;s.turnGot=[];s.turnSkipped=[];s.turnDev=null;s.steal=null}
-function normWord(t){return String(t).normalize('NFKC').toLowerCase().replace(/[\s\u00a0]+/g,' ').replace(/^[\s"'«»]+|[\s"'«».!?,]+$/g,'')}
+/* ---------- GAME ENGINE ---------- */
+function normWord(t){return String(t).normalize('NFKC').toLowerCase().replace(/[\s ]+/g,' ').replace(/^[\s"'«»]+|[\s"'«».!?,]+$/g,'')}
 function dedupe(list){const seen=new Set();return list.filter(t=>{const k=normWord(t);if(!k||seen.has(k))return false;seen.add(k);return true})}
-function beginGame(s){s.prevTurn=null;const del=s.deleted||[];s.words=s.words.filter((_,i)=>!del.includes(i));s.deleted=[];const before=s.words.length;s.words=dedupe(s.words);const gone=before-s.words.length;if(gone)setTimeout(()=>toast(gone+(gone===1?' duplikat':' duplikater')+' fjernet'),50);s.scores=s.teams.map(()=>[0,0,0]);s.round=0;s.teamIdx=0;s.carry=false;fillBowl(s);s.phase='ready'}
+function resetTurn(s){s.turnGot=[];s.turnSkipped=[];s.turnLog=[];s.steal=null;s.current=null;s.turnDev=null;s.timer=null}
+function fillBowl(s){const del=s.deleted||[];s.bowl=shuffle(s.words.map((_,i)=>i).filter(i=>!del.includes(i)));s.roundTaken={};s.roundSkipped={};resetTurn(s)}
+function beginGame(s){
+  const del=s.deleted||[];s.words=s.words.filter((_,i)=>!del.includes(i));s.deleted=[];
+  const before=s.words.length;s.words=dedupe(s.words);const gone=before-s.words.length;
+  if(gone)setTimeout(()=>toast(gone+(gone===1?' duplikat':' duplikater')+' fjernet'),50);
+  s.seen=[];s.scores=s.teams.map(()=>[0,0,0]);s.round=0;s.teamIdx=0;s.carry=false;s.carryLeft=0;s.dur=s.dur||60;fillBowl(s);s.phase='ready';
+}
 function draw(s){
   if(!s.bowl.length){s.current=null;return}
   const pool=s.bowl.filter(i=>i!==s.current);
   s.current=pool.length?pool[Math.floor(Math.random()*pool.length)]:s.bowl[0];
 }
-function scoreRows(hl){
-  return `<div class="scores">${S.teams.map((t,i)=>`<div class="srow ${i===hl?'next':''}"><span>${esc(t)}${i===hl?'<small>sin tur</small>':''}</span><span class="pts">${total(i)}</span></div>`).join('')}</div>`;
+function takeWord(s,w,team){s.seen=s.seen||[];if(!s.seen.includes(w))s.seen.push(w);s.bowl=s.bowl.filter(i=>i!==w);(s.roundTaken=s.roundTaken||{})[w]=team;s.scores[team][s.round]++}
+/* after a slip leaves the bowl mid-turn: draw the next one, or end the round */
+function afterRemove(s){
+  if(s.phase!=='turn')return;
+  if(!s.bowl.length){s.carryLeft=Math.max(0,leftOf(s)||0);s.timer={running:false,endsAt:null,left:0};s.current=null;s.steal=null;s.phase='summary'}
+  else if(s.current==null||!s.bowl.includes(s.current))draw(s);
 }
-function roundStrip(){return `<div class="rounds">${ROUNDS.map((r,i)=>`<div class="${i===S.round?'on':i<S.round?'done':''}">${i+1}. ${r.short}</div>`).join('')}</div>`}
-
-function vReady(){
-  const r=ROUNDS[S.round];
-  return header(true)+`
-  <span class="pill">Runde ${S.round+1} av 3 · ${r.name}</span>
-  ${roundStrip()}
-  <p class="rule">${r.rule}</p>
-  <div class="card" style="text-align:center;padding:26px 18px">
-    <p class="label" style="margin:0">${S.carry?'Fortsetter med resten av tiden':'Neste lag'}</p>
-    <h1 class="big-team">${esc(S.teams[S.teamIdx])}</h1>
-    <p class="small" style="margin:10px 0 0">${MODE==='online'?'Trykk Start på mobilen til '+esc(S.teams[S.teamIdx])+'.':'Gi mobilen til den som skal '+r.verb+'.'}<br>Start klokka på den andre mobilen samtidig.</p>
-    <button class="btn primary xl" onclick="startTurn()">Start</button>
-  </div>
-  <div class="count"><b>${S.bowl.length}</b><span>lapper igjen i bollen<br>denne runden</span></div>
-  ${prevCard()}
-  <div class="card"><p class="label">Poeng</p>${scoreRows(S.teamIdx)}</div>`;
-}
-function startTurn(){act(s=>{s.steal=null;s.turnSkipped=[];s.prevTurn=null;s.turnGot=[];s.carry=false;s.current=null;s.turnDev=DEV;draw(s);s.phase='turn'})}
+function place(s,w,toBowl){if(toBowl){rm(s.deleted,w);if(!s.bowl.includes(w))s.bowl.push(w)}else{s.bowl=s.bowl.filter(i=>i!==w);s.deleted=s.deleted||[];if(!s.deleted.includes(w))s.deleted.push(w)}}
 
 let lastTap=0;
 function guard(){const t=Date.now();if(t-lastTap<350)return false;lastTap=t;return myTurn()}
-
-function vTurn(){
-  const r=ROUNDS[S.round];
-  return `<div class="turn">
-    <div class="turnhead"><span class="pill">${esc(S.teams[S.teamIdx])} · ${r.short}</span><span class="got">${S.turnGot.length} tatt${(S.turnSkipped||[]).length?' · −'+S.turnSkipped.length:''} · ${S.bowl.length} igjen</span></div>
-    <div class="word pop" id="word">${esc(S.words[S.current]??'')}</div>
-    <p class="hint">${r.rule}</p>
-    <div class="btnrow">
-      <button class="btn outline xl" style="flex-direction:column;gap:2px" ${S.current!=null?'':'disabled'} onclick="skip()">Hopp over<small style="font-size:13px;font-weight:700;opacity:.7">−1 poeng</small></button>
-      <button class="btn good xl" onclick="correct()">Riktig ✓</button>
-    </div>
-    <button class="btn bad" onclick="timeUp()">Tiden er ute</button>
-    ${S.turnGot.length?'<button class="btn ghost" onclick="undoLast()">Angre siste riktig</button>':''}
-    <button class="btn ghost" style="margin-top:0;font-size:14px" onclick="deleteWord()">Slett denne lappen fra spillet</button>
-  </div>`;
-}
-function vWatch(){
-  const r=ROUNDS[S.round];
-  return header(true)+`
-  <span class="pill">Runde ${S.round+1} av 3 · ${r.name}</span>
-  <div class="card" style="text-align:center;padding:26px 18px">
-    <p class="label" style="margin:0">Spiller nå</p>
-    <h1 class="big-team">${esc(S.teams[S.teamIdx])}</h1>
-    <p class="small" style="margin:10px 0 0">${S.turnGot.length} tatt denne turen · ${S.bowl.length} igjen i bollen</p>
-  </div>
-  <div class="card"><p class="label">Poeng</p>${scoreRows(S.teamIdx)}</div>
-  <div class="spacer"></div>
-  <button class="btn ghost" onclick="takeOver()">Ta over turen på denne mobilen</button>`;
-}
-function takeOver(){if(confirm('Ta over turen her? Bruk dette bare hvis den andre mobilen har problemer.'))act(s=>{s.turnDev=DEV;if(s.current==null)draw(s)})}
-function fitWord(){
-  const el=$('word');if(!el)return;const n=(el.textContent||'').length;
-  el.style.fontSize=(n<=8?58:n<=14?48:n<=22?40:n<=36?32:26)+'px';
+function startTurn(){
+  unlockAudio();const ti=S.teamIdx,rd=S.round;
+  act(s=>{if(s.phase!=='ready'||s.teamIdx!==ti||s.round!==rd)return;
+    const ms=(s.carry&&s.carryLeft>1000)?s.carryLeft:(s.dur||60)*1000;
+    resetTurn(s);s.carry=false;s.carryLeft=0;s.turnDev=DEV;s.timer={running:true,endsAt:Date.now()+ms,left:null};draw(s);s.phase='turn'});
 }
 function correct(){
-  if(!guard()||S.current==null)return;
-  buzz(25);
-  act(s=>{const w=s.current;s.bowl=s.bowl.filter(i=>i!==w);s.turnGot.push(w);s.scores[s.teamIdx][s.round]++;
-    if(!s.bowl.length){s.current=null;s.phase='summary'}else draw(s)});
-  if(S.phase==='summary')buzz([40,60,40]);
+  if(!guard()||S.current==null)return;const w=S.current;buzz(25);
+  act(s=>{if(s.phase!=='turn'||!s.bowl.includes(w))return;takeWord(s,w,s.teamIdx);s.turnGot.push(w);(s.turnLog=s.turnLog||[]).push({t:'got',w});afterRemove(s)});
 }
-function skip(){if(!guard()||S.current==null)return;buzz(15);act(s=>{const w=s.current;s.bowl=s.bowl.filter(i=>i!==w);(s.turnSkipped=s.turnSkipped||[]).push(w);s.scores[s.teamIdx][s.round]--;
-  if(!s.bowl.length){s.current=null;s.phase='summary'}else draw(s)})}
-function undoSkip(k){act(s=>{const w=(s.turnSkipped||[]).splice(k,1)[0];if(w==null)return;if(!s.bowl.includes(w))s.bowl.push(w);s.scores[s.teamIdx][s.round]++});toast('Minuspoeng fjernet, lappen er tilbake i bollen')}
-function undoLast(){if(!myTurn())return;act(s=>{const w=s.turnGot.pop();if(w==null)return;if(s.current!=null&&!s.bowl.includes(s.current))s.bowl.push(s.current);s.bowl.push(w);s.scores[s.teamIdx][s.round]--;s.current=w});toast('Angret')}
-let STEAL_T=0,stealTimer=null;
-function deleteWord(){
-  if(!myTurn()||S.current==null)return;
-  if(!confirm('Slette «'+S.words[S.current]+'» fra spillet? Den kommer ikke tilbake i senere runder, og ingen får poeng for den.'))return;
-  act(s=>{const w=s.current;(s.deleted=s.deleted||[]).push(w);s.bowl=s.bowl.filter(i=>i!==w);
-    if(!s.bowl.length){s.current=null;s.phase='summary'}else draw(s)});
-  toast('Lappen er slettet');
+function skip(){
+  if(!guard()||S.current==null)return;const w=S.current;buzz(15);
+  act(s=>{if(s.phase!=='turn'||!s.bowl.includes(w))return;s.bowl=s.bowl.filter(i=>i!==w);(s.roundSkipped=s.roundSkipped||{})[w]=s.teamIdx;
+    (s.turnSkipped=s.turnSkipped||[]).push(w);(s.turnLog=s.turnLog||[]).push({t:'skip',w});s.scores[s.teamIdx][s.round]--;afterRemove(s)});
 }
-function timeUp(){if(!guard())return;buzz(60);STEAL_T=Date.now();act(s=>{s.steal=s.current!=null?{w:s.current,open:true,by:null}:null;s.current=null;s.phase='summary'})}
-function steal(i){act(s=>{const st=s.steal;if(!st)return;if(i>=0){s.bowl=s.bowl.filter(x=>x!==st.w);s.scores[i][s.round]++;s.steal={w:st.w,open:false,by:i}}else s.steal=null});if(i>=0){buzz(30);toast(S.teams[i]+' stjal lappen!')}}
-function undoSteal(){act(s=>{const st=s.steal;if(!st||st.by==null)return;if(!s.bowl.includes(st.w))s.bowl.push(st.w);s.scores[st.by][s.round]--;s.steal={w:st.w,open:true,by:null}});STEAL_T=Date.now()}
-function runCountdown(){
-  clearInterval(stealTimer);stealTimer=null;
-  if(!(S&&S.phase==='summary'&&S.steal&&S.steal.open&&myTurn()))return;
-  if(!STEAL_T)STEAL_T=Date.now();
-  let buzzed=false;
-  const tick=()=>{const el=$('cd');if(!el){clearInterval(stealTimer);return}
-    const left=Math.max(0,10-Math.floor((Date.now()-STEAL_T)/1000));
-    if(left>0){el.textContent=left;el.classList.remove('done')}else{el.textContent='Tiden er ute!';el.classList.add('done');if(!buzzed){buzzed=true;buzz([80,60,80])}clearInterval(stealTimer)}};
-  tick();stealTimer=setInterval(tick,250);
+function undoLast(){
+  if(!myTurn())return;
+  act(s=>{const e=(s.turnLog||[]).pop();if(!e||s.phase!=='turn')return;
+    if(e.t==='got')annulTakenS(s,e.w,true);else unskipS(s,e.w,true);s.current=e.w});
+  toast('Angret');
 }
-
-/* ---------- SUMMARY ---------- */
-function vSummary(){
-  const empty=S.bowl.length===0, team=S.teams[S.teamIdx];
-  const list=S.turnGot.length?`<ul class="list">${S.turnGot.map((w,k)=>`<li><span>${esc(S.words[w])}</span><button class="dq" onclick="removeGot(${k})">Diskvalifiser</button></li>`).join('')}</ul>`:'<p class="empty">Ingen lapper denne gangen.</p>';
-  const head=empty?`<span class="pill">Bollen er tom!</span><h1 style="margin-top:12px">Runde ${S.round+1} ferdig</h1>`
-    :`<span class="pill">Tiden er ute</span><h1 style="margin-top:12px">${esc(team)} tok ${S.turnGot.length}</h1>`;
-  const skl=S.turnSkipped||[],sk=skl.length;
-  const skipHtml=sk?`<p class="label" style="margin:14px 0 8px">Hoppet over (−1 hver)</p><ul class="list">${skl.map((w,k)=>`<li><span>${esc(S.words[w])}</span><button onclick="undoSkip(${k})">Angre</button></li>`).join('')}</ul>`:'';
-  const net=S.turnGot.length-sk;
-  const st=S.steal;let stealHtml='';
-  if(st&&st.open){
-    const others=S.teams.map((_,i)=>i).filter(i=>i!==S.teamIdx);
-    stealHtml=`<div class="card steal"><p class="label">Siste lapp: de andre lagene kan stjele</p>
-      ${myTurn()?`<div class="stealword">${esc(S.words[st.w])}</div><div class="cd" id="cd">10</div><p class="small" style="text-align:center;margin:0">De andre lagene gjetter nå.</p>`
-        :'<p class="small" style="margin:0">Ordet vises på mobilen som spilte. De andre lagene har ca. 10 sekunder på seg.</p>'}
-      ${others.map(i=>`<button class="btn good" onclick="steal(${i})">${esc(S.teams[i])} tok den</button>`).join('')}
-      <button class="btn outline" onclick="steal(-1)">Ingen tok den</button></div>`;
-  }else if(st&&st.by!=null){
-    stealHtml=`<div class="card"><p class="label">Stjålet</p><ul class="list"><li><span>${esc(S.teams[st.by])}: ${esc(S.words[st.w])}</span><button onclick="undoSteal()">Angre</button></li></ul></div>`;
-  }
-  const stolen=!!(st&&st.by!=null);
-  let actions;
-  if(st&&st.open){
-    actions='';
-  }else if(empty&&S.round<2&&stolen){
-    const nx=ROUNDS[S.round+1];
-    actions=`<p class="rule"><b>Neste runde: ${nx.name}.</b> Alle lappene går tilbake i bollen.</p>
-      <button class="btn primary" onclick="nextRound(false)">Neste lag: ${esc(S.teams[nextTeam(S.teamIdx)])}</button>`;
-  }else if(empty&&S.round<2){
-    const nx=ROUNDS[S.round+1];
-    actions=`<p class="rule"><b>Neste runde: ${nx.name}.</b> Alle lappene går tilbake i bollen. Har ${esc(team)} tid igjen på klokka, fortsetter de.</p>
-      <button class="btn primary" onclick="nextRound(true)">${esc(team)} fortsetter (har tid igjen)</button>
-      <button class="btn outline" onclick="nextRound(false)">Neste lag: ${esc(S.teams[nextTeam(S.teamIdx)])}</button>`;
-  }else if(empty){
-    actions=`<button class="btn primary" onclick="act(s=>s.phase='final')">Se resultatet</button>`;
-  }else{
-    actions=`<button class="btn primary" onclick="nextTurn()">Neste lag: ${esc(S.teams[nextTeam(S.teamIdx)])}</button>
-      ${myTurn()&&!stolen?'<button class="btn ghost" onclick="resumeTurn()">Oi, trykket feil. Fortsett turen</button>':''}`;
-  }
-  return header(true)+head+stealHtml+`
-  <div class="card"><p class="label">${esc(team)} denne turen${sk?' · '+(net>0?'+':'')+net+' totalt':''}</p>${list}${skipHtml}
-    <p class="small" style="margin:10px 0 0">Jukset noen? Trykk «Diskvalifiser», så mister laget poenget og lappen går tilbake i bollen.</p></div>
-  ${actions}
-  <div class="card"><p class="label">Poeng</p>${scoreRows(-1)}</div>`;
+function doTimeUp(force){
+  act(s=>{if(s.phase!=='turn')return;const t=s.timer;
+    if(!force&&t&&(!t.running||t.endsAt-Date.now()>400))return;
+    s.steal=s.current!=null?{w:s.current,open:true,by:null,endsAt:Date.now()+10000}:null;
+    s.current=null;s.carryLeft=0;s.timer={running:false,endsAt:null,left:0};s.phase='summary'});
 }
-function removeGot(k){act(s=>{const w=s.turnGot.splice(k,1)[0];if(w==null)return;if(!s.bowl.includes(w))s.bowl.push(w);s.scores[s.teamIdx][s.round]--});toast('Diskvalifisert, lappen er tilbake i bollen')}
-function savePrev(s){s.prevTurn={team:s.teamIdx,round:s.round,got:(s.turnGot||[]).slice()}}
-function dqPrev(k){act(s=>{const p=s.prevTurn;if(!p)return;const w=p.got.splice(k,1)[0];if(w==null)return;s.scores[p.team][p.round]--;
-  if(p.round===s.round&&!s.bowl.includes(w))s.bowl.push(w)});toast('Diskvalifisert')}
-let PREV_OPEN=false;
-function prevCard(){
-  const p=S.prevTurn;if(!p||!p.got.length)return'';
-  return `<details class="card" ${PREV_OPEN?'open':''} ontoggle="PREV_OPEN=this.open"><summary>Gå gjennom forrige tur: ${esc(S.teams[p.team])} tok ${p.got.length} ›</summary>
-    <ul class="list" style="margin-top:12px">${p.got.map((w,k)=>`<li><span>${esc(S.words[w])}</span><button class="dq" onclick="dqPrev(${k})">Diskvalifiser</button></li>`).join('')}</ul>
-    <p class="small" style="margin:10px 0 0">Laget mister poenget${p.round===S.round?', og lappen går tilbake i bollen':''}.</p></details>`;
+function stopNow(){if(confirm('Stoppe turen nå?'))doTimeUp(true)}
+function steal(i){
+  act(s=>{const st=s.steal;if(!st||!st.open)return;
+    if(i>=0&&s.bowl.includes(st.w)){takeWord(s,st.w,i);s.steal={w:st.w,open:false,by:i}}else s.steal={w:st.w,open:false,by:null}});
+  if(i>=0){buzz(30);toast(S.teams[i]+' stjal lappen!')}
 }
-function nextTurn(){act(s=>{savePrev(s);s.steal=null;s.turnSkipped=[];s.teamIdx=nextTeam(s.teamIdx);s.turnGot=[];s.turnDev=null;s.phase='ready'})}
-function resumeTurn(){act(s=>{s.steal=null;s.turnDev=DEV;draw(s);s.phase='turn'})}
-function nextRound(carry){act(s=>{savePrev(s);s.round++;fillBowl(s);s.carry=carry;if(!carry)s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'})}
+function nextTurn(){const ti=S.teamIdx;act(s=>{if(s.phase!=='summary'||s.teamIdx!==ti)return;s.teamIdx=nextTeam(ti);resetTurn(s);s.phase='ready'})}
+function nextRound(carry){const rd=S.round;act(s=>{if(s.phase!=='summary'||s.round!==rd||s.bowl.length)return;s.round++;fillBowl(s);
+  s.carry=!!carry&&s.carryLeft>1000;if(!s.carry){s.carryLeft=0;s.teamIdx=nextTeam(s.teamIdx)}s.phase='ready'})}
+function toFinal(){act(s=>{if(s.phase==='summary'&&!s.bowl.length)s.phase='final'})}
 function endRoundEarly(){
-  if(!S||['setup','words','final'].includes(S.phase))return;
+  closeSheet('menu');if(!S||['setup','words','final'].includes(S.phase))return;
   if(!confirm('Avslutte runde '+(S.round+1)+' nå? Lappene som er igjen teller ikke.'))return;
-  act(s=>{if(s.round<2){s.round++;fillBowl(s);s.carry=false;s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'}else s.phase='final'});
+  const rd=S.round;act(s=>{if(s.round!==rd)return;if(s.round<2){s.round++;fillBowl(s);s.carry=false;s.carryLeft=0;s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'}else s.phase='final'});
 }
 function restartSameTeams(ask=true){
+  closeSheet('menu');
   if(ask&&!confirm('Starte på nytt med nye lapper? Poengene nullstilles, lagene beholdes.'))return;
-  act(s=>{s.parti=(s.parti||1)+1;s.words=[];s.batches=[];s.scores=[];s.bowl=[];s.current=null;s.turnGot=[];s.turnDev=null;s.phase='words'});
+  act(s=>{s.parti=(s.parti||1)+1;s.words=[];s.batches=[];s.scores=[];s.bowl=[];s.deleted=[];s.roundTaken={};s.roundSkipped={};resetTurn(s);s.phase='words'});
   LCOUNT=0;EXTRA=false;render();
+}
+
+/* judge operations on single slips */
+function annulTakenS(s,w,toBowl){const rt=s.roundTaken||{};const team=rt[w];if(team==null)return;delete rt[w];s.scores[team][s.round]--;rm(s.turnGot,w);
+  if(s.steal&&s.steal.w===w&&s.steal.by===team)s.steal.by=null;place(s,w,toBowl)}
+function unskipS(s,w,toBowl){const rs=s.roundSkipped||{};const team=rs[w];if(team==null)return;delete rs[w];s.scores[team][s.round]++;rm(s.turnSkipped,w);place(s,w,toBowl)}
+function statusOf(w){
+  if((S.deleted||[]).includes(w))return 'slettet';
+  if((S.roundTaken||{})[w]!=null)return 'tatt';
+  if((S.roundSkipped||{})[w]!=null)return 'hoppet';
+  if(S.phase==='turn'&&S.current===w)return 'scene';
+  if(S.steal&&S.steal.open&&S.steal.w===w)return 'scene';
+  return 'bolle';
+}
+function seen(w){return (S.seen||[]).includes(w)}
+function label(w){return seen(w)?esc(S.words[w]):'<i style="color:var(--muted)">Skjult lapp</i>'}
+function chip(w){const st=statusOf(w);const L={tatt:'Tatt · '+esc(S.teams[(S.roundTaken||{})[w]]||''),hoppet:'Hoppet over',slettet:'Slettet',scene:'På scenen',bolle:'I bollen'};return `<span class="chip ${st}">${L[st]}</span>`}
+function wordOp(fn,msg){act(s=>{fn(s);if(s.phase==='turn')afterRemove(s)});closeSheet('wsheet');if(msg)toast(msg)}
+function annul(w,toBowl){wordOp(s=>annulTakenS(s,w,toBowl),toBowl?'Annullert, tilbake i bollen':'Annullert og slettet')}
+function unskip(w,toBowl){wordOp(s=>unskipS(s,w,toBowl),toBowl?'Tilbake i bollen, +1':'Slettet, +1')}
+function delWord(w){wordOp(s=>{if(s.steal&&s.steal.open&&s.steal.w===w)s.steal.open=false;if(s.current===w)s.current=null;place(s,w,false)},'Lappen er slettet')}
+function restoreWord(w){wordOp(s=>place(s,w,true),'Tilbake i bollen')}
+function saveEdit(w){const v=($('editw').value||'').trim().slice(0,80);if(!v)return;act(s=>{s.words[w]=v});closeSheet('wsheet');toast('Lappen er endret')}
+function openWord(w){
+  const st=statusOf(w);let b='';
+  if(st==='tatt')b=`<button class="btn primary" onclick="annul(${w},true)">Annuller: tilbake i bollen</button><button class="btn bad" onclick="annul(${w},false)">Annuller: slett lappen</button>`;
+  else if(st==='hoppet')b=`<button class="btn primary" onclick="unskip(${w},true)">Angre hopp: tilbake i bollen (+1)</button><button class="btn bad" onclick="unskip(${w},false)">Slett lappen (+1)</button>`;
+  else if(st==='slettet')b=`<button class="btn primary" onclick="restoreWord(${w})">Legg tilbake i bollen</button>`;
+  else b=`<button class="btn bad" onclick="delWord(${w})">Slett lappen fra spillet</button>`;
+  const vis=seen(w);
+  $('wpanel').innerHTML=`<p class="label">${chip(w)}</p><h2 style="word-break:break-word">${label(w)}</h2>${b}
+    ${vis?`<p class="label" style="margin:20px 0 0">Rett skrivefeil</p>
+    <input class="field" id="editw" value="${esc(S.words[w])}" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button class="btn outline" onclick="saveEdit(${w})">Lagre endring</button>`:'<p class="small" style="margin-top:14px">Lappen er ikke tatt ennå, så teksten er skjult for dommeren.</p>'}
+    <button class="btn ghost" onclick="closeSheet('wsheet')">Lukk</button>`;
+  $('wsheet').classList.add('open');
+}
+function adjScore(i,d){const rd=S.round;act(s=>{if(s.round===rd)s.scores[i][rd]+=d})}
+/* judge timer controls */
+function tPause(){act(s=>{const t=s.timer;if(s.phase!=='turn'||!t||!t.running)return;t.left=Math.max(0,t.endsAt-Date.now());t.running=false;t.endsAt=null})}
+function tResume(){act(s=>{const t=s.timer;if(s.phase!=='turn'||!t||t.running)return;t.endsAt=Date.now()+(t.left||0);t.running=true;t.left=null})}
+function tAdd(ms){act(s=>{const t=s.timer;if(s.phase!=='turn'||!t)return;if(t.running)t.endsAt=Math.max(Date.now()+1000,t.endsAt+ms);else t.left=Math.max(1000,(t.left||0)+ms)})}
+
+/* ---------- ROLE PICKER ---------- */
+function vRole(){
+  return header(false)+`<h1>Hva skal denne mobilen være?</h1>
+  <p class="lede">Du kan bytte senere under «Meny».</p>
+  <button class="role" onclick="setRole('scene')"><span class="em">🎤</span><span><b>Scene</b><span>Mobilen som går rundt til den som skal forklare. Enkel visning med ordet og to knapper.</span></span></button>
+  <button class="role" onclick="setRole('dommer')"><span class="em">⚖️</span><span><b>Dommer 🔒</b><span>Krever passord. Fikser lapper etter turen: diskvalifiser, slett eller rett skrivefeil. Ser aldri lapper som ikke er tatt.</span></span></button>
+  <button class="role" onclick="setRole('tilskuer')"><span class="em">👀</span><span><b>Tilskuer</b><span>Ser poeng, klokke og hvem som spiller.</span></span></button>`;
+}
+
+/* ---------- SCENE (simple, for the performer) ---------- */
+function vScene(){
+  const r=ROUNDS[S.round],team=esc(S.teams[S.teamIdx]);
+  if(S.phase==='ready'){
+    return header(true)+`<span class="pill">Runde ${S.round+1} av 3 · ${r.name}</span>
+    <div class="card" style="text-align:center;padding:30px 18px;margin-top:18px">
+      <p class="label" style="margin:0">${S.carry?'Fortsetter med resten av tiden':'Nå er det'}</p>
+      <h1 class="big-team">${team}</h1>
+      <p class="rule" style="margin-top:14px">${r.rule}</p>
+      <button class="btn primary xl" onclick="startTurn()">Start${S.carry&&S.carryLeft>1000?' ('+fmt(S.carryLeft)+' s)':''}</button>
+    </div>
+    <p class="small" style="text-align:center;margin-top:14px">${S.bowl.length} lapper igjen i bollen</p>`;
+  }
+  if(S.phase==='turn'){
+    if(!myTurn())return header(true)+`<span class="pill">Runde ${S.round+1} · ${r.name}</span>
+      <div class="card" style="text-align:center;padding:30px 18px;margin-top:18px"><p class="label" style="margin:0">Spiller nå</p><h1 class="big-team">${team}</h1>
+      <div class="tbig tleft"></div><p class="small">${S.bowl.length} lapper igjen</p></div>
+      <div class="spacer"></div><button class="btn ghost" onclick="takeOver()">Ta over turen på denne mobilen</button>`;
+    return `<div class="turn">
+      <div class="turnhead"><span class="pill">${team} · ${r.name}</span><span class="tsm tleft"></span></div>
+      <div class="word pop" id="word">${esc(S.words[S.current]??'')}</div>
+      <div class="btnrow">
+        <button class="btn outline xl" style="flex-direction:column;gap:2px" ${S.current!=null?'':'disabled'} onclick="skip()">Hopp over<small style="font-size:13px;font-weight:700;opacity:.7">−1 poeng</small></button>
+        <button class="btn good xl" onclick="correct()">Riktig ✓</button>
+      </div>
+      <div class="links">${(S.turnLog||[]).length?'<button onclick="undoLast()">Angre siste</button>':''}</div>
+    </div>`;
+  }
+  if(S.phase==='summary'){
+    const st=S.steal;
+    if(st&&st.open){
+      const others=S.teams.map((_,i)=>i).filter(i=>i!==S.teamIdx);
+      return header(true)+`<span class="pill">Tiden er ute!</span>
+      <div class="card steal" style="text-align:center">
+        <p class="label">Siste lapp: de andre lagene kan stjele</p>
+        ${myTurn()?`<div class="stealword">${esc(S.words[st.w])}</div>`:''}
+        <div class="cd sleft">10</div>
+        ${others.map(i=>`<button class="btn good" onclick="steal(${i})">${esc(S.teams[i])} tok den</button>`).join('')}
+        <button class="btn outline" onclick="steal(-1)">Ingen tok den</button></div>`;
+    }
+    return header(true)+doneBlock(true);
+  }
+  return vAudience();
+}
+function takeOver(){if(confirm('Ta over turen her? Bruk dette bare hvis scene-mobilen har problemer.'))act(s=>{s.turnDev=DEV;if(s.current==null)draw(s)})}
+function turnNet(){return (S.turnGot||[]).length-(S.turnSkipped||[]).length}
+function doneBlock(big){
+  const team=esc(S.teams[S.teamIdx]),empty=!S.bowl.length,net=turnNet(),st=S.steal;
+  const stolen=st&&st.by!=null?`<p class="small" style="margin:8px 0 0">${esc(S.teams[st.by])} stjal den siste lappen.</p>`:'';
+  let h=`<div class="card" style="text-align:center;padding:26px 18px">
+    <p class="label" style="margin:0">${empty?'Bollen er tom! Runde '+(S.round+1)+' ferdig':'Tiden er ute'}</p>
+    <h1 class="big-team" style="font-size:${big?40:30}px">${team} ${net>=0?'+':''}${net}</h1>${stolen}</div>`;
+  if(empty&&S.round<2){
+    const nx=ROUNDS[S.round+1];
+    h+=`<p class="rule"><b>Neste runde: ${nx.name}.</b> Alle lappene går tilbake i bollen.</p>`;
+    if(S.carryLeft>1000)h+=`<button class="btn primary" onclick="nextRound(true)">${team} fortsetter (${fmt(S.carryLeft)} s igjen)</button>`;
+    h+=`<button class="btn ${S.carryLeft>1000?'outline':'primary'}" onclick="nextRound(false)">Neste lag: ${esc(S.teams[nextTeam(S.teamIdx)])}</button>`;
+  }else if(empty)h+=`<button class="btn primary" onclick="toFinal()">Se resultatet</button>`;
+  else h+=`<button class="btn primary xl" onclick="nextTurn()">Neste lag: ${esc(S.teams[nextTeam(S.teamIdx)])}</button>`;
+  return h;
+}
+
+/* ---------- JUDGE (everything) ---------- */
+function scoreTable(adj){
+  return `<table><thead><tr><th>Lag</th><th>Forkl.</th><th>Mime</th><th>Lyd</th><th>Sum</th></tr></thead><tbody>
+  ${S.teams.map((t,i)=>`<tr${i===S.teamIdx&&S.phase!=='final'?' style="background:var(--yellow-soft)"':''}><td>${esc(t)}</td>${(S.scores[i]||[0,0,0]).map((v,r)=>`<td>${adj&&r===S.round?`<button class="mini" onclick="adjScore(${i},-1)">−</button>${v}<button class="mini" onclick="adjScore(${i},1)">+</button>`:v}</td>`).join('')}<td class="tot">${total(i)}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+function wordList(list,empty){
+  if(!list.length)return `<p class="empty">${empty}</p>`;
+  return `<ul class="list tap">${list.map(w=>`<li onclick="openWord(${w})"><span>${label(w)}</span>${chip(w)}</li>`).join('')}</ul>`;
+}
+function vJudge(){
+  const r=ROUNDS[S.round],team=esc(S.teams[S.teamIdx]),t=S.timer;
+  let status,main='';
+  if(S.phase==='ready'){
+    status=`Venter på at ${team} trykker Start`;
+    main=`<div class="card"><div class="stepper"><p class="label" style="margin:0">Sekunder per tur</p>
+      <div class="ctl"><button onclick="setDur(-10)">−</button><output>${S.dur||60}</output><button onclick="setDur(10)">+</button></div></div>
+      ${S.carry&&S.carryLeft>1000?`<p class="small" style="margin:10px 0 0">${team} fortsetter med ${fmt(S.carryLeft)} s.</p>`:''}</div>`;
+  }else if(S.phase==='turn'){
+    status=`${team} spiller`;
+    return header(true)+`<span class="pill">⚖️ Dommer · Runde ${S.round+1} av 3 · ${r.name}</span>
+      <div class="card" style="text-align:center;padding:30px 18px;margin-top:18px"><p class="label" style="margin:0">${team} spiller</p><div class="tbig tleft" style="font-size:110px"></div></div>`;
+  }else if(S.phase==='summary'&&S.steal&&S.steal.open){
+    status='Siste lapp kan stjeles';
+    const others=S.teams.map((_,i)=>i).filter(i=>i!==S.teamIdx);
+    main=`<div class="card steal" style="text-align:center"><p class="label">Siste lapp kan stjeles</p><div class="cd sleft">10</div>
+      ${others.map(i=>`<button class="btn good" onclick="steal(${i})">${esc(S.teams[i])} tok den</button>`).join('')}
+      <button class="btn outline" onclick="steal(-1)">Ingen tok den</button></div>`;
+  }else{
+    status=S.bowl.length?`${team} er ferdig`:`Runde ${S.round+1} ferdig`;
+    main=doneBlock(false);
+  }
+  const turnWords=[...(S.turnGot||[]),...(S.turnSkipped||[])];
+  if(S.steal&&S.steal.by!=null)turnWords.push(S.steal.w);
+  const stealOpen=!!(S.steal&&S.steal.open);
+  const all=S.words.map((_,i)=>i).filter(w=>seen(w));const hidden=S.words.length-all.length;
+  return header(true)+`<span class="pill">⚖️ Dommer · Runde ${S.round+1} av 3 · ${r.name}</span>
+  <p class="status">${status}</p>
+  ${main}
+  ${S.phase==='ready'||stealOpen?'':`<div class="card"><p class="label">Forrige tur · trykk på en lapp for å fikse</p>${wordList(turnWords,'Ingen lapper denne turen.')}</div>`}
+  <div class="card"><p class="label">Poeng · − og + justerer denne runden</p>${scoreTable(true)}</div>
+  ${stealOpen?'':`<div class="card"><button class="btn outline" style="margin:0" onclick="SHOWALL=!SHOWALL;render()">${SHOWALL?'Skjul':'Vis'} tatte lapper (${all.length})</button>
+    ${SHOWALL?`<p class="small" style="margin:12px 0">Bare lapper som er tatt vises${hidden?'; '+hidden+' er fortsatt skjult':''}. Trykk på en lapp for å fikse den.</p>${wordList(all,'Ingen lapper er tatt ennå.')}`:''}</div>`}`;
+}
+
+/* ---------- AUDIENCE ---------- */
+function vAudience(){
+  const r=ROUNDS[S.round],team=esc(S.teams[S.teamIdx]);
+  const what=S.phase==='turn'?'Spiller nå':S.phase==='ready'?'Neste lag':'Ferdig';
+  return header(true)+`<span class="pill">Runde ${S.round+1} av 3 · ${r.name}</span>
+  <div class="card" style="text-align:center;padding:26px 18px"><p class="label" style="margin:0">${what}</p><h1 class="big-team">${team}</h1>
+    ${S.phase==='turn'?'<div class="tbig tleft"></div>':''}<p class="small" style="margin:8px 0 0">${S.bowl.length} lapper igjen i bollen</p></div>
+  <div class="card"><p class="label">Poeng</p>${scoreTable(false)}</div>`;
 }
 
 /* ---------- FINAL ---------- */
 function vFinal(){
   const idx=S.teams.map((_,i)=>i).sort((a,b)=>total(b)-total(a));
   const best=total(idx[0]);const win=idx.filter(i=>total(i)===best);
-  return header(false)+`
-  <div style="text-align:center;margin-top:10px"><div class="trophy">🏆</div>
+  return header(false)+`<div style="text-align:center;margin-top:10px"><div class="trophy">🏆</div>
   <h1 style="margin-top:10px">${win.length>1?'Uavgjort!':esc(S.teams[win[0]])+' vant!'}</h1>
   <p class="lede">${win.length>1?win.map(i=>esc(S.teams[i])).join(' og ')+' med '+best+' poeng hver':best+' poeng totalt'}</p></div>
-  <div class="card"><table><thead><tr><th>Lag</th><th>Forkl.</th><th>Mime</th><th>Lyd</th><th>Sum</th></tr></thead><tbody>
-  ${idx.map(i=>`<tr class="${total(i)===best?'win':''}"><td>${esc(S.teams[i])}</td>${S.scores[i].map(v=>`<td>${v}</td>`).join('')}<td class="tot">${total(i)}</td></tr>`).join('')}
-  </tbody></table></div>
-  <div class="spacer"></div>
+  <div class="card">${scoreTable(false)}</div><div class="spacer"></div>
   <button class="btn primary" onclick="restartSameTeams(false)">Nytt spill med nye lapper</button>
   <button class="btn outline" onclick="act(beginGame)">Spill igjen med samme lapper</button>
   <button class="btn ghost" onclick="leaveGame()">Avslutt</button>`;
@@ -632,17 +713,22 @@ function vFinal(){
 
 /* ---------- MENU ---------- */
 function openMenu(){
-  $('menuScores').innerHTML=(S.scores&&S.scores.length)?`<table><thead><tr><th>Lag</th><th>R1</th><th>R2</th><th>R3</th><th>Sum</th></tr></thead><tbody>${S.teams.map((t,i)=>`<tr><td>${esc(t)}</td>${(S.scores[i]||[0,0,0]).map(v=>`<td>${v}</td>`).join('')}<td class="tot">${total(i)}</td></tr>`).join('')}</tbody></table>`:'';
+  const R=[['scene','🎤 Scene'],['dommer','⚖️ Dommer'],['tilskuer','👀 Tilskuer']];
+  $('menuPanel').innerHTML=`<h2>Meny</h2>
+    <p class="label" style="margin:16px 0 0">Denne mobilen er</p>
+    <div class="row3">${R.map(([k,l])=>`<button class="btn ${ROLE===k?'primary':'outline'}" onclick="setRole('${k}')">${l}</button>`).join('')}</div>
+    <button class="btn outline" onclick="toggleSound();openMenu()">Lyd: ${SOUND?'på 🔊':'av 🔇'}</button>
+    ${MODE==='online'?`<button class="btn outline" onclick="shareLink()">Del lenken (kode ${ROOM})</button>`:''}
+    <button class="btn outline" onclick="endRoundEarly()">Avslutt denne runden nå</button>
+    <button class="btn outline" onclick="restartSameTeams()">Nytt spill med nye lapper</button>
+    <button class="btn bad" onclick="leaveGame()">Forlat spillet</button>
+    <button class="btn ghost" onclick="closeSheet('menu')">Lukk</button>`;
   $('menu').classList.add('open');
 }
-function closeMenu(){$('menu').classList.remove('open')}
+function closeSheet(id){$(id).classList.remove('open')}
 
 /* ---------- BOOT ---------- */
-(function(){
-  const q=new URLSearchParams(location.search).get('r');
-  render();
-  if(q)joinRoom(q);
-})();
+(function(){const q=new URLSearchParams(location.search).get('r');render();if(q)joinRoom(q)})();
 </script>
 </body>
 </html>
