@@ -408,7 +408,7 @@ function tone(f,d,v=.25,type='square',delay=0){
 }
 function beep(){tone(880,.09,.2)}
 function horn(){tone(196,1.1,.35,'sawtooth');tone(147,1.1,.3,'sawtooth',.05)}
-function testSound(){if(!SOUND){SOUND=true;ls('gb_sound','1')}unlockAudio();setTimeout(()=>{beep();setTimeout(beep,350);setTimeout(horn,800)},80);toast('Du skal høre to pip og et signal')}
+function testSound(){if(!SOUND){SOUND=true;ls('gb_sound','1')}unlockAudio();setTimeout(()=>{beep();setTimeout(beep,1000);setTimeout(beep,2000);setTimeout(()=>{horn();buzz([250,120,250])},3000)},80);toast('3 pip, så kommer signalet for at tiden er ute')}
 function toggleSound(){SOUND=!SOUND;ls('gb_sound',SOUND?'1':'0');if(SOUND){unlockAudio();setTimeout(()=>tone(660,.15),50)}render()}
 
 /* ===== Clock (runs on every phone) ===== */
@@ -614,12 +614,14 @@ function vHostSetup(){
   ${canEdit()?teamsCard():`<button class="btn dark" onclick="setRole('dommer')">⚖️ Jeg er dommer</button>`}
   <button class="btn outline" onclick="shareLink()">Del lenken</button>
   <div class="spacer"></div>
+  <button class="btn outline" onclick="HOSTSETUP=false;setRole('klokke')">🖥️ Denne skjermen er TV-en</button>
   <button class="btn primary" onclick="HOSTSETUP=false;render()">Videre: skriv dine lapper</button>`;
 }
 function vTvLobby(){
   const ps=players(S),n=slipCount();
   const btns=`<div class="tvbtns"><button class="iconbtn" onclick="testSound()">Test lyd</button>${document.fullscreenEnabled||document.webkitFullscreenEnabled?'<button class="iconbtn" onclick="goFull()">Fullskjerm</button>':''}<button class="iconbtn" onclick="setRole(null)">Tilbake</button></div>`;
-  const tap=SOUND&&(!AC||AC.state!=='running')?'<p class="small">Trykk på skjermen for å slå på lyden</p>':'';
+  const tap=(SOUND&&(!AC||AC.state!=='running')?'<p class="small">Trykk på skjermen for å slå på lyden</p>':'')+
+    `<button class="btn outline" style="width:auto;padding:14px 26px;margin-top:3vmin" onclick="testSound()">🔊 Test lyden når tiden er ute</button>`;
   if(S.useNames&&S.teamsDrawn)return `<div class="tv">
     <p class="clabel">Lagene er trukket!</p>
     <div class="tvboard">${S.teams.map((t,i)=>`<div class="tvrow"><div>${esc(t)}</div><div style="font-size:min(4.4vmin,42px);text-align:right">${members(i).map(esc).join(' · ')||'–'}</div></div>`).join('')}</div>
