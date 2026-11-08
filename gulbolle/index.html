@@ -525,15 +525,15 @@ function teamsCard(){
     <div class="lenticks"><span>Kort</span><span>Middels</span><span>Langt</span></div>
   </div>`;
 }
-function setTeams(d){act(s=>{const n=Math.min(6,Math.max(2,s.teams.length+d));while(s.teams.length<n)s.teams.push('Lag '+(s.teams.length+1));s.teams.length=n})}
-function renameTeam(i,v){act(s=>{s.teams[i]=(v||'').trim()||('Lag '+(i+1))})}
+function setTeams(d){if(!canEdit())return;act(s=>{const n=Math.min(6,Math.max(2,s.teams.length+d));while(s.teams.length<n)s.teams.push('Lag '+(s.teams.length+1));s.teams.length=n})}
+function renameTeam(i,v){if(!canEdit())return;act(s=>{s.teams[i]=(v||'').trim()||('Lag '+(i+1))})}
 function lenLabel(n){return (n<=3?'Kort':n>=6?'Langt':'Middels')+' · '+n+' lapper per person'}
-function setPerTo(n){act(s=>{s.perPerson=Math.min(6,Math.max(3,n))})}
+function setPerTo(n){if(!canEdit())return;act(s=>{s.perPerson=Math.min(6,Math.max(3,n))})}
 function setPer(d){act(s=>{s.perPerson=Math.min(6,Math.max(1,s.perPerson+d))})}
 function setPeople(d){act(s=>{s.people=Math.min(40,Math.max(2,(s.people||8)+d))})}
 function splitText(n,T){if(n<T)return `${n} personer på ${T} lag gir tomme lag. Velg færre lag.`;const b=Math.floor(n/T),x=n%T;const sz=Array.from({length:T},(_,i)=>b+(i<x?1:0));
   if(!x)return `${T} lag med ${b} på hvert.`;return `${T} lag: ${sz.join(', ').replace(/, (\d+)$/,' og $1')} personer.`}
-function setNames(v){act(s=>{s.useNames=!!v})}
+function setNames(v){if(!canEdit())return;act(s=>{s.useNames=!!v})}
 function setDur(d){act(s=>{s.dur=Math.min(180,Math.max(20,(s.dur||60)+d))})}
 function vSetup(){
   return header(false)+`<h1>Lag og lapper</h1>
@@ -580,11 +580,12 @@ function sendWords(){
   ls(sentKey(),'1');EXTRA=false;buzz(25);render();
   toast(got.length+' '+(got.length===1?'lapp':'lapper')+' i bollen!');document.activeElement&&document.activeElement.blur();
 }
+function canEdit(){return MODE==='local'||ROLE==='dommer'}
 function vHostSetup(){
   return header(false)+`<span class="pill">Kode ${ROOM}</span>
   <h1 style="margin-top:12px">Nytt spill</h1>
-  <p class="lede">Velg lengde og lag. Så kan alle bli med på <b>raggan.no/gulbolle</b> med koden <b>${ROOM}</b>.</p>
-  ${teamsCard()}
+  <p class="lede">Alle kan bli med på <b>raggan.no/gulbolle</b> med koden <b>${ROOM}</b>. ${canEdit()?'Velg lengde og lag.':'Bare dommeren kan endre lag og lengde.'}</p>
+  ${canEdit()?teamsCard():`<button class="btn dark" onclick="setRole('dommer')">⚖️ Jeg er dommer</button>`}
   <button class="btn outline" onclick="shareLink()">Del lenken</button>
   <div class="spacer"></div>
   <button class="btn primary" onclick="HOSTSETUP=false;render()">Videre: skriv dine lapper</button>`;
@@ -611,8 +612,9 @@ function vLobby(){
   <button class="btn outline" onclick="shareLink()">Del lenken</button>
   <button class="btn ghost" onclick="EXTRA=true;render()">Skriv lapper for en uten mobil</button>
   ${rosterCard()}
-  ${teamsCard()}<div class="spacer"></div>
-  <button class="btn dark" ${slipCount()<2||BUSY?'disabled':''} onclick="startOnline()">Alle er ferdige, start spillet</button>`;
+  ${canEdit()?teamsCard():''}<div class="spacer"></div>
+  ${canEdit()?`<button class="btn dark" ${slipCount()<2||BUSY?'disabled':''} onclick="startOnline()">Alle er ferdige, start spillet</button>`
+    :`<p class="small" style="text-align:center;margin:14px 0 0">Dommeren fordeler lagene og starter spillet.</p><button class="btn ghost" onclick="setRole('dommer')">⚖️ Jeg er dommer</button>`}`;
 }
 function startOnline(){
   if(slipCount()<2){toast('For få lapper');return}
@@ -623,12 +625,14 @@ function rosterCard(){
   if(!S.useNames)return '';
   const ps=players(S);if(!ps.length)return '';
   const r=S.roster||{};const free=ps.filter(n=>r[n]==null||r[n]>=S.teams.length);
-  const chip=n=>`<button class="nm" onclick="moveP(${ps.indexOf(n)})">${esc(n)}</button>`;
-  return `<div class="card"><p class="label">Lagene · trykk på et navn for å flytte det</p>
+  const ed=canEdit();
+  const chip=n=>ed?`<button class="nm" onclick="moveP(${ps.indexOf(n)})">${esc(n)}</button>`:`<span class="nm" style="cursor:default">${esc(n)}</span>`;
+  if(!ed&&!Object.keys(r).length)return '';
+  return `<div class="card"><p class="label">Lagene${ed?' · trykk på et navn for å flytte det':''}</p>
     ${S.teams.map((t,i)=>`<b>${esc(t)}</b><div class="names">${members(i).map(chip).join('')||'<span class="small">Ingen ennå</span>'}</div>`).join('')}
     ${free.length?`<b>Ikke fordelt</b><div class="names">${free.map(chip).join('')}</div>`:''}
-    <div class="row2"><button class="btn outline" onclick="fillTeams()">Fordel nye</button><button class="btn outline" onclick="shuffleTeams()">Stokk alle</button></div>
-    <p class="small" style="margin:10px 0 0">De som ikke er fordelt når spillet starter, havner automatisk på det minste laget.</p></div>`;
+    ${ed?`<div class="row2"><button class="btn outline" onclick="fillTeams()">Fordel nye</button><button class="btn outline" onclick="shuffleTeams()">Stokk alle</button></div>
+    <p class="small" style="margin:10px 0 0">De som ikke er fordelt når spillet starter, havner automatisk på det minste laget.</p>`:''}</div>`;
 }
 function vLocalWords(){
   return header(false)+`<h1>Skriv lappene</h1>
@@ -666,9 +670,9 @@ function ensureRoster(s){
     const c=sz.map((v,i)=>v===min?i:-1).filter(i=>i>=0);s.roster[n]=c[Math.floor(Math.random()*c.length)];
   }
 }
-function fillTeams(){act(ensureRoster)}
-function shuffleTeams(){act(s=>{s.roster={};ensureRoster(s)})}
-function moveP(k){const n=players(S)[k];if(n==null)return;act(s=>{s.roster=s.roster||{};const c=s.roster[n];s.roster[n]=(c==null||c>=s.teams.length-1)?0:c+1})}
+function fillTeams(){if(!canEdit())return;act(ensureRoster)}
+function shuffleTeams(){if(!canEdit())return;act(s=>{s.roster={};ensureRoster(s)})}
+function moveP(k){if(!canEdit())return;const n=players(S)[k];if(n==null)return;act(s=>{s.roster=s.roster||{};const c=s.roster[n];s.roster[n]=(c==null||c>=s.teams.length-1)?0:c+1})}
 function explainerOf(s,team){if(!s.useNames)return null;const m=members(team,s);if(!m.length)return null;return m[((s.expIdx||[])[team]||0)%m.length]}
 function advanceExp(s,team){s.expIdx=s.expIdx&&s.expIdx.length===s.teams.length?s.expIdx:s.teams.map(()=>0);s.expIdx[team]=(s.expIdx[team]||0)+1}
 function beginGame(s){s.finalAt=null;
@@ -862,7 +866,6 @@ function vScene(){
     return `<div class="turn">
       <div class="turnhead"><span class="pill">${team} · ${r.name}</span><span class="tsm tleft"></span></div>
       <div class="word pop" id="word">${esc(S.words[S.current]??'')}</div>
-      ${tally('tally')}
       <div class="btnrow">
         <button class="btn outline xl skipbtn" style="flex-direction:column;gap:2px" ${S.current!=null?'':'disabled'} onclick="skip()">Hopp over<small style="font-size:13px;font-weight:700;opacity:.7">−1 poeng</small></button>
         <button class="btn good xl" onclick="correct()">Riktig ✓</button>
