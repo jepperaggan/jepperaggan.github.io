@@ -146,6 +146,35 @@ body[data-role=klokke] .wrap{max-width:none;padding:calc(env(safe-area-inset-top
 .tvnum.cd.done{font-size:min(10vmin,96px)}
 .tvbtns{position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom) + 14px);display:flex;gap:8px;opacity:.45}
 .tvbtns:hover{opacity:1}
+.tgl{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.tgl input{width:24px;height:24px;accent-color:var(--yellow-deep);margin:2px 0 0;flex:none}
+.tgl b{font-size:17px}.tgl small{display:block;color:var(--muted);font-weight:600;font-size:13px;line-height:1.4;margin-top:4px}
+.names{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.nm{border:0;background:var(--field);border-radius:999px;padding:8px 13px;font-weight:700;font-size:15px;cursor:pointer}
+.exp{font-size:22px;font-weight:800;margin:8px 0 0;font-family:"Bricolage Grotesque",sans-serif}
+@media (min-width:700px){body[data-role=scene] .exp{font-size:36px}}
+.awards{display:grid;gap:10px}
+.aw{display:flex;gap:12px;align-items:center;background:var(--field);border-radius:14px;padding:12px 14px;text-align:left}
+.aw .ic{font-size:26px;line-height:1}.aw b{display:block;font-size:15px}.aw span{color:var(--muted);font-weight:600;font-size:14px}
+.tvboard{width:min(92vw,1100px);display:grid;gap:1.2vmin;margin-top:3vmin}
+.tvrow{display:flex;justify-content:space-between;align-items:center;gap:3vmin;background:var(--card);border-radius:2vmin;padding:1.8vmin 3vmin;font-size:min(5vmin,48px);font-weight:800;text-align:left}
+.tvrow small{display:block;font-size:min(2.4vmin,22px);color:var(--muted);font-weight:600}
+.tvrow span{font-family:"Bricolage Grotesque",sans-serif;font-size:min(7vmin,72px)}
+.tvrow.on{box-shadow:inset 0 0 0 .5vmin var(--yellow-deep)}
+.tvfin{justify-content:flex-start;padding-top:2vmin}
+.tvfin .tvboard{margin-top:1.5vmin;gap:.8vmin}
+.tvfin .tvrow{padding:1vmin 3vmin;font-size:min(3.6vmin,36px)}.tvfin .tvrow span{font-size:min(5vmin,50px)}.tvfin .tvrow small{font-size:min(2vmin,18px)}
+.tvfin .tvaw{grid-template-columns:repeat(auto-fit,minmax(min(28vw,330px),1fr));margin-top:2vmin;gap:1vmin}
+.tvfin .tvaw .aw{padding:1.4vmin 2vmin}.tvfin .tvaw .aw .ic{font-size:min(4.5vmin,40px)}.tvfin .tvaw .aw b{font-size:min(2.4vmin,22px)}.tvfin .tvaw .aw span{font-size:min(2.1vmin,19px)}
+.tvteam.sm{font-size:min(10vmin,110px)}
+.tvexp{font-size:min(5vmin,48px);font-weight:800;margin:0}
+.tvcount{font-size:min(6vmin,56px);font-weight:800;margin:1vmin 0 0;font-family:"Bricolage Grotesque",sans-serif}
+.tvaw{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(40vw,420px),1fr));gap:1.5vmin;width:min(92vw,1100px);margin-top:3vmin}
+.tvaw .aw{padding:2vmin 2.5vmin}.tvaw .aw .ic{font-size:min(6vmin,54px)}.tvaw .aw b{font-size:min(3vmin,28px)}.tvaw .aw span{font-size:min(2.6vmin,24px)}
+.tv.enter{animation:tvIn 280ms cubic-bezier(0.23,1,0.32,1)}
+@keyframes tvIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+@keyframes tvFade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){.tv.enter{animation-name:tvFade}}
 .tbig{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:76px;line-height:1;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:-.03em;margin:4px 0}
 .tbig.low,.tsm.low{color:var(--red)}
 .tsm{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
@@ -201,11 +230,11 @@ function rm(arr,w){if(!arr)return;const i=arr.indexOf(w);if(i>=0)arr.splice(i,1)
 const DEV=(()=>{let d=ls('gb_dev');if(!d){d=Math.random().toString(36).slice(2,10);ls('gb_dev',d)}return d})();
 
 /* ===== State ===== */
-let HOSTSETUP=false;
+let HOSTSETUP=false,TVKEY='';
 let MODE=null, ROOM=null, VER=0, LCOUNT=0, DBERR=false, BUSY=false, EXTRA=false, ROLE=null, SHOWALL=false;
 let S=null;
 function freshState(teams){
-  return {phase:'words',teams:teams||['Lag 1','Lag 2','Lag 3'],perPerson:3,dur:60,words:[],batches:[],parti:1,
+  return {phase:'words',teams:teams||['Lag 1','Lag 2','Lag 3'],perPerson:3,dur:60,useNames:true,slips:[],roster:{},expIdx:[],words:[],wordBy:[],batches:[],parti:1,
     round:0,bowl:[],current:null,teamIdx:0,carry:false,carryLeft:0,turnDev:null,timer:null,
     turnGot:[],turnSkipped:[],turnLog:[],roundTaken:{},roundSkipped:{},deleted:[],scores:[],steal:null};
 }
@@ -260,16 +289,12 @@ async function pull(){
     if(j[0].versjon>VER){VER=j[0].versjon;S=j[0].state;render()}
   }catch(e){}
 }
-async function pullCount(){
-  if(MODE!=='online'||S.phase!=='words')return;
-  try{const j=await api(`gulbolle_lapper?rom=eq.${ROOM}&parti=eq.${S.parti||1}&select=tekst`);
-    const n=dedupe(j.map(x=>x.tekst)).length;
-    if(n!==LCOUNT){LCOUNT=n;render()}}catch(e){}
-}
+async function pullCount(){} /* slips now live in the room state */
+function slipCount(){return dedupe((S.slips||[]).map(x=>x.t)).length}
 let pollN=0;
 setInterval(()=>{
   if(MODE!=='online'||document.hidden||!S)return;pollN++;
-  if(S.phase==='words'){if(pollN%2===0){pull();pullCount()}return}
+  if(S.phase==='words'){if(pollN%2===0)pull();return}
   pull(); // every 0.5 s during the game, so the clock appears quickly on every screen
 },500);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&MODE==='online'){pull();pullCount()}});
@@ -393,7 +418,7 @@ function view(){
   if(S.phase==='setup')return vSetup();
   if(S.phase==='words'&&HOSTSETUP&&MODE==='online')return vHostSetup();
   if(S.phase==='words')return MODE==='local'?vLocalWords():((ls(sentKey())&&!EXTRA)?vLobby():vWordForm());
-  if(S.phase==='final')return vFinal();
+  if(S.phase==='final')return ROLE==='klokke'?vClockFinal():vFinal();
   if(!ROLE)return vRole();
   if(ROLE==='dommer')return vJudge();
   if(ROLE==='tilskuer')return vAudience();
@@ -407,7 +432,8 @@ function render(){
   app.innerHTML=view();
   for(const id in keep){const el=$(id);if(el&&(el.dataset.keep!=='0'||id===focusId))el.value=keep[id]}
   if(focusId){const el=$(focusId);if(el){el.focus();try{el.setSelectionRange(sel,sel)}catch(e){}}}
-  document.body.dataset.role=(MODE&&S&&!['words','setup','final'].includes(S.phase)&&ROLE)||'';
+  document.body.dataset.role=(MODE&&S&&!['words','setup'].includes(S.phase)&&(S.phase!=='final'||ROLE==='klokke')&&ROLE)||'';
+  if(ROLE==='klokke'&&S){const tv=app.querySelector('.tv');const k=[S.phase,S.round,S.teamIdx,!!(S.steal&&S.steal.open)].join('|');if(tv&&TVKEY&&k!==TVKEY)tv.classList.add('enter');TVKEY=k}
   fitWord();clockTick();
   keepAwake(!!(S&&MODE&&!['words','setup','final'].includes(S.phase)));
 }
@@ -442,6 +468,8 @@ function teamsCard(){
       <div class="ctl"><button onclick="setTeams(-1)">−</button><output>${S.teams.length}</output><button onclick="setTeams(1)">+</button></div></div>
     ${S.teams.map((t,i)=>`<input class="field" id="team${i}" data-keep="0" value="${esc(t)}" placeholder="Lag ${i+1}" onchange="renameTeam(${i},this.value)" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.blur()">`).join('')}
   </div>
+  <div class="card"><label class="tgl"><input type="checkbox" ${S.useNames?'checked':''} onchange="setNames(this.checked)"><span><b>Bruk navn</b>
+    <small>Alle skriver navnet sitt. Appen fordeler lagene, bestemmer hvem som forklarer, og viser kveldens priser og hvem som skrev hva til slutt.</small></span></label></div>
   <div class="card">
     <p class="label" style="margin:0">Lengde på spillet</p><b id="lenlbl" style="display:block;margin-top:6px;font-size:18px">${lenLabel(S.perPerson)}</b>
     <input type="range" class="len" id="lenr" data-keep="0" min="3" max="6" step="1" value="${S.perPerson}" oninput="$('lenlbl').textContent=lenLabel(+this.value)" onchange="setPerTo(+this.value)">
@@ -453,6 +481,7 @@ function renameTeam(i,v){act(s=>{s.teams[i]=(v||'').trim()||('Lag '+(i+1))})}
 function lenLabel(n){return (n<=3?'Kort':n>=6?'Langt':'Middels')+' · '+n+' lapper per person'}
 function setPerTo(n){act(s=>{s.perPerson=Math.min(6,Math.max(3,n))})}
 function setPer(d){act(s=>{s.perPerson=Math.min(6,Math.max(1,s.perPerson+d))})}
+function setNames(v){act(s=>{s.useNames=!!v})}
 function setDur(d){act(s=>{s.dur=Math.min(180,Math.max(20,(s.dur||60)+d))})}
 function vSetup(){
   return header(false)+`<h1>Lag og lapper</h1>
@@ -466,6 +495,7 @@ function vSetup(){
 let BONUS=false;
 function wordInputs(){
   const n=S.perPerson+(BONUS?1:0);let h='';
+  if(S.useNames)h+=`<input class="field" id="pname" maxlength="30" autocomplete="off" placeholder="${EXTRA?'Navnet til den som skriver':'Ditt navn'}" value="${MODE==='online'&&!EXTRA?esc(ls('gb_name')||''):''}" style="font-weight:800">`;
   for(let i=0;i<n;i++)h+=`<input class="field" id="w${i}" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="${i<S.perPerson?'Lapp '+(i+1):'Bonuslapp (valgfri)'}" enterkeyhint="${i<n-1?'next':'done'}" onkeydown="wordKey(event,${i})">`;
   if(!BONUS)h+=`<button class="btn ghost" style="margin-top:6px" onclick="addBonus()">+ Én til, jeg har en god en</button>`;
   return h;
@@ -478,17 +508,24 @@ function vWordForm(){
   return header(false)+`<h1>${EXTRA?'Lapper for en til':'Skriv dine '+S.perPerson+' lapper'}</h1>
   <p class="lede">Ting, personer, filmer, steder … alt som kan forklares, mimes og lages én lyd av. Ingen andre ser hva du skriver.</p>
   <div class="card">${wordInputs()}<button class="btn primary" ${BUSY?'disabled':''} onclick="sendWords()">Legg i bollen</button></div>
-  <div class="count"><b id="lcount">${LCOUNT}</b><span>lapper i bollen så langt</span></div>
+  <div class="count"><b id="lcount">${slipCount()}</b><span>lapper i bollen så langt</span></div>
   <div class="spacer"></div>
   ${EXTRA?'<button class="btn ghost" onclick="EXTRA=false;render()">Avbryt</button>':`<button class="btn ghost" onclick="ls(sentKey(),'1');render()">Jeg har allerede skrevet lapper</button>`}`;
 }
-async function sendWords(){
+function readName(){
+  if(!S.useNames)return '';
+  const el=$('pname');const v=el?(el.value||'').trim().replace(/\s+/g,' ').slice(0,30):'';
+  if(!v){toast('Skriv navnet ditt først');el&&el.focus();return null}
+  return v;
+}
+function sendWords(){
   const got=readWords();if(!got.length){toast('Skriv minst én lapp');return}
-  BUSY=true;render();
-  try{await api('gulbolle_lapper',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(got.map(t=>({rom:ROOM,parti:S.parti||1,tekst:t})))});
-    BUSY=false;clearWords();ls(sentKey(),'1');EXTRA=false;buzz(25);render();
-    toast(got.length+' '+(got.length===1?'lapp':'lapper')+' i bollen!');pullCount();document.activeElement&&document.activeElement.blur();
-  }catch(e){BUSY=false;render();toast('Klarte ikke å sende, prøv igjen')}
+  const by=readName();if(by==null)return;
+  if(by&&!EXTRA)ls('gb_name',by);
+  clearWords();const nm=$('pname');if(nm&&EXTRA)nm.value='';
+  act(s=>{if(s.phase!=='words')return;(s.slips=s.slips||[]).push(...got.map(t=>({t,by})))});
+  ls(sentKey(),'1');EXTRA=false;buzz(25);render();
+  toast(got.length+' '+(got.length===1?'lapp':'lapper')+' i bollen!');document.activeElement&&document.activeElement.blur();
 }
 function vHostSetup(){
   return header(false)+`<span class="pill">Kode ${ROOM}</span>
@@ -503,42 +540,75 @@ function vLobby(){
   return header(false)+`<span class="pill">Kode ${ROOM}</span>
   <h1 style="margin-top:12px">Bollen fylles</h1>
   <p class="lede">Alle går inn på <b>raggan.no/gulbolle</b>, trykker «Bli med» og skriver koden <b>${ROOM}</b>.</p>
-  <div class="count"><b id="lcount">${LCOUNT}</b><span>lapper i bollen<br>oppdateres av seg selv</span></div>
+  <div class="count"><b id="lcount">${slipCount()}</b><span>lapper i bollen<br>oppdateres av seg selv</span></div>
+  ${S.useNames&&players(S).length?`<p class="small" style="margin:10px 2px 0"><b>Har skrevet:</b> ${players(S).map(esc).join(', ')}</p>`:''}
   <button class="btn outline" onclick="shareLink()">Del lenken</button>
   <button class="btn ghost" onclick="EXTRA=true;render()">Skriv lapper for en uten mobil</button>
+  ${rosterCard()}
   ${teamsCard()}<div class="spacer"></div>
-  <button class="btn dark" ${LCOUNT<2||BUSY?'disabled':''} onclick="startOnline()">Alle er ferdige, start spillet</button>`;
+  <button class="btn dark" ${slipCount()<2||BUSY?'disabled':''} onclick="startOnline()">Alle er ferdige, start spillet</button>`;
 }
-async function startOnline(){
-  if(!confirm('Er alle ferdige med lappene? '+LCOUNT+' lapper i bollen.'))return;
-  BUSY=true;render();
-  try{const j=await api(`gulbolle_lapper?rom=eq.${ROOM}&parti=eq.${S.parti||1}&select=tekst&order=laget.asc`);BUSY=false;
-    const texts=j.map(x=>x.tekst);if(dedupe(texts).length<2){render();toast('For få lapper');return}
-    act(s=>{if(s.phase!=='words')return;s.words=texts;s.deleted=[];beginGame(s)});
-  }catch(e){BUSY=false;render();toast('Nettfeil, prøv igjen')}
+function startOnline(){
+  if(slipCount()<2){toast('For få lapper');return}
+  if(!confirm('Er alle ferdige med lappene? '+slipCount()+' lapper i bollen.'))return;
+  act(s=>{if(s.phase!=='words')return;buildWords(s);s.deleted=[];beginGame(s)});
+}
+function rosterCard(){
+  if(!S.useNames)return '';
+  const ps=players(S);if(!ps.length)return '';
+  const r=S.roster||{};const free=ps.filter(n=>r[n]==null||r[n]>=S.teams.length);
+  const chip=n=>`<button class="nm" onclick="moveP(${ps.indexOf(n)})">${esc(n)}</button>`;
+  return `<div class="card"><p class="label">Lagene · trykk på et navn for å flytte det</p>
+    ${S.teams.map((t,i)=>`<b>${esc(t)}</b><div class="names">${members(i).map(chip).join('')||'<span class="small">Ingen ennå</span>'}</div>`).join('')}
+    ${free.length?`<b>Ikke fordelt</b><div class="names">${free.map(chip).join('')}</div>`:''}
+    <div class="row2"><button class="btn outline" onclick="fillTeams()">Fordel nye</button><button class="btn outline" onclick="shuffleTeams()">Stokk alle</button></div>
+    <p class="small" style="margin:10px 0 0">De som ikke er fordelt når spillet starter, havner automatisk på det minste laget.</p></div>`;
 }
 function vLocalWords(){
   return header(false)+`<h1>Skriv lappene</h1>
   <p class="lede">Hver person skriver ${S.perPerson} ting, trykker «Legg i bollen» og sender mobilen videre.</p>
   <div class="card">${wordInputs()}<button class="btn primary" onclick="addBatch()">Legg i bollen</button></div>
-  <div class="count"><b>${S.words.length}</b><span>lapper i bollen<br>fra ${S.batches.length} ${S.batches.length===1?'person':'personer'}</span></div>
+  <div class="count"><b>${slipCount()}</b><span>lapper i bollen<br>fra ${S.batches.length} ${S.batches.length===1?'person':'personer'}</span></div>
   ${S.batches.length?'<button class="btn ghost" onclick="undoBatch()">Angre siste person</button>':''}
   <div class="spacer"></div>
-  <button class="btn dark" ${S.words.length<2?'disabled':''} onclick="act(beginGame)">Alle er ferdige, start spillet</button>
+  <button class="btn dark" ${slipCount()<2?'disabled':''} onclick="act(s=>{buildWords(s);s.deleted=[];beginGame(s)})">Alle er ferdige, start spillet</button>
   <button class="btn ghost" onclick="act(s=>s.phase='setup')">Tilbake til lag</button>`;
 }
-function addBatch(){const got=readWords();if(!got.length){toast('Skriv minst én lapp');return}clearWords();act(s=>{s.words.push(...got);s.batches.push(got.length)});buzz(20);toast(got.length+' i bollen. Send mobilen videre!');document.activeElement&&document.activeElement.blur()}
-function undoBatch(){act(s=>{const k=s.batches.pop();if(k)s.words.splice(s.words.length-k,k)})}
+function addBatch(){const got=readWords();if(!got.length){toast('Skriv minst én lapp');return}const by=readName();if(by==null)return;clearWords();const nm=$('pname');if(nm)nm.value='';act(s=>{(s.slips=s.slips||[]).push(...got.map(t=>({t,by})));s.batches.push(got.length)});buzz(20);toast(got.length+' i bollen. Send mobilen videre!');document.activeElement&&document.activeElement.blur()}
+function undoBatch(){act(s=>{const k=s.batches.pop();if(k)s.slips.splice(s.slips.length-k,k)})}
 
 /* ---------- GAME ENGINE ---------- */
 function normWord(t){return String(t).normalize('NFKC').toLowerCase().replace(/[\s ]+/g,' ').replace(/^[\s"'«»]+|[\s"'«».!?,]+$/g,'')}
 function dedupe(list){const seen=new Set();return list.filter(t=>{const k=normWord(t);if(!k||seen.has(k))return false;seen.add(k);return true})}
-function resetTurn(s){s.turnGot=[];s.turnSkipped=[];s.turnLog=[];s.steal=null;s.current=null;s.turnDev=null;s.timer=null}
+function resetTurn(s){s.turnExp=null;s.turnStart=null;s.turnGot=[];s.turnSkipped=[];s.turnLog=[];s.steal=null;s.current=null;s.turnDev=null;s.timer=null}
 function fillBowl(s){const del=s.deleted||[];s.bowl=shuffle(s.words.map((_,i)=>i).filter(i=>!del.includes(i)));s.roundTaken={};s.roundSkipped={};resetTurn(s)}
+function buildWords(s){
+  const map=new Map();s.words=[];s.wordBy=[];
+  for(const sl of (s.slips||[])){const k=normWord(sl.t);if(!k)continue;
+    if(map.has(k)){const i=map.get(k);if(sl.by&&!s.wordBy[i].includes(sl.by))s.wordBy[i].push(sl.by);continue}
+    map.set(k,s.words.length);s.words.push(sl.t);s.wordBy.push(sl.by?[sl.by]:[])}
+  const gone=(s.slips||[]).length-s.words.length;
+  if(gone>0)setTimeout(()=>toast(gone+(gone===1?' duplikat':' duplikater')+' fjernet'),50);
+}
+function players(s){const seen=new Set(),out=[];(s.slips||[]).forEach(x=>{const n=(x.by||'').trim(),k=n.toLowerCase();if(n&&!seen.has(k)){seen.add(k);out.push(n)}});return out}
+function members(i,s=S){const r=s.roster||{};return players(s).filter(n=>r[n]===i)}
+function ensureRoster(s){
+  s.roster=s.roster||{};const T=s.teams.length,ps=players(s);
+  for(const n of Object.keys(s.roster))if(s.roster[n]>=T||!ps.includes(n))delete s.roster[n];
+  for(const n of shuffle(ps.filter(n=>s.roster[n]==null))){
+    const sz=s.teams.map((_,i)=>ps.filter(p=>s.roster[p]===i).length),min=Math.min(...sz);
+    const c=sz.map((v,i)=>v===min?i:-1).filter(i=>i>=0);s.roster[n]=c[Math.floor(Math.random()*c.length)];
+  }
+}
+function fillTeams(){act(ensureRoster)}
+function shuffleTeams(){act(s=>{s.roster={};ensureRoster(s)})}
+function moveP(k){const n=players(S)[k];if(n==null)return;act(s=>{s.roster=s.roster||{};const c=s.roster[n];s.roster[n]=(c==null||c>=s.teams.length-1)?0:c+1})}
+function explainerOf(s,team){if(!s.useNames)return null;const m=members(team,s);if(!m.length)return null;return m[((s.expIdx||[])[team]||0)%m.length]}
+function advanceExp(s,team){s.expIdx=s.expIdx&&s.expIdx.length===s.teams.length?s.expIdx:s.teams.map(()=>0);s.expIdx[team]=(s.expIdx[team]||0)+1}
 function beginGame(s){
-  const del=s.deleted||[];s.words=s.words.filter((_,i)=>!del.includes(i));s.deleted=[];
-  const before=s.words.length;s.words=dedupe(s.words);const gone=before-s.words.length;
-  if(gone)setTimeout(()=>toast(gone+(gone===1?' duplikat':' duplikater')+' fjernet'),50);
+  const del=s.deleted||[];const keep=s.words.map((_,i)=>i).filter(i=>!del.includes(i));
+  s.words=keep.map(i=>s.words[i]);s.wordBy=keep.map(i=>(s.wordBy||[])[i]||[]);s.deleted=[];
+  if(s.useNames)ensureRoster(s);s.expIdx=s.teams.map(()=>0);
   s.seen=[];s.history=[];s.scores=s.teams.map(()=>[0,0,0]);s.round=0;s.teamIdx=0;s.carry=false;s.carryLeft=0;s.dur=s.dur||60;fillBowl(s);s.phase='ready';
 }
 function draw(s){
@@ -561,16 +631,16 @@ function startTurn(){
   unlockAudio();const ti=S.teamIdx,rd=S.round;
   act(s=>{if(s.phase!=='ready'||s.teamIdx!==ti||s.round!==rd)return;
     const ms=(s.carry&&s.carryLeft>1000)?s.carryLeft:(s.dur||60)*1000;
-    resetTurn(s);s.carry=false;s.carryLeft=0;s.turnDev=DEV;s.timer={running:true,endsAt:Date.now()+ms,left:null,total:ms};draw(s);s.phase='turn'});
+    resetTurn(s);s.carry=false;s.carryLeft=0;s.turnDev=DEV;s.turnExp=explainerOf(s,s.teamIdx);s.turnStart=Date.now();s.timer={running:true,endsAt:Date.now()+ms,left:null,total:ms};draw(s);s.phase='turn'});
 }
 function correct(){
   if(!guard()||S.current==null)return;const w=S.current;buzz(25);
-  act(s=>{if(s.phase!=='turn'||!s.bowl.includes(w))return;takeWord(s,w,s.teamIdx);s.turnGot.push(w);(s.turnLog=s.turnLog||[]).push({t:'got',w});afterRemove(s)});
+  act(s=>{if(s.phase!=='turn'||!s.bowl.includes(w))return;takeWord(s,w,s.teamIdx);s.turnGot.push(w);(s.turnLog=s.turnLog||[]).push({t:'got',w,at:Date.now()});afterRemove(s)});
 }
 function skip(){
   if(!guard()||S.current==null)return;const w=S.current;buzz(15);
   act(s=>{if(s.phase!=='turn'||!s.bowl.includes(w))return;s.bowl=s.bowl.filter(i=>i!==w);(s.roundSkipped=s.roundSkipped||{})[w]=s.teamIdx;
-    (s.turnSkipped=s.turnSkipped||[]).push(w);(s.turnLog=s.turnLog||[]).push({t:'skip',w});s.scores[s.teamIdx][s.round]--;afterRemove(s)});
+    (s.turnSkipped=s.turnSkipped||[]).push(w);(s.turnLog=s.turnLog||[]).push({t:'skip',w,at:Date.now()});s.scores[s.teamIdx][s.round]--;afterRemove(s)});
 }
 function undoLast(){
   if(!myTurn())return;
@@ -593,21 +663,23 @@ function steal(i){
 function archiveTurn(s){
   const st=s.steal;const stolen=st&&st.by!=null?{w:st.w,by:st.by}:null;
   if(!s.turnDev&&!(s.turnGot||[]).length&&!(s.turnSkipped||[]).length&&!stolen)return;
-  (s.history=s.history||[]).push({team:s.teamIdx,round:s.round,got:(s.turnGot||[]).slice(),skipped:(s.turnSkipped||[]).slice(),stolen});
+  const gotSet=new Set(s.turnGot||[]);let prev=s.turnStart||0;const takes=[];
+  (s.turnLog||[]).filter(e=>e.at).sort((a,b)=>a.at-b.at).forEach(e=>{if(e.t==='got'&&gotSet.has(e.w)&&prev)takes.push({w:e.w,dt:e.at-prev});prev=e.at});
+  (s.history=s.history||[]).push({team:s.teamIdx,round:s.round,exp:s.turnExp||null,got:(s.turnGot||[]).slice(),skipped:(s.turnSkipped||[]).slice(),stolen,takes});
 }
-function nextTurn(){const ti=S.teamIdx;act(s=>{if(s.phase!=='summary'||s.teamIdx!==ti)return;archiveTurn(s);s.teamIdx=nextTeam(ti);resetTurn(s);s.phase='ready'})}
+function nextTurn(){const ti=S.teamIdx;act(s=>{if(s.phase!=='summary'||s.teamIdx!==ti)return;archiveTurn(s);advanceExp(s,ti);s.teamIdx=nextTeam(ti);resetTurn(s);s.phase='ready'})}
 function nextRound(carry){const rd=S.round;act(s=>{if(s.phase!=='summary'||s.round!==rd||s.bowl.length)return;archiveTurn(s);s.round++;fillBowl(s);
-  s.carry=!!carry&&s.carryLeft>1000;if(!s.carry){s.carryLeft=0;s.teamIdx=nextTeam(s.teamIdx)}s.phase='ready'})}
+  s.carry=!!carry&&s.carryLeft>1000;if(!s.carry){s.carryLeft=0;advanceExp(s,s.teamIdx);s.teamIdx=nextTeam(s.teamIdx)}s.phase='ready'})}
 function toFinal(){act(s=>{if(s.phase==='summary'&&!s.bowl.length){archiveTurn(s);s.phase='final'}})}
 function endRoundEarly(){
   closeSheet('menu');if(!S||['setup','words','final'].includes(S.phase))return;
   if(!confirm('Avslutte runde '+(S.round+1)+' nå? Lappene som er igjen teller ikke.'))return;
-  const rd=S.round;act(s=>{if(s.round!==rd)return;if(s.phase==='summary')archiveTurn(s);if(s.round<2){s.round++;fillBowl(s);s.carry=false;s.carryLeft=0;s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'}else s.phase='final'});
+  const rd=S.round;act(s=>{if(s.round!==rd)return;if(s.phase==='summary'){archiveTurn(s);advanceExp(s,s.teamIdx)}if(s.round<2){s.round++;fillBowl(s);s.carry=false;s.carryLeft=0;s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'}else s.phase='final'});
 }
 function restartSameTeams(ask=true){
   closeSheet('menu');
   if(ask&&!confirm('Starte på nytt med nye lapper? Poengene nullstilles, lagene beholdes.'))return;
-  act(s=>{s.parti=(s.parti||1)+1;s.words=[];s.batches=[];s.scores=[];s.bowl=[];s.deleted=[];s.roundTaken={};s.roundSkipped={};resetTurn(s);s.phase='words'});
+  act(s=>{s.parti=(s.parti||1)+1;s.slips=[];s.words=[];s.wordBy=[];s.history=[];s.batches=[];s.scores=[];s.bowl=[];s.deleted=[];s.roundTaken={};s.roundSkipped={};resetTurn(s);s.phase='words'});
   LCOUNT=0;EXTRA=false;render();
 }
 
@@ -709,6 +781,7 @@ function vScene(){
     <div class="card" style="text-align:center;padding:30px 18px;margin-top:18px">
       <p class="label" style="margin:0">${S.carry?'Fortsetter med resten av tiden':'Nå er det'}</p>
       <h1 class="big-team">${team}</h1>
+      ${explainerOf(S,S.teamIdx)?`<p class="exp">${esc(explainerOf(S,S.teamIdx))} ${S.round===1?'mimer':S.round===2?'lager lyden':'forklarer'}</p>`:''}
       <p class="rule" style="margin-top:14px">${r.rule}</p>
       <button class="btn primary xl" onclick="startTurn()">Start${S.carry&&S.carryLeft>1000?' ('+fmt(S.carryLeft)+' s)':''}</button>
     </div>
@@ -779,7 +852,7 @@ function vJudge(){
   const r=ROUNDS[S.round],team=esc(S.teams[S.teamIdx]),t=S.timer;
   let status,main='';
   if(S.phase==='ready'){
-    status=`Venter på at ${team} trykker Start`;
+    status=`Venter på at ${team}${explainerOf(S,S.teamIdx)?' ('+esc(explainerOf(S,S.teamIdx))+')':''} trykker Start`;
     main=`<div class="card"><div class="stepper"><p class="label" style="margin:0">Sekunder per tur</p>
       <div class="ctl"><button onclick="setDur(-10)">−</button><output>${S.dur||60}</output><button onclick="setDur(10)">+</button></div></div>
       ${S.carry&&S.carryLeft>1000?`<p class="small" style="margin:10px 0 0">${team} fortsetter med ${fmt(S.carryLeft)} s.</p>`:''}</div>`;
@@ -818,14 +891,63 @@ function vJudge(){
 function goFull(){const d=document.documentElement;try{(d.requestFullscreen||d.webkitRequestFullscreen).call(d)}catch(e){}}
 function vClock(){
   const r=ROUNDS[S.round],team=esc(S.teams[S.teamIdx]);let mid;
-  if(S.phase==='turn')mid=`<p class="clabel">${team} · ${r.name}</p>
-    <div class="jring tv"><svg viewBox="0 0 200 200"><circle class="trk" cx="100" cy="100" r="90"/><circle class="prg" cx="100" cy="100" r="90" style="stroke-dasharray:${565.49*timeFrac()} 600"/></svg><div class="tbig tleft num"></div></div>`;
+  if(S.phase==='turn'){const n=(S.turnGot||[]).length;mid=`<p class="clabel">${team}${S.turnExp?' · '+esc(S.turnExp):''} · ${r.name}</p>
+    <div class="jring tv"><svg viewBox="0 0 200 200"><circle class="trk" cx="100" cy="100" r="90"/><circle class="prg" cx="100" cy="100" r="90" style="stroke-dasharray:${565.49*timeFrac()} 600"/></svg><div class="tbig tleft num"></div></div>
+    <p class="tvcount">${n} ${n===1?'riktig':'riktige'}</p>`}
   else if(S.phase==='summary'&&S.steal&&S.steal.open)mid=`<p class="clabel">Siste lapp kan stjeles!</p><div class="tvnum cd sleft">10</div>`;
-  else if(S.phase==='summary'){const net=turnNet();mid=`<p class="clabel">${S.bowl.length?'Tiden er ute':'Runde '+(S.round+1)+' ferdig'}</p><div class="tvteam">${team} ${net>=0?'+':''}${net}</div>`}
-  else mid=`<p class="clabel">Runde ${S.round+1} av 3 · ${r.name}</p><div class="tvteam">${team}</div><p class="tvsub">${r.rule}</p>`;
+  else if(S.phase==='summary'){const net=turnNet();mid=`<p class="clabel">${S.bowl.length?'Tiden er ute':'Runde '+(S.round+1)+' ferdig'}</p><div class="tvteam sm">${team} ${net>=0?'+':''}${net}</div>${tvBoard(-1)}`}
+  else{const ex=explainerOf(S,S.teamIdx);mid=`<p class="clabel">Runde ${S.round+1} av 3 · ${r.name}</p><div class="tvteam sm">${team}</div>${ex?`<p class="tvexp">${esc(ex)} ${S.round===1?'mimer':S.round===2?'lager lyden':'forklarer'}</p>`:''}${tvBoard(S.teamIdx)}`}
   const needTap=SOUND&&(!AC||AC.state!=='running');
   return `<div class="tv">${mid}${needTap?'<p class="small">Trykk på skjermen for å slå på lyden</p>':''}</div>
   <div class="tvbtns">${document.fullscreenEnabled||document.webkitFullscreenEnabled?'<button class="iconbtn" onclick="goFull()">Fullskjerm</button>':''}<button class="iconbtn" onclick="toggleSound()">${SOUND?'🔊':'🔇'}</button><button class="iconbtn" onclick="openMenu()">Meny</button></div>`;
+}
+
+function tvBoard(hl){
+  return `<div class="tvboard">${S.teams.map((t,i)=>`<div class="tvrow ${i===hl?'on':''}"><div>${esc(t)}${S.useNames&&members(i).length?`<small>${members(i).map(esc).join(', ')}</small>`:''}</div><span>${total(i)}</span></div>`).join('')}</div>`;
+}
+function vClockFinal(){
+  const idx=S.teams.map((_,i)=>i).sort((a,b)=>total(b)-total(a));const best=total(idx[0]);const win=idx.filter(i=>total(i)===best);
+  const A=awards();
+  return `<div class="tv tvfin"><div style="font-size:min(7vmin,64px);line-height:1">🏆</div>
+    <div class="tvteam sm">${win.length>1?'Uavgjort!':esc(S.teams[win[0]])+' vant!'}</div>
+    <div class="tvboard">${idx.map(i=>`<div class="tvrow ${total(i)===best?'on':''}"><div>${esc(S.teams[i])}${S.useNames&&members(i).length?`<small>${members(i).map(esc).join(', ')}</small>`:''}</div><span>${total(i)}</span></div>`).join('')}</div>
+    ${A.length?`<div class="tvaw">${awardHtml(A)}</div>`:''}</div>
+  <div class="tvbtns"><button class="iconbtn" onclick="openMenu()">Meny</button></div>`;
+}
+
+/* ---------- AWARDS ---------- */
+function awards(){
+  const H=S.history||[],A=[],W=w=>'«'+esc(S.words[w])+'»';
+  const ex={};H.forEach(h=>{if(!h.exp)return;const e=ex[h.exp]||(ex[h.exp]={got:0,turns:0,skip:0});e.got+=h.got.length;e.turns++;e.skip+=h.skipped.length});
+  const exs=Object.entries(ex);
+  if(exs.length){
+    const [bn,b]=exs.sort((a,c)=>c[1].got-a[1].got||(c[1].got/c[1].turns)-(a[1].got/a[1].turns))[0];
+    if(b.got)A.push(['🎤','Kveldens forklarer',`${esc(bn)} · ${b.got} lapper på ${b.turns} ${b.turns===1?'tur':'turer'}`]);
+    const [sn,sv]=exs.slice().sort((a,c)=>c[1].skip-a[1].skip)[0];
+    if(sv.skip)A.push(['🙈','Mest hoppet over',`${esc(sn)} · ${sv.skip} ${sv.skip===1?'gang':'ganger'}`]);
+  }
+  let f=null;H.forEach(h=>(h.takes||[]).forEach(t=>{if(h.got.includes(t.w)&&t.dt>300&&(!f||t.dt<f.dt))f={...t,exp:h.exp}}));
+  if(f)A.push(['⚡','Raskeste lapp',`${W(f.w)} på ${(f.dt/1000).toFixed(1).replace('.',',')} s${f.exp?' · '+esc(f.exp):''}`]);
+  const sk={};H.forEach(h=>h.skipped.forEach(w=>sk[w]=(sk[w]||0)+1));
+  const hard=Object.entries(sk).sort((a,b)=>b[1]-a[1])[0];
+  if(hard)A.push(['🧱','Vanskeligste lapp',`${W(+hard[0])} · hoppet over ${hard[1]} ${hard[1]===1?'gang':'ganger'}`]);
+  const st={};H.forEach(h=>{if(h.stolen)st[h.stolen.by]=(st[h.stolen.by]||0)+1});
+  const thief=Object.entries(st).sort((a,b)=>b[1]-a[1])[0];
+  if(thief)A.push(['🦊','Lappetyvene',`${esc(S.teams[+thief[0]])} · ${thief[1]} ${thief[1]===1?'lapp':'lapper'} stjålet`]);
+  if(S.useNames){
+    const au={};Object.entries(sk).forEach(([w,n])=>((S.wordBy||[])[+w]||[]).forEach(a=>au[a]=(au[a]||0)+n));
+    const sly=Object.entries(au).sort((a,b)=>b[1]-a[1])[0];
+    if(sly)A.push(['😈','Lumskeste lappeskriver',`${esc(sly[0])} · lappene ble hoppet over ${sly[1]} ${sly[1]===1?'gang':'ganger'}`]);
+  }
+  return A;
+}
+function awardHtml(A){return A.map(([ic,t,d])=>`<div class="aw"><span class="ic">${ic}</span><div><b>${t}</b><span>${d}</span></div></div>`).join('')}
+let SHOWWHO=false;
+function whoWrote(){
+  if(!S.useNames||!(S.wordBy||[]).some(a=>a&&a.length))return '';
+  const rows=S.words.map((w,i)=>({w,by:(S.wordBy[i]||[]).join(' og ')||'Ukjent'})).sort((a,b)=>a.by.localeCompare(b.by,'no')||a.w.localeCompare(b.w,'no'));
+  return `<div class="card"><button class="btn outline" style="margin:0" onclick="SHOWWHO=!SHOWWHO;render()">${SHOWWHO?'Skjul':'Vis'} hvem som skrev hva</button>
+    ${SHOWWHO?`<ul class="list" style="margin-top:12px">${rows.map(r=>`<li><span>${esc(r.w)}</span><span class="chip">${esc(r.by)}</span></li>`).join('')}</ul>`:''}</div>`;
 }
 
 /* ---------- AUDIENCE ---------- */
@@ -845,7 +967,10 @@ function vFinal(){
   return header(false)+`<div style="text-align:center;margin-top:10px"><div class="trophy">🏆</div>
   <h1 style="margin-top:10px">${win.length>1?'Uavgjort!':esc(S.teams[win[0]])+' vant!'}</h1>
   <p class="lede">${win.length>1?win.map(i=>esc(S.teams[i])).join(' og ')+' med '+best+' poeng hver':best+' poeng totalt'}</p></div>
-  <div class="card">${scoreTable(false)}</div><div class="spacer"></div>
+  <div class="card">${scoreTable(false)}</div>
+  ${(()=>{const A=awards();return A.length?`<div class="card"><p class="label">Kveldens priser</p><div class="awards">${awardHtml(A)}</div></div>`:''})()}
+  ${whoWrote()}
+  <div class="spacer"></div>
   <button class="btn primary" onclick="restartSameTeams(false)">Nytt spill med nye lapper</button>
   <button class="btn outline" onclick="act(beginGame)">Spill igjen med samme lapper</button>
   <button class="btn ghost" onclick="leaveGame()">Avslutt</button>`;
