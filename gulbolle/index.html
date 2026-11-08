@@ -350,7 +350,7 @@ let SOUND=ls('gb_sound')!=='0',AC=null;
 function unlockAudio(){
   if(!SOUND)return;
   try{if('audioSession' in navigator)navigator.audioSession.type='playback'}catch(e){}
-  try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}
+  try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state!=='running')AC.resume().then(()=>{if(ROLE==='klokke')render()}).catch(()=>{})}catch(e){}
 }
 document.addEventListener('touchend',unlockAudio,{passive:true});document.addEventListener('click',unlockAudio);
 function tone(f,d,v=.25,type='square',delay=0){
@@ -360,6 +360,7 @@ function tone(f,d,v=.25,type='square',delay=0){
 }
 function beep(){tone(880,.09,.2)}
 function horn(){tone(196,1.1,.35,'sawtooth');tone(147,1.1,.3,'sawtooth',.05)}
+function testSound(){if(!SOUND){SOUND=true;ls('gb_sound','1')}unlockAudio();setTimeout(()=>{beep();setTimeout(beep,350);setTimeout(horn,800)},80);toast('Du skal høre to pip og et signal')}
 function toggleSound(){SOUND=!SOUND;ls('gb_sound',SOUND?'1':'0');if(SOUND){unlockAudio();setTimeout(()=>tone(660,.15),50)}render()}
 
 /* ===== Clock (runs on every phone) ===== */
@@ -571,8 +572,9 @@ function vTvLobby(){
     <div class="tvteam" style="letter-spacing:.12em">${ROOM}</div>
     <p class="tvcount">${n} ${n===1?'lapp':'lapper'} i bollen${S.useNames?' · '+ps.length+(ps.length===1?' person':' personer'):''}</p>
     ${S.useNames&&ps.length?`<p class="tvsub" style="max-width:80vw">${ps.map(esc).join(' · ')}</p>`:''}
+    ${SOUND&&(!AC||AC.state!=='running')?'<p class="small">Trykk på skjermen for å slå på lyden</p>':''}
   </div>
-  <div class="tvbtns">${document.fullscreenEnabled||document.webkitFullscreenEnabled?'<button class="iconbtn" onclick="goFull()">Fullskjerm</button>':''}<button class="iconbtn" onclick="setRole(null)">Tilbake</button></div>`;
+  <div class="tvbtns"><button class="iconbtn" onclick="testSound()">Test lyd</button>${document.fullscreenEnabled||document.webkitFullscreenEnabled?'<button class="iconbtn" onclick="goFull()">Fullskjerm</button>':''}<button class="iconbtn" onclick="setRole(null)">Tilbake</button></div>`;
 }
 function vLobby(){
   return header(false)+`<span class="pill">Kode ${ROOM}</span>
@@ -959,7 +961,7 @@ function vClock(){
     ${sv?tvBoard(S.teamIdx):`<p class="tvsub">${S.bowl.length} lapper i bollen${S.round===2?' · stillingen er hemmelig til slutt':''}</p>`}`}
   const needTap=SOUND&&(!AC||AC.state!=='running');
   return `<div class="tv">${mid}${needTap?'<p class="small">Trykk på skjermen for å slå på lyden</p>':''}</div>
-  <div class="tvbtns">${document.fullscreenEnabled||document.webkitFullscreenEnabled?'<button class="iconbtn" onclick="goFull()">Fullskjerm</button>':''}<button class="iconbtn" onclick="toggleSound()">${SOUND?'🔊':'🔇'}</button><button class="iconbtn" onclick="openMenu()">Meny</button></div>`;
+  <div class="tvbtns">${document.fullscreenEnabled||document.webkitFullscreenEnabled?'<button class="iconbtn" onclick="goFull()">Fullskjerm</button>':''}<button class="iconbtn" onclick="testSound()">Test lyd</button><button class="iconbtn" onclick="toggleSound()">${SOUND?'🔊':'🔇'}</button><button class="iconbtn" onclick="openMenu()">Meny</button></div>`;
 }
 
 function tvBoard(hl){
