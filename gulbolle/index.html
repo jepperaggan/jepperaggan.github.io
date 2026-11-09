@@ -197,6 +197,13 @@ body[data-role=klokke] .wrap{max-width:none;padding:calc(env(safe-area-inset-top
 .sheet .panel{max-height:85dvh;overflow:auto}
 td .mini{border:0;background:var(--field);border-radius:8px;width:26px;height:26px;font-weight:800;cursor:pointer;margin:0 2px}
 .newer{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 10px);transform:translateX(-50%);z-index:20;border:0;border-radius:999px;padding:12px 18px;background:var(--pink);color:var(--ink);font-weight:800;font-size:14px;box-shadow:var(--shadow);cursor:pointer}
+.prog{margin-top:14px}
+.progtop{display:flex;align-items:baseline;gap:10px}
+.progtop b{font-family:Unbounded,sans-serif;font-size:24px}
+.progtop span{color:var(--muted);font-size:14px;font-weight:600}
+.progbar{position:relative;height:12px;border-radius:6px;background:rgba(43,18,64,.12);margin-top:8px;overflow:hidden}
+.progbar div{height:100%;background:var(--ink);border-radius:6px;transition:width 400ms cubic-bezier(0.23,1,0.32,1)}
+.progbar i{position:absolute;top:0;bottom:0;width:2px;background:var(--mustard)}
 /* ===== Final show (TV) ===== */
 .tvstage{position:relative;flex:1;min-height:calc(100dvh - 24px)}
 .scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vmin;text-align:center;opacity:0;visibility:hidden;transition:opacity 450ms cubic-bezier(0.23,1,0.32,1),visibility 0s 450ms}
@@ -985,6 +992,18 @@ function wordList(list,empty){
   if(!list.length)return `<p class="empty">${empty}</p>`;
   return `<ul class="list tap">${list.map(w=>`<li onclick="openWord(${w})"><span>${label(w)}</span>${chip(w)}</li>`).join('')}</ul>`;
 }
+/* how far the whole game has come: three rounds of the same slips */
+function gameProgress(){
+  if(S.phase==='final')return {pct:100,done:0,active:0};
+  const active=Math.max(1,S.words.length-(S.deleted||[]).length);
+  const done=Math.max(0,Math.min(active,active-S.bowl.length));
+  return {pct:Math.round(((S.round||0)+done/active)/3*100),done,active};
+}
+function progressHtml(){
+  const g=gameProgress();
+  return `<div class="prog"><div class="progtop"><b>${g.pct} %</b><span>av spillet · ${g.done} av ${g.active} lapper ute av bollen i runde ${S.round+1}</span></div>
+    <div class="progbar"><div style="width:${g.pct}%"></div><i style="left:33.33%"></i><i style="left:66.66%"></i></div></div>`;
+}
 function vJudge(){
   const r=ROUNDS[S.round],team=esc(S.teams[S.teamIdx]),t=S.timer;
   let status,main='';
@@ -995,7 +1014,7 @@ function vJudge(){
       ${S.carry&&S.carryLeft>1000?`<p class="small" style="margin:10px 0 0">${team} fortsetter med ${fmt(S.carryLeft)} s.</p>`:''}</div>`;
   }else if(S.phase==='turn'){
     status=`${team} spiller`;
-    return header(true)+`<span class="pill">⚖️ Dommer · Runde ${S.round+1} av 3 · ${r.name}</span>
+    return header(true)+`<span class="pill">⚖️ Dommer · Runde ${S.round+1} av 3 · ${r.name}</span>${progressHtml()}
       <div class="card" style="text-align:center;padding:24px 18px;margin-top:18px"><p class="label" style="margin:0">${team} spiller</p>
       <div class="jring"><svg viewBox="0 0 200 200"><circle class="disc" cx="100" cy="100" r="83"/><circle class="trk" cx="100" cy="100" r="90"/><circle class="prg" cx="100" cy="100" r="90" style="stroke-dasharray:${565.49*timeFrac()} 600"/></svg><div class="tbig tleft num" style="font-size:96px"></div></div></div>`;
   }else if(S.phase==='summary'&&S.steal&&S.steal.open){
@@ -1012,7 +1031,7 @@ function vJudge(){
   if(S.steal&&S.steal.by!=null)turnWords.push(S.steal.w);
   const stealOpen=!!(S.steal&&S.steal.open);const H=S.history||[];
   const all=S.words.map((_,i)=>i).filter(w=>seen(w));const hidden=S.words.length-all.length;
-  return header(true)+`<span class="pill">⚖️ Dommer · Runde ${S.round+1} av 3 · ${r.name}</span>
+  return header(true)+`<span class="pill">⚖️ Dommer · Runde ${S.round+1} av 3 · ${r.name}</span>${progressHtml()}
   <p class="status">${status}</p>
   ${main}
   ${stealOpen?'':S.phase==='summary'?`<div class="card"><p class="label">Turen som akkurat var · trykk for å fikse</p>${wordList(turnWords,'Ingen lapper denne turen.')}</div>`
