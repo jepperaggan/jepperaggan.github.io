@@ -138,7 +138,7 @@ body[data-role=klokke] .wrap{max-width:none;padding:calc(env(safe-area-inset-top
 .tvnum.cd{font-size:min(32vmin,320px)}
 .tvnum.cd.done{font-size:min(10vmin,96px)}
 .tvbtns{position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom) + 14px);display:flex;gap:8px;opacity:.45}
-.tvbtns:hover{opacity:1}
+.tvbtns:hover,.tvbtns.solid{opacity:1}
 .tgl{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
 .tgl input{width:24px;height:24px;accent-color:var(--yellow-deep);margin:2px 0 0;flex:none}
 .tgl b{font-size:17px}.tgl small{display:block;color:var(--muted);font-weight:600;font-size:13px;line-height:1.4;margin-top:4px}
@@ -205,6 +205,32 @@ td .mini{border:0;background:var(--field);border-radius:8px;width:26px;height:26
 .progbar{position:relative;height:12px;border-radius:6px;background:rgba(43,18,64,.12);margin-top:8px;overflow:hidden}
 .progbar div{height:100%;background:var(--ink);border-radius:6px;transition:width 400ms cubic-bezier(0.23,1,0.32,1)}
 .progbar i{position:absolute;top:0;bottom:0;width:2px;background:var(--mustard)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1;min-width:90px;border:2px solid var(--ink);background:transparent;color:var(--ink);border-radius:14px;padding:11px 8px;font-weight:700;font-size:14px;cursor:pointer}
+.seg button.on{background:var(--ink);color:var(--mustard)}
+.drawword{margin-top:10px;font-size:15px;font-weight:600;color:var(--muted)}
+.drawword b{font-family:Unbounded,sans-serif;font-size:22px;color:var(--ink);text-transform:uppercase;margin-left:4px}
+.padwrap{flex:1;position:relative;background:#fff;border-radius:22px;margin:10px 0 2px;min-height:300px;overflow:hidden;box-shadow:inset 0 0 0 3px var(--ink)}
+.padwrap canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+.pauseover{position:absolute;inset:0;display:grid;place-items:center;background:rgba(43,18,64,.55);color:var(--mustard);font-family:Unbounded,sans-serif;font-weight:800;font-size:40px;pointer-events:none}
+.pausebar{margin-top:10px;text-align:center;background:var(--ink);color:var(--mustard);border-radius:14px;padding:12px;font-weight:800;font-family:Unbounded,sans-serif;font-size:14px}
+.tvdrawrow{display:flex;gap:4vmin;align-items:center;justify-content:center;width:100%;height:calc(100dvh - 60px)}
+.tvdrawside{display:flex;flex-direction:column;align-items:center;gap:2vmin;flex:none;width:min(34vw,420px)}
+.jring.tvsmall{width:min(30vw,36vh);margin:0}
+.jring.tvsmall .num{font-size:min(14vmin,120px)!important}
+.tvdraw{flex:1;height:86%;max-width:62vw;position:relative}
+.tvdrawside .tvtally{flex-direction:column;align-items:stretch;gap:1.4vmin}
+.tvdrawside .tvtally .tg,.tvdrawside .tvtally .tr{white-space:nowrap;font-size:min(3.4vmin,34px);text-align:center}
+.jring .pz{font-size:.4em}
+.tvdraw canvas{position:absolute;inset:0;width:100%;height:100%}
+.judgedraw{position:relative;height:220px;margin-top:10px}
+.judgedraw canvas{position:absolute;inset:0;width:100%;height:100%}
+.joinrow{display:flex;align-items:center;justify-content:center;gap:6vmin}
+.joininfo{text-align:left;display:flex;flex-direction:column;align-items:flex-start}
+.joininfo .tvteam{text-align:left}
+.qr{width:min(38vmin,380px);aspect-ratio:1;background:#fff;border-radius:2vmin;padding:1.6vmin;box-shadow:0 0 0 .6vmin var(--ink);flex:none}
+.qr.sm{width:min(20vmin,200px)}
+.qr svg{display:block;width:100%;height:100%}
 /* ===== Final show (TV) ===== */
 .tvstage{position:relative;flex:1;min-height:calc(100dvh - 24px)}
 .scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vmin;text-align:center;opacity:0;visibility:hidden;transition:opacity 450ms cubic-bezier(0.23,1,0.32,1),visibility 0s 450ms}
@@ -276,12 +302,18 @@ const SB='https://qcxxtvzarpxstlmyguqi.supabase.co/rest/v1/';
 const KEY='sb_publishable_5m5Hsz9YfHSPK1MZhsXiHA_GjlwYQrW';
 const H={apikey:KEY,'Content-Type':'application/json'};
 const LKEY='gulbolle_v2';
-const BUILD='20261108231115';
-const ROUNDS=[
-  {name:'Forklar',verb:'forklare',rule:'Forklar med ord, men ikke si selve ordet.'},
-  {name:'Mime',verb:'mime',rule:'Ingen ord og ingen lyder. Bare miming.'},
-  {name:'Én lyd',verb:'lage lyden',rule:'Bare én lyd. Ingen ord.'}
-];
+const BUILD='20261109233707';
+const RTYPES={
+  forklar:{key:'forklar',name:'Forklar',verb:'forklare',does:'forklarer',col:'Forkl.',rule:'Forklar med ord, men ikke si selve ordet.',award:['🗣️','Beste forklarer']},
+  mime:{key:'mime',name:'Mime',verb:'mime',does:'mimer',col:'Mime',rule:'Ingen ord og ingen lyder. Bare miming.',award:['🕺','Beste mimer']},
+  lyd:{key:'lyd',name:'Én lyd',verb:'lage lyden',does:'lager lyden',col:'Lyd',rule:'Bare én lyd. Ingen ord.',award:['📣','Beste lydmaker']},
+  tegn:{key:'tegn',name:'Tegn',verb:'tegne',does:'tegner',col:'Tegn',rule:'Tegn ordet på mobilen. Ingen bokstaver eller tall.',award:['🎨','Beste tegner']}
+};
+function roundKeys(s){s=s||S;return (s&&s.rounds&&s.rounds.length)?s.rounds:['forklar','mime','lyd']}
+function NR(s){return roundKeys(s).length}
+function RT(i,s){s=s||S;if(i==null)i=s.round||0;return RTYPES[roundKeys(s)[i]]||RTYPES.forklar}
+function isLastRound(s){s=s||S;return (s.round||0)>=NR(s)-1}
+const DRAWMODES={av:['forklar','mime','lyd'],ekstra:['forklar','mime','lyd','tegn'],erstatt:['forklar','mime','tegn']};
 const BOWL_SVG='<svg class="bowl" viewBox="0 0 32 32" aria-hidden="true"><ellipse cx="16" cy="13" rx="13" ry="3.4" fill="#FF4F8B"/><path d="M3 13c0 7.5 5.8 13 13 13s13-5.5 13-13" fill="#2B1240"/><ellipse cx="16" cy="13" rx="10.5" ry="2.2" fill="#000000" opacity=".45"/><path d="M11 12.4l3-3.6M17 12.6l1.5-4.6M21 12.2l-.8-3.4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
 /* ===== Helpers ===== */
@@ -334,6 +366,11 @@ function act(fn){
   try{fn(S)}catch(e){console.error(e)}
   if(MODE==='local'){ls(LKEY,JSON.stringify(S));render();return}
   OPS.push(fn);render();push();
+}
+function actQuiet(fn){
+  try{fn(S)}catch(e){console.error(e)}
+  if(MODE==='local'){ls(LKEY,JSON.stringify(S));return}
+  OPS.push(fn);push();
 }
 async function push(){
   if(MODE!=='online'||inflight||!OPS.length)return;
@@ -442,7 +479,7 @@ function clockTick(){
   if(!S||!MODE)return;
   if(S.phase==='turn'&&S.timer){
     const left=leftOf(S);
-    document.querySelectorAll('.tleft').forEach(el=>{el.textContent=S.timer.running?fmt(left):'Pause';el.classList.toggle('low',S.timer.running&&left<=10000)});
+    document.querySelectorAll('.tleft').forEach(el=>{if(S.timer.running)el.textContent=fmt(left);else el.innerHTML='<span class="pz">Pause</span>';el.classList.toggle('low',S.timer.running&&left<=10000)});
     if(S.timer.running){
       const sec=Math.ceil(left/1000);
       if(sec>=1&&sec<=5&&sec!==lastSec){lastSec=sec;beep()}
@@ -454,15 +491,13 @@ function clockTick(){
   }
   if(S.phase==='final'){
     const now=Date.now();
-    document.querySelectorAll('.scene[data-from]').forEach(el=>{
-      const on=REVEAL_SKIP?el.dataset.to==='9e15':(now>=+el.dataset.from&&now<+el.dataset.to);el.classList.toggle('vis',on)});
     document.querySelectorAll('[data-at]').forEach(el=>{
       if(el.classList.contains('show'))return;
-      if(now>=+el.dataset.at||REVEAL_SKIP){el.classList.add('show');
+      if(now>=+el.dataset.at){el.classList.add('show');
         if(!el.dataset.played&&now-+el.dataset.at<1500){el.dataset.played=1;
-          if(el.dataset.snd==='row')tone(392,.18,.22,'triangle');
-          if(el.dataset.snd==='drum'&&!REVEAL_SKIP)for(let i=0;i<16;i++)tone(80+i*3,.07,.06+i*.012,'triangle',i*.095);
-          if(el.dataset.snd==='aw'&&!REVEAL_SKIP){tone(659,.22,.25,'triangle');tone(988,.4,.25,'triangle',.12)}
+          if(el.dataset.snd==='row'){tone(392,.18,.22,'triangle');tone(523,.22,.2,'triangle',.12)}
+          if(el.dataset.snd==='drum')for(let i=0;i<16;i++)tone(80+i*3,.07,.06+i*.012,'triangle',i*.095);
+          if(el.dataset.snd==='aw'){tone(659,.22,.25,'triangle');tone(988,.4,.25,'triangle',.12)}
           if(el.dataset.snd==='win'){[523,659,784,1047].forEach((f,i)=>tone(f,.35,.25,'triangle',i*.14));buzz([80,60,80,60,200])}}}
     });
     if(ROLE!=='klokke'&&!FINAL_SHOWN&&revealDone()){FINAL_SHOWN=true;render()}
@@ -530,8 +565,9 @@ function render(){
   for(const id in keep){const el=$(id);if(el&&(el.dataset.keep!=='0'||id===focusId))el.value=keep[id]}
   if(focusId){const el=$(focusId);if(el){el.focus();try{el.setSelectionRange(sel,sel)}catch(e){}}}
   document.body.dataset.role=(MODE&&S&&!['words','setup'].includes(S.phase)&&(S.phase!=='final'||ROLE==='klokke')&&ROLE)||'';
-  if(ROLE==='klokke'&&S){const tv=app.querySelector('.tv');const k=[S.phase,S.round,S.teamIdx,!!(S.steal&&S.steal.open),!!S.teamsDrawn].join('|');if(tv&&TVKEY&&k!==TVKEY)tv.classList.add('enter');TVKEY=k}
-  fitWord();clockTick();
+  if(ROLE==='klokke'&&S)tvTurnSounds();
+  if(ROLE==='klokke'&&S){const tv=app.querySelector('.tv');const k=[S.phase,S.round,S.teamIdx,!!(S.steal&&S.steal.open),!!S.teamsDrawn,S.revealStep||0].join('|');if(tv&&TVKEY&&k!==TVKEY)tv.classList.add('enter');TVKEY=k}
+  fitWord();clockTick();setupPad();paintViews();
   keepAwake(!!(S&&MODE&&!['words','setup','final'].includes(S.phase)));
 }
 function fitWord(){const el=$('word');if(!el)return;const n=(el.textContent||'').length;const k=Math.min(2.4,Math.max(1,innerWidth/430));el.style.fontSize=Math.round((n<=8?58:n<=14?48:n<=22?40:n<=36?32:26)*k*0.74)+'px'}
@@ -576,8 +612,12 @@ function setupCards(){
     <p class="label" style="margin:0">Lengde på spillet</p><b id="lenlbl" style="display:block;margin-top:6px;font-size:18px">${lenLabel(S.perPerson)}</b>
     <input type="range" class="len" id="lenr" data-keep="0" min="3" max="6" step="1" value="${S.perPerson}" oninput="$('lenlbl').textContent=lenLabel(+this.value)" onchange="setPerTo(+this.value)">
     <div class="lenticks"><span>Kort</span><span>Middels</span><span>Langt</span></div>
-  </div>`;
+  </div>
+  <div class="card"><p class="label">Tegnerunde</p>
+    <div class="seg">${[['av','Ingen'],['ekstra','4. runde'],['erstatt','I stedet for lyd']].map(([k,l])=>`<button class="${(S.drawMode||'av')===k?'on':''}" onclick="setDrawMode('${k}')">${l}</button>`).join('')}</div>
+    <p class="small" style="margin:10px 0 0">Rundene: ${roundKeys().map(k=>RTYPES[k].name).join(' → ')}. I tegnerunden tegner performeren på mobilen, og tegningen vises live på TV-en.</p></div>`;
 }
+function setDrawMode(m){if(!canEdit()&&!HOSTSETUP&&!(isHost()&&!slipCount()))return;if(!DRAWMODES[m])return;act(s=>{if(s.phase!=='words'&&s.phase!=='setup')return;s.drawMode=m;s.rounds=DRAWMODES[m].slice()})}
 function setTeams(d){if(!canEdit())return;act(s=>{const n=Math.min(6,Math.max(2,s.teams.length+d));while(s.teams.length<n)s.teams.push('Lag '+(s.teams.length+1));s.teams.length=n})}
 function renameTeam(i,v){if(!canEdit())return;act(s=>{s.teams[i]=(v||'').trim()||('Lag '+(i+1))})}
 function lenLabel(n){return (n<=3?'Kort':n>=6?'Langt':'Middels')+' · '+n+' lapper per person'}
@@ -645,6 +685,12 @@ function vHostSetup(){
   <button class="btn outline" onclick="HOSTSETUP=false;setRole('klokke')">🖥️ Denne skjermen er TV-en</button>
   <button class="btn primary" onclick="HOSTSETUP=false;render()">Videre: skriv dine lapper</button>`;
 }
+let QR_LOADING=false;
+function joinUrl(){return location.origin+location.pathname+'?r='+ROOM}
+function qrSvg(){
+  if(!window.qrcode){if(!QR_LOADING){QR_LOADING=true;const sc=document.createElement('script');sc.src='qrcode.js';sc.onload=()=>render();document.head.appendChild(sc)}return ''}
+  try{const q=qrcode(0,'M');q.addData(joinUrl());q.make();return q.createSvgTag({cellSize:6,margin:2,scalable:true})}catch(e){return ''}
+}
 function vTvLobby(){
   const ps=players(S),n=slipCount();
   const btns=`<div class="tvbtns"><button class="iconbtn" onclick="testSound()">Test lyd</button>${document.fullscreenEnabled||document.webkitFullscreenEnabled?'<button class="iconbtn" onclick="goFull()">Fullskjerm</button>':''}<button class="iconbtn" onclick="setRole(null)">Tilbake</button></div>`;
@@ -653,13 +699,14 @@ function vTvLobby(){
   if(S.useNames&&S.teamsDrawn)return `<div class="tv">
     <p class="clabel">Lagene er trukket!</p>
     <div class="tvboard">${S.teams.map((t,i)=>`<div class="tvrow"><div>${esc(t)}</div><div style="font-size:min(4.4vmin,42px);text-align:right">${members(i).map(esc).join(' · ')||'–'}</div></div>`).join('')}</div>
-    <p class="tvsub" style="margin-top:3vmin;max-width:none">Kode <b style="color:var(--ink)">${ROOM}</b> · raggan.no/gulbolle</p>${tap}
+    <div style="display:flex;align-items:center;gap:3vmin;margin-top:3vmin"><div class="qr sm">${qrSvg()}</div><p class="tvsub" style="margin:0;max-width:none;text-align:left">Skann eller gå til <b style="color:var(--ink)">raggan.no/gulbolle</b><br>Kode <b style="color:var(--ink)">${ROOM}</b></p></div>${tap}
   </div>${btns}`;
   return `<div class="tv">
-    <p class="clabel">Bli med på</p>
+    <div class="joinrow"><div class="qr">${qrSvg()}</div><div class="joininfo">
+    <p class="clabel">Skann, eller gå til</p>
     <div class="tvteam sm">raggan.no/gulbolle</div>
     <p class="clabel" style="margin-top:2vmin">Kode</p>
-    <div class="tvteam" style="letter-spacing:.12em">${ROOM}</div>
+    <div class="tvteam" style="letter-spacing:.12em">${ROOM}</div></div></div>
     ${isHost()&&!n?`<div style="display:flex;gap:1vmin;align-items:center;margin-top:1vmin"><span class="tvsub" style="margin:0">Lapper per person:</span>${[3,4,5,6].map(k=>`<button class="btn ${S.perPerson===k?'primary':'outline'}" style="width:auto;margin:0;padding:10px 18px" onclick="setPerTo(${k})">${k}</button>`).join('')}</div>`
       :`<p class="tvsub" style="margin:1vmin 0 0">${lenLabel(S.perPerson)}</p>`}
     ${S.useNames?(ps.length?`<p class="clabel" style="margin-top:3vmin">Har levert</p><p class="tvexp" style="max-width:86vw;line-height:1.35">${ps.map(esc).join(' · ')}</p>`:'<p class="tvsub" style="margin-top:3vmin">Venter på de første lappene …</p>')
@@ -723,7 +770,7 @@ function undoBatch(){act(s=>{const k=s.batches.pop();if(k)s.slips.splice(s.slips
 /* ---------- GAME ENGINE ---------- */
 function normWord(t){return String(t).normalize('NFKC').toLowerCase().replace(/[\s ]+/g,' ').replace(/^[\s"'«»]+|[\s"'«».!?,]+$/g,'')}
 function dedupe(list){const seen=new Set();return list.filter(t=>{const k=normWord(t);if(!k||seen.has(k))return false;seen.add(k);return true})}
-function resetTurn(s){s.turnExp=null;s.turnStart=null;s.turnGot=[];s.turnSkipped=[];s.turnLog=[];s.steal=null;s.current=null;s.turnDev=null;s.timer=null}
+function resetTurn(s){s.draw=null;s.turnExp=null;s.turnStart=null;s.turnGot=[];s.turnSkipped=[];s.turnLog=[];s.steal=null;s.current=null;s.turnDev=null;s.timer=null}
 function fillBowl(s){const del=s.deleted||[];s.bowl=shuffle(s.words.map((_,i)=>i).filter(i=>!del.includes(i)));s.roundTaken={};s.roundSkipped={};resetTurn(s)}
 function buildWords(s){
   const map=new Map();s.words=[];s.wordBy=[];
@@ -748,12 +795,15 @@ function shuffleTeams(){if(!canEdit())return;act(s=>{s.roster={};ensureRoster(s)
 function drawTeams(){shuffleTeams();buzz([30,40,30])}
 function moveP(k){if(!canEdit())return;const n=players(S)[k];if(n==null)return;act(s=>{s.roster=s.roster||{};const c=s.roster[n];s.roster[n]=(c==null||c>=s.teams.length-1)?0:c+1})}
 function explainerOf(s,team){if(!s.useNames)return null;const m=members(team,s);if(!m.length)return null;return m[((s.expIdx||[])[team]||0)%m.length]}
+function setExplainer(team,k){act(s=>{if(s.phase!=='ready'||s.teamIdx!==team)return;s.expIdx=s.expIdx&&s.expIdx.length===s.teams.length?s.expIdx:s.teams.map(()=>0);s.expIdx[team]=k})}
+function skipTeam(){const ti=S.teamIdx;if(!confirm('Hoppe over '+S.teams[ti]+' denne gangen?'))return;
+  act(s=>{if(s.phase!=='ready'||s.teamIdx!==ti)return;snap(s,'Hopp over '+s.teams[ti]);s.teamIdx=nextTeam(ti);s.carry=false;s.carryLeft=0})}
 function advanceExp(s,team){s.expIdx=s.expIdx&&s.expIdx.length===s.teams.length?s.expIdx:s.teams.map(()=>0);s.expIdx[team]=(s.expIdx[team]||0)+1}
 function beginGame(s){s.finalAt=null;
   const del=s.deleted||[];const keep=s.words.map((_,i)=>i).filter(i=>!del.includes(i));
   s.words=keep.map(i=>s.words[i]);s.wordBy=keep.map(i=>(s.wordBy||[])[i]||[]);s.deleted=[];
   if(s.useNames){ensureRoster(s);s.teamsDrawn=true}s.expIdx=s.teams.map(()=>0);
-  s.seen=[];s.history=[];s.scores=s.teams.map(()=>[0,0,0]);s.round=0;s.teamIdx=0;s.carry=false;s.carryLeft=0;s.dur=s.dur||60;fillBowl(s);s.phase='ready';
+  s.seen=[];s.history=[];s.rounds=roundKeys(s).slice();s.scores=s.teams.map(()=>s.rounds.map(()=>0));s.round=0;s.teamIdx=0;s.carry=false;s.carryLeft=0;s.dur=s.dur||60;fillBowl(s);s.phase='ready';
 }
 function draw(s){
   if(!s.bowl.length){s.current=null;return}
@@ -770,21 +820,21 @@ function afterRemove(s){
 function place(s,w,toBowl){if(toBowl){rm(s.deleted,w);if(!s.bowl.includes(w))s.bowl.push(w)}else{s.bowl=s.bowl.filter(i=>i!==w);s.deleted=s.deleted||[];if(!s.deleted.includes(w))s.deleted.push(w)}}
 
 let lastTap=0;
-function guard(){const t=Date.now();if(t-lastTap<350)return false;lastTap=t;return myTurn()}
+function guard(){if(S.phase==='turn'&&S.timer&&!S.timer.running)return false;const t=Date.now();if(t-lastTap<350)return false;lastTap=t;return myTurn()}
 function startTurn(){
   unlockAudio();const ti=S.teamIdx,rd=S.round;
   act(s=>{if(s.phase!=='ready'||s.teamIdx!==ti||s.round!==rd)return;
     const ms=(s.carry&&s.carryLeft>1000)?s.carryLeft:(s.dur||60)*1000;
-    resetTurn(s);s.carry=false;s.carryLeft=0;s.turnDev=DEV;s.turnExp=explainerOf(s,s.teamIdx);s.turnStart=Date.now();s.timer={running:true,endsAt:Date.now()+ms,left:null,total:ms};draw(s);s.phase='turn'});
+    resetTurn(s);s.undo=null;s.carry=false;s.carryLeft=0;s.turnDev=DEV;s.turnExp=explainerOf(s,s.teamIdx);s.turnStart=Date.now();s.timer={running:true,endsAt:Date.now()+ms,left:null,total:ms};draw(s);s.phase='turn'});
 }
 function correct(){
-  if(!guard()||S.current==null)return;const w=S.current;buzz(25);
-  act(s=>{if(s.phase!=='turn'||!s.bowl.includes(w))return;takeWord(s,w,s.teamIdx);s.turnGot.push(w);(s.turnLog=s.turnLog||[]).push({t:'got',w,at:Date.now()});afterRemove(s)});
+  if(!guard()||S.current==null)return;PAD_STROKES=[];const w=S.current;buzz(25);
+  act(s=>{if(s.phase!=='turn'||!s.bowl.includes(w))return;takeWord(s,w,s.teamIdx);s.turnGot.push(w);s.draw=null;(s.turnLog=s.turnLog||[]).push({t:'got',w,at:Date.now()});afterRemove(s)});
 }
 function skip(){
-  if(!guard()||S.current==null)return;const w=S.current;buzz(15);
+  if(!guard()||S.current==null)return;PAD_STROKES=[];const w=S.current;buzz(15);
   act(s=>{if(s.phase!=='turn'||!s.bowl.includes(w))return;s.bowl=s.bowl.filter(i=>i!==w);(s.roundSkipped=s.roundSkipped||{})[w]=s.teamIdx;
-    (s.turnSkipped=s.turnSkipped||[]).push(w);(s.turnLog=s.turnLog||[]).push({t:'skip',w,at:Date.now()});s.scores[s.teamIdx][s.round]--;afterRemove(s)});
+    (s.turnSkipped=s.turnSkipped||[]).push(w);s.draw=null;(s.turnLog=s.turnLog||[]).push({t:'skip',w,at:Date.now()});s.scores[s.teamIdx][s.round]--;afterRemove(s)});
 }
 function undoLast(){
   if(!myTurn())return;
@@ -800,10 +850,16 @@ function doTimeUp(force){
 }
 function stopNow(){if(confirm('Stoppe turen nå?'))doTimeUp(true)}
 function steal(i){
-  act(s=>{const st=s.steal;if(!st||!st.open)return;
+  act(s=>{const st=s.steal;if(!st||!st.open)return;snap(s,i>=0?s.teams[i]+' tok den':'Ingen tok den');
     if(i>=0&&s.bowl.includes(st.w)){takeWord(s,st.w,i);s.steal={w:st.w,open:false,by:i}}else s.steal={w:st.w,open:false,by:null}});
   if(i>=0){buzz(30);toast(S.teams[i]+' stjal lappen!')}
 }
+function snap(s,label){const c=JSON.parse(JSON.stringify(s));delete c.undo;delete c.draw;s.undo={label,state:c}}
+function undoStep(){
+  if(!S.undo)return;if(!confirm('Angre «'+S.undo.label+'»?'))return;
+  act(s=>{const u=s.undo;if(!u)return;Object.keys(s).forEach(k=>delete s[k]);Object.assign(s,JSON.parse(JSON.stringify(u.state)));s.undo=null});toast('Angret');
+}
+function undoBtn(){return S.undo&&S.phase!=='turn'?`<button class="btn outline" onclick="undoStep()">↩ Angre: ${esc(S.undo.label)}</button>`:''}
 function archiveTurn(s){
   const st=s.steal;const stolen=st&&st.by!=null?{w:st.w,by:st.by}:null;
   if(!s.turnDev&&!(s.turnGot||[]).length&&!(s.turnSkipped||[]).length&&!stolen)return;
@@ -811,14 +867,20 @@ function archiveTurn(s){
   (s.turnLog||[]).filter(e=>e.at).sort((a,b)=>a.at-b.at).forEach(e=>{if(e.t==='got'&&gotSet.has(e.w)&&prev)takes.push({w:e.w,dt:e.at-prev});prev=e.at});
   (s.history=s.history||[]).push({team:s.teamIdx,round:s.round,exp:s.turnExp||null,got:(s.turnGot||[]).slice(),skipped:(s.turnSkipped||[]).slice(),stolen,takes});
 }
-function nextTurn(){const ti=S.teamIdx;act(s=>{if(s.phase!=='summary'||s.teamIdx!==ti)return;archiveTurn(s);advanceExp(s,ti);s.teamIdx=nextTeam(ti);resetTurn(s);s.phase='ready'})}
-function nextRound(carry){const rd=S.round;act(s=>{if(s.phase!=='summary'||s.round!==rd||s.bowl.length)return;archiveTurn(s);s.round++;fillBowl(s);
+function nextTurn(){const ti=S.teamIdx;act(s=>{if(s.phase!=='summary'||s.teamIdx!==ti)return;snap(s,'Neste lag');archiveTurn(s);advanceExp(s,ti);s.teamIdx=nextTeam(ti);resetTurn(s);s.phase='ready'})}
+function nextRound(carry){const rd=S.round;act(s=>{if(s.phase!=='summary'||s.round!==rd||s.bowl.length)return;snap(s,'Neste runde');archiveTurn(s);s.round++;fillBowl(s);
   s.carry=!!carry&&s.carryLeft>1000;if(!s.carry){s.carryLeft=0;advanceExp(s,s.teamIdx);s.teamIdx=nextTeam(s.teamIdx)}s.phase='ready'})}
-function toFinal(){act(s=>{if(s.phase==='summary'&&!s.bowl.length){archiveTurn(s);s.finalAt=Date.now();s.phase='final'}})}
+function toFinal(){act(s=>{if(s.phase==='summary'&&!s.bowl.length){snap(s,'Se resultatet');archiveTurn(s);s.finalAt=Date.now();s.revealStep=0;s.revealAt=Date.now();s.phase='final'}})}
 function endRoundEarly(){
   closeSheet('menu');if(!S||['setup','words','final'].includes(S.phase))return;
   if(!confirm('Avslutte runde '+(S.round+1)+' nå? Lappene som er igjen teller ikke.'))return;
-  const rd=S.round;act(s=>{if(s.round!==rd)return;if(s.phase==='summary'){archiveTurn(s);advanceExp(s,s.teamIdx)}if(s.round<2){s.round++;fillBowl(s);s.carry=false;s.carryLeft=0;s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'}else{s.finalAt=Date.now();s.phase='final'}});
+  const rd=S.round;act(s=>{if(s.round!==rd)return;snap(s,'Avslutt runden');if(s.phase==='summary'){archiveTurn(s);advanceExp(s,s.teamIdx)}if(!isLastRound(s)){s.round++;fillBowl(s);s.carry=false;s.carryLeft=0;s.teamIdx=nextTeam(s.teamIdx);s.phase='ready'}else{s.finalAt=Date.now();s.revealStep=0;s.revealAt=Date.now();s.phase='final'}});
+}
+function rematch(){
+  if(!confirm('Revansj? Alle skriver nye lapper, og dommeren trekker nye lag.'))return;
+  act(s=>{s.parti=(s.parti||1)+1;s.slips=[];s.words=[];s.wordBy=[];s.history=[];s.batches=[];s.scores=[];s.bowl=[];s.deleted=[];s.roundTaken={};s.roundSkipped={};
+    s.roster={};s.teamsDrawn=false;s.expIdx=[];s.finalAt=null;s.revealStep=0;s.undo=null;resetTurn(s);s.round=0;s.teamIdx=0;s.phase='words'});
+  EXTRA=false;TOPUP=0;render();
 }
 function restartSameTeams(ask=true){
   closeSheet('menu');
@@ -919,13 +981,13 @@ function vRole(){
 /* ---------- SCENE (simple, for the performer) ---------- */
 function sceneTop(){return `<div class="top" style="justify-content:flex-end;margin-bottom:8px"><div class="hdrbtns"><button class="iconbtn" onclick="toggleSound()" aria-label="Lyd">${SOUND?'🔊':'🔇'}</button><button class="iconbtn" onclick="openMenu()">Meny</button></div></div>`}
 function vScene(){
-  const r=ROUNDS[S.round],team=esc(S.teams[S.teamIdx]);
+  const r=RT(),team=esc(S.teams[S.teamIdx]);
   if(S.phase==='ready'){
-    return sceneTop()+`<span class="pill">Runde ${S.round+1} av 3 · ${r.name}</span>
+    return sceneTop()+`<span class="pill">Runde ${S.round+1} av ${NR()} · ${r.name}</span>
     <div class="card" style="text-align:center;padding:30px 18px;margin-top:18px">
       <p class="label" style="margin:0">${S.carry?'Fortsetter med resten av tiden':'Nå er det'}</p>
       <h1 class="big-team">${team}</h1>
-      ${explainerOf(S,S.teamIdx)?`<p class="exp">${esc(explainerOf(S,S.teamIdx))} ${S.round===1?'mimer':S.round===2?'lager lyden':'forklarer'}</p>`:''}
+      ${explainerOf(S,S.teamIdx)?`<p class="exp">${esc(explainerOf(S,S.teamIdx))} ${RT().does}</p>`:''}
       <p class="rule" style="margin-top:14px">${r.rule}</p>
       <button class="btn primary xl" onclick="startTurn()">Start${S.carry&&S.carryLeft>1000?' ('+fmt(S.carryLeft)+' s)':''}</button>
     </div>
@@ -937,12 +999,23 @@ function vScene(){
       <div class="card" style="text-align:center;padding:30px 18px;margin-top:18px"><p class="label" style="margin:0">Spiller nå</p><h1 class="big-team">${team}</h1>
       <div class="tbig tleft"></div><p class="small">${S.bowl.length} lapper igjen</p></div>
       <div class="spacer"></div><button class="btn ghost" onclick="takeOver()">Ta over turen på denne mobilen</button>`;
+    const paused=!!(S.timer&&!S.timer.running);
+    if(r.key==='tegn')return `<div class="turn">
+      <div class="turnhead"><span class="pill">${team} · Tegn</span><span class="tsm tleft"></span></div>
+      <div class="drawword">Tegn: <b>${esc(S.words[S.current]??'')}</b></div>
+      <div class="padwrap" id="padwrap"><canvas id="pad"></canvas>${paused?'<div class="pauseover">PAUSE</div>':''}</div>
+      <div class="btnrow">
+        <button class="btn outline skipbtn" style="flex-direction:column;gap:2px;padding:14px" ${S.current!=null&&!paused?'':'disabled'} onclick="skip()">Hopp over<small style="font-size:12px;font-weight:700;opacity:.7">−1 poeng</small></button>
+        <button class="btn good" style="padding:14px;font-size:20px" ${paused?'disabled':''} onclick="correct()">Riktig ✓</button>
+      </div>
+      <div class="links"><button onclick="clearPad()">Visk ut</button>${(S.turnLog||[]).length?'<button onclick="undoLast()">Angre siste</button>':''}</div>
+    </div>`;
     return `<div class="turn">
       <div class="turnhead"><span class="pill">${team} · ${r.name}</span><span class="tsm tleft"></span></div>
-      <div class="word pop" id="word">${esc(S.words[S.current]??'')}</div>
+      <div class="word pop" id="word">${esc(S.words[S.current]??'')}</div>${paused?'<div class="pausebar">PAUSE · dommeren har stoppet klokka</div>':''}
       <div class="btnrow">
-        <button class="btn outline xl skipbtn" style="flex-direction:column;gap:2px" ${S.current!=null?'':'disabled'} onclick="skip()">Hopp over<small style="font-size:13px;font-weight:700;opacity:.7">−1 poeng</small></button>
-        <button class="btn good xl" onclick="correct()">Riktig ✓</button>
+        <button class="btn outline xl skipbtn" style="flex-direction:column;gap:2px" ${S.current!=null&&!paused?'':'disabled'} onclick="skip()">Hopp over<small style="font-size:13px;font-weight:700;opacity:.7">−1 poeng</small></button>
+        <button class="btn good xl" ${paused?'disabled':''} onclick="correct()">Riktig ✓</button>
       </div>
       <div class="links">${(S.turnLog||[]).length?'<button onclick="undoLast()">Angre siste</button>':''}</div>
       <p class="small kbd">→ eller mellomrom = Riktig · ← = Hopp over</p>
@@ -973,8 +1046,8 @@ function doneBlock(big){
   let h=`<div class="card" style="text-align:center;padding:26px 18px">
     <p class="label" style="margin:0">${empty?'Bollen er tom! Runde '+(S.round+1)+' ferdig':'Tiden er ute'}</p>
     <h1 class="big-team" style="font-size:${big?40:30}px">${team} ${net>=0?'+':''}${net}</h1>${tally('tally')}${stolen}</div>`;
-  if(empty&&S.round<2){
-    const nx=ROUNDS[S.round+1];
+  if(empty&&!isLastRound()){
+    const nx=RT(S.round+1);
     h+=`<p class="rule"><b>Neste runde: ${nx.name}.</b> Alle lappene går tilbake i bollen.</p>`;
     if(S.carryLeft>1000)h+=`<button class="btn primary" onclick="nextRound(true)">${team} fortsetter (${fmt(S.carryLeft)} s igjen)</button>`;
     h+=`<button class="btn ${S.carryLeft>1000?'outline':'primary'}" onclick="nextRound(false)">Neste lag: ${esc(S.teams[nextTeam(S.teamIdx)])}</button>`;
@@ -985,8 +1058,8 @@ function doneBlock(big){
 
 /* ---------- JUDGE (everything) ---------- */
 function scoreTable(adj){
-  return `<table><thead><tr><th>Lag</th><th>Forkl.</th><th>Mime</th><th>Lyd</th><th>Sum</th></tr></thead><tbody>
-  ${S.teams.map((t,i)=>`<tr${i===S.teamIdx&&S.phase!=='final'?' style="background:var(--yellow-soft)"':''}><td>${esc(t)}</td>${(S.scores[i]||[0,0,0]).map((v,r)=>`<td>${adj&&r===S.round?`<button class="mini" onclick="adjScore(${i},-1)">−</button>${v}<button class="mini" onclick="adjScore(${i},1)">+</button>`:v}</td>`).join('')}<td class="tot">${total(i)}</td></tr>`).join('')}
+  return `<table><thead><tr><th>Lag</th>${roundKeys().map(k=>`<th>${RTYPES[k].col}</th>`).join('')}<th>Sum</th></tr></thead><tbody>
+  ${S.teams.map((t,i)=>`<tr${i===S.teamIdx&&S.phase!=='final'?' style="background:var(--yellow-soft)"':''}><td>${esc(t)}</td>${(S.scores[i]||roundKeys().map(()=>0)).map((v,r)=>`<td>${adj&&r===S.round?`<button class="mini" onclick="adjScore(${i},-1)">−</button>${v}<button class="mini" onclick="adjScore(${i},1)">+</button>`:v}</td>`).join('')}<td class="tot">${total(i)}</td></tr>`).join('')}
   </tbody></table>`;
 }
 function wordList(list,empty){
@@ -998,12 +1071,12 @@ function gameProgress(){
   if(S.phase==='final')return {pct:100,done:0,active:0};
   const active=Math.max(1,S.words.length-(S.deleted||[]).length);
   const done=Math.max(0,Math.min(active,active-S.bowl.length));
-  return {pct:Math.round(((S.round||0)+done/active)/3*100),done,active};
+  return {pct:Math.round(((S.round||0)+done/active)/NR()*100),done,active};
 }
 function progressHtml(){
   const g=gameProgress();
   return `<div class="prog"><div class="progtop"><b>${g.pct} %</b><span>av spillet · ${g.done} av ${g.active} lapper ute av bollen i runde ${S.round+1}</span></div>
-    <div class="progbar"><div style="width:${g.pct}%"></div><i style="left:33.33%"></i><i style="left:66.66%"></i></div></div>`;
+    <div class="progbar"><div style="width:${g.pct}%"></div>${roundKeys().slice(1).map((_,k)=>`<i style="left:${(k+1)/NR()*100}%"></i>`).join('')}</div></div>`;
 }
 /* the slips of the running turn, newest first; skipped ones stay hidden */
 function liveTurnCard(){
@@ -1014,18 +1087,23 @@ function liveTurnCard(){
     ${wordList(order,'Ingen lapper ennå. De dukker opp her når performeren trykker Riktig.')}</div>`;
 }
 function vJudge(){
-  const r=ROUNDS[S.round],team=esc(S.teams[S.teamIdx]),t=S.timer;
+  const r=RT(),team=esc(S.teams[S.teamIdx]),t=S.timer;
   let status,main='';
   if(S.phase==='ready'){
     status=`Venter på at ${team}${explainerOf(S,S.teamIdx)?' ('+esc(explainerOf(S,S.teamIdx))+')':''} trykker Start`;
-    main=`<div class="card"><div class="stepper"><p class="label" style="margin:0">Sekunder per tur</p>
+    const mem=S.useNames?members(S.teamIdx):[],cur=explainerOf(S,S.teamIdx);
+    main=`${mem.length>1?`<div class="card"><p class="label">Hvem ${RT().does}?</p><div class="names" style="margin:0">${mem.map((n,k)=>`<button class="nm" style="${n===cur?'background:var(--ink);color:var(--mustard)':''}" onclick="setExplainer(${S.teamIdx},${k})">${esc(n)}</button>`).join('')}</div></div>`:''}
+      <button class="btn outline" onclick="skipTeam()">Hopp over ${team} denne gangen</button>
+      <div class="card"><div class="stepper"><p class="label" style="margin:0">Sekunder per tur</p>
       <div class="ctl"><button onclick="setDur(-10)">−</button><output>${S.dur||60}</output><button onclick="setDur(10)">+</button></div></div>
       ${S.carry&&S.carryLeft>1000?`<p class="small" style="margin:10px 0 0">${team} fortsetter med ${fmt(S.carryLeft)} s.</p>`:''}</div>`;
   }else if(S.phase==='turn'){
     status=`${team} spiller`;
-    return header(true)+`<span class="pill">⚖️ Dommer · Runde ${S.round+1} av 3 · ${r.name}</span>${progressHtml()}
+    return header(true)+`<span class="pill">⚖️ Dommer · Runde ${S.round+1} av ${NR()} · ${r.name}</span>${progressHtml()}
       <div class="card" style="text-align:center;padding:18px;margin-top:14px"><p class="label" style="margin:0">${team} spiller</p>
-      <div class="jring judge"><svg viewBox="0 0 200 200"><circle class="disc" cx="100" cy="100" r="83"/><circle class="trk" cx="100" cy="100" r="90"/><circle class="prg" cx="100" cy="100" r="90" style="stroke-dasharray:${565.49*timeFrac()} 600"/></svg><div class="tbig tleft num" style="font-size:72px"></div></div></div>
+      <div class="jring judge"><svg viewBox="0 0 200 200"><circle class="disc" cx="100" cy="100" r="83"/><circle class="trk" cx="100" cy="100" r="90"/><circle class="prg" cx="100" cy="100" r="90" style="stroke-dasharray:${565.49*timeFrac()} 600"/></svg><div class="tbig tleft num" style="font-size:72px"></div></div>
+      ${t&&t.running?'<button class="btn dark" style="margin-top:10px" onclick="tPause()">⏸ Pause</button>':'<button class="btn primary" style="margin-top:10px" onclick="tResume()">▶ Fortsett</button>'}</div>
+      ${r.key==='tegn'?'<div class="judgedraw"><canvas class="drawview"></canvas></div>':''}
       ${liveTurnCard()}`;
   }else if(S.phase==='summary'&&S.steal&&S.steal.open){
     status='Siste lapp kan stjeles';
@@ -1041,9 +1119,10 @@ function vJudge(){
   if(S.steal&&S.steal.by!=null)turnWords.push(S.steal.w);
   const stealOpen=!!(S.steal&&S.steal.open);const H=S.history||[];
   const all=S.words.map((_,i)=>i).filter(w=>seen(w));const hidden=S.words.length-all.length;
-  return header(true)+`<span class="pill">⚖️ Dommer · Runde ${S.round+1} av 3 · ${r.name}</span>${progressHtml()}
+  return header(true)+`<span class="pill">⚖️ Dommer · Runde ${S.round+1} av ${NR()} · ${r.name}</span>${progressHtml()}
   <p class="status">${status}</p>
   ${main}
+  ${undoBtn()}
   ${stealOpen?'':S.phase==='summary'?`<div class="card"><p class="label">Turen som akkurat var · trykk for å fikse</p>${wordList(turnWords,'Ingen lapper denne turen.')}</div>`
     :(H.length?`<div class="card"><p class="label">Forrige tur · ${esc(S.teams[H[H.length-1].team])} ${histNet(H[H.length-1])>=0?'+':''}${histNet(H[H.length-1])} · trykk for å fikse</p>${histList(H.length-1)}</div>`:'')}
   <div class="card"><p class="label">Poeng · − og + justerer denne runden</p>${scoreTable(true)}</div>
@@ -1054,42 +1133,65 @@ function vJudge(){
 }
 
 /* ---------- CLOCK (TV) ---------- */
+let TVCNT=null;
+function tvTurnSounds(){
+  const key=S.phase==='turn'?String(S.turnStart):null,g=(S.turnGot||[]).length,k=(S.turnSkipped||[]).length;
+  if(key&&TVCNT&&TVCNT.key===key){
+    if(g>TVCNT.g){tone(880,.09,.22,'triangle');tone(1320,.16,.22,'triangle',.08)}
+    if(k>TVCNT.k){tone(140,.28,.3,'sawtooth');tone(110,.28,.25,'sawtooth',.03)}
+  }
+  TVCNT={key,g,k};
+}
 function goFull(){const d=document.documentElement;try{(d.requestFullscreen||d.webkitRequestFullscreen).call(d)}catch(e){}}
 /* Total standings are only shown between rounds, never during the last round. */
 function standingsVisible(){
-  if(S.phase==='summary'&&!S.bowl.length&&!(S.steal&&S.steal.open))return S.round<2;
+  if(S.phase==='summary'&&!S.bowl.length&&!(S.steal&&S.steal.open))return !isLastRound();
   if(S.phase==='ready'&&S.round>0)return !(S.history||[]).some(h=>h.round===S.round);
   return false;
 }
-const REV_STEP=2000,AW_STEP=4600,AW_NAME=1700;
-function revealPlan(){
-  const A=awards(),f0=S.finalAt||0;
-  const awStart=f0+(A.length?2600:600);const awAt=A.map((_,k)=>awStart+k*AW_STEP);
-  const podStart=awStart+A.length*AW_STEP;
-  const idx=rankIdx(),best=total(idx[0]);
-  const rest=idx.filter(i=>total(i)<best).reverse(); // last place first; equal scores appear together
+const AW_NAME=2400;
+/* The final is a list of steps. The judge (or the TV) moves through them with Neste. */
+function revealSteps(){
+  const A=awards(),idx=rankIdx(),best=total(idx[0]);
+  const rest=idx.filter(i=>total(i)<best).reverse(); // last place first; equal scores together
   const levels=[...new Set(rest.map(total))];
-  const t0=podStart+1400;const rowAt={};rest.forEach(i=>rowAt[i]=t0+levels.indexOf(total(i))*REV_STEP);
-  const winAt=t0+levels.length*REV_STEP;idx.filter(i=>total(i)===best).forEach(i=>rowAt[i]=winAt);
-  const sumAt=winAt+5000;
-  return {A,awAt,podStart,rowAt,winAt,sumAt,end:sumAt+300};
+  const steps=[{k:'intro',label:'Intro'}];
+  A.forEach((a,i)=>steps.push({k:'aw',i,label:'Pris '+(i+1)+' av '+A.length}));
+  steps.push({k:'pod',lvl:0,label:'Pallen'});
+  levels.forEach((l,i)=>steps.push({k:'pod',lvl:i+1,label:(placeOfScore(l))+'. plass'}));
+  steps.push({k:'win',label:'Vinneren'});
+  steps.push({k:'sum',label:'Oppsummering'});
+  return {steps,A,idx,best,rest,levels};
 }
+function placeOfScore(v){return 1+S.teams.filter((_,j)=>total(j)>v).length}
+function curStep(){const P=revealSteps();const n=Math.max(0,Math.min(P.steps.length-1,S.revealStep||0));return {P,n,st:P.steps[n]}}
+function revealMove(d){
+  const max=revealSteps().steps.length-1,from=S.revealStep||0;
+  act(s=>{if(s.phase!=='final')return;const v=Math.max(0,Math.min(max,(s.revealStep||0)+d));if(v===s.revealStep)return;s.revealStep=v;s.revealAt=Date.now()});
+}
+function revealEnd(){act(s=>{if(s.phase!=='final')return;s.revealStep=revealSteps().steps.length-1;s.revealAt=Date.now()})}
 function rankIdx(){return S.teams.map((_,i)=>i).sort((a,b)=>total(b)-total(a)||a-b)}
 function placeOf(i){return 1+S.teams.filter((_,j)=>total(j)>total(i)).length}
-function revealDone(){return MODE==='local'||!S.finalAt||Date.now()>=revealPlan().end}
+function revealDone(){return MODE==='local'||!S.finalAt||curStep().st.k==='sum'}
 let REVEAL_SKIP=false,FINAL_SHOWN=false;
 function vClock(){
-  const r=ROUNDS[S.round],team=esc(S.teams[S.teamIdx]);let mid;
-  if(S.phase==='turn'){const n=(S.turnGot||[]).length;mid=`<p class="clabel">${team}${S.turnExp?' · '+esc(S.turnExp):''} · ${r.name}</p>
+  const r=RT(),team=esc(S.teams[S.teamIdx]);let mid;
+  if(S.phase==='turn'&&r.key==='tegn'){mid=`<div class="tvdrawrow">
+      <div class="tvdrawside"><p class="clabel">${team}${S.turnExp?' · '+esc(S.turnExp):''} tegner</p>
+        <div class="jring tvsmall"><svg viewBox="0 0 200 200"><circle class="disc" cx="100" cy="100" r="83"/><circle class="trk" cx="100" cy="100" r="90"/><circle class="prg" cx="100" cy="100" r="90" style="stroke-dasharray:${565.49*timeFrac()} 600"/></svg><div class="tbig tleft num"></div></div>
+        ${tally('tvtally')}</div>
+      <div class="tvdraw"><canvas class="drawview"></canvas></div></div>`}
+  else if(S.phase==='turn'){const n=(S.turnGot||[]).length;mid=`<p class="clabel">${team}${S.turnExp?' · '+esc(S.turnExp):''} · ${r.name}</p>
     <div class="jring tv"><svg viewBox="0 0 200 200"><circle class="disc" cx="100" cy="100" r="83"/><circle class="trk" cx="100" cy="100" r="90"/><circle class="prg" cx="100" cy="100" r="90" style="stroke-dasharray:${565.49*timeFrac()} 600"/></svg><div class="tbig tleft num"></div></div>
     ${tally('tvtally')}`}
-  else if(S.phase==='summary'&&S.steal&&S.steal.open)mid=`<p class="clabel">Siste lapp kan stjeles!</p><div class="tvnum cd sleft">10</div>`;
+  else if(S.phase==='summary'&&S.steal&&S.steal.open)mid=r.key==='tegn'&&S.draw?`<div class="tvdrawrow"><div class="tvdrawside"><p class="clabel">Siste lapp kan stjeles!</p><div class="tvnum cd sleft">10</div></div><div class="tvdraw"><canvas class="drawview"></canvas></div></div>`
+    :`<p class="clabel">Siste lapp kan stjeles!</p><div class="tvnum cd sleft">10</div>`;
   else if(S.phase==='summary'){const net=turnNet();const empty=!S.bowl.length;
-    mid=`<p class="clabel">${empty?(S.round<2?'Stillingen etter runde '+(S.round+1):'Bollen er tom! 🥁'):'Tiden er ute'}</p><div class="tvteam sm">${team} ${net>=0?'+':''}${net}</div>${tally('tvtally')}
+    mid=`<p class="clabel">${empty?(!isLastRound()?'Stillingen etter runde '+(S.round+1):'Bollen er tom! 🥁'):'Tiden er ute'}</p><div class="tvteam sm">${team} ${net>=0?'+':''}${net}</div>${tally('tvtally')}
     ${standingsVisible()?tvBoard(-1):empty?'<p class="tvsub">Vinneren avsløres om et øyeblikk …</p>':''}`}
   else{const ex=explainerOf(S,S.teamIdx);const sv=standingsVisible();
-    mid=`<p class="clabel">${sv?'Stillingen etter runde '+S.round+' · nå: '+r.name:'Runde '+(S.round+1)+' av 3 · '+r.name}</p><div class="tvteam sm">${team}</div>${ex?`<p class="tvexp">${esc(ex)} ${S.round===1?'mimer':S.round===2?'lager lyden':'forklarer'}</p>`:''}
-    ${sv?tvBoard(S.teamIdx):`<p class="tvsub">${S.bowl.length} lapper i bollen${S.round===2?' · stillingen er hemmelig til slutt':''}</p>`}`}
+    mid=`<p class="clabel">${sv?'Stillingen etter runde '+S.round+' · nå: '+r.name:'Runde '+(S.round+1)+' av '+NR()+' · '+r.name}</p><div class="tvteam sm">${team}</div>${ex?`<p class="tvexp">${esc(ex)} ${RT().does}</p>`:''}
+    ${sv?tvBoard(S.teamIdx):`<p class="tvsub">${S.bowl.length} lapper i bollen${isLastRound()?' · stillingen er hemmelig til slutt':''}</p>`}`}
   const needTap=SOUND&&(!AC||AC.state!=='running');
   return `<div class="tv">${mid}${needTap?'<p class="small">Trykk på skjermen for å slå på lyden</p>':''}</div>
   <div class="tvbtns">${document.fullscreenEnabled||document.webkitFullscreenEnabled?'<button class="iconbtn" onclick="goFull()">Fullskjerm</button>':''}<button class="iconbtn" onclick="testSound()">Test lyd</button><button class="iconbtn" onclick="toggleSound()">${SOUND?'🔊':'🔇'}</button><button class="iconbtn" onclick="openMenu()">Meny</button></div>`;
@@ -1099,35 +1201,39 @@ function tvBoard(hl){
   return `<div class="tvboard">${S.teams.map((t,i)=>`<div class="tvrow ${i===hl?'on':''}"><div>${esc(t)}${S.useNames&&members(i).length?`<small>${members(i).map(esc).join(', ')}</small>`:''}</div><span>${total(i)}</span></div>`).join('')}</div>`;
 }
 function vClockFinal(){
-  const idx=rankIdx();const best=total(idx[0]);const win=idx.filter(i=>total(i)===best);
-  const P=revealPlan(),A=P.A,winTxt=win.length>1?'Uavgjort!':esc(S.teams[win[0]])+' vant!';
+  const {P,n,st}=curStep(),{A,idx,best,levels}=P,at=S.revealAt||0;
+  const win=idx.filter(i=>total(i)===best),winTxt=win.length>1?'Uavgjort!':esc(S.teams[win[0]])+' vant!';
   const mem=i=>S.useNames&&members(i).length?`<small>${members(i).map(esc).join(', ')}</small>`:'';
-  const top=idx.slice(0,4),arr=[1,0,2,3].filter(k=>k<top.length).map(k=>top[k]);
-  const H={1:'34vh',2:'25vh',3:'18vh',4:'13vh'};
-  const intro=A.length?`<div class="scene" data-from="0" data-to="${P.awAt[0]}"><div style="font-size:min(14vmin,130px);line-height:1">🏆</div><div class="tvteam">Kveldens priser</div></div>`:'';
-  const slides=A.map(([ic,t,who,stat],k)=>`<div class="scene" data-from="${P.awAt[k]}" data-to="${P.awAt[k]+AW_STEP}">
-      <div class="awic">${ic}</div><div class="awtitle rv" data-at="${P.awAt[k]}" data-snd="drum">${t}</div>
-      <div class="awwho rv pop" data-at="${P.awAt[k]+AW_NAME}" data-snd="aw">${who}</div>
-      <p class="awstat rv" data-at="${P.awAt[k]+AW_NAME+300}">${stat}</p></div>`).join('');
-  const podium=`<div class="scene" data-from="${P.podStart}" data-to="${P.sumAt}">
-      <div class="tvteam sm"><span class="rvpre" data-at="${P.winAt}">Og vinneren er …</span><span class="rv" data-at="${P.winAt}" data-snd="win">🏆 ${winTxt}</span></div>
+  let body='';
+  if(st.k==='intro')body=`<div style="font-size:min(14vmin,130px);line-height:1">🏆</div><div class="tvteam">${A.length?'Kveldens priser':'Resultatet'}</div>`;
+  else if(st.k==='aw'){const [ic,t,who,stat]=A[st.i];
+    body=`<p class="clabel">Pris ${st.i+1} av ${A.length}</p><div class="awic">${ic}</div><div class="awtitle rv" data-at="${at}" data-snd="drum">${t}</div>
+      <div class="awwho rv pop" data-at="${at+AW_NAME}" data-snd="aw">${who}</div>
+      <p class="awstat rv" data-at="${at+AW_NAME+300}">${stat}</p>`}
+  else if(st.k==='pod'||st.k==='win'){
+    const top=idx.slice(0,4),arr=[1,0,2,3].filter(k=>k<top.length).map(k=>top[k]);
+    const H={1:'34vh',2:'25vh',3:'18vh',4:'13vh'};
+    const lvlOf=i=>total(i)===best?99:levels.indexOf(total(i))+1;   // 1 = last place
+    const shown=i=>st.k==='win'||lvlOf(i)<=st.lvl, isNew=i=>st.k==='win'?total(i)===best:lvlOf(i)===st.lvl;
+    const rv=i=>shown(i)?(isNew(i)?`rv" data-at="${at+400}`:'rv show'):'rv';
+    body=`<div class="tvteam sm">${st.k==='win'?`<span class="rvpre" data-at="${at+400}">Og vinneren er …</span><span class="rv" data-at="${at+400}" data-snd="win">🏆 ${winTxt}</span>`:'Og vinneren er …'}</div>
       <div class="podium">${arr.map(i=>{const pl=placeOf(i);return `<div class="pcol">
-        <div class="pname rv" data-at="${P.rowAt[i]}">${esc(S.teams[i])}${mem(i)}</div>
-        <div class="pbar rv ${pl===1?'win':''}" data-at="${P.rowAt[i]}" data-snd="${pl===1?'':'row'}" style="height:${H[Math.min(pl,4)]}"><span class="pplace">${pl}.</span><span class="pscore">${total(i)} poeng</span></div></div>`}).join('')}</div>
-      ${idx.length>4?`<p class="tvsub rv" data-at="${P.rowAt[idx[4]]}">${idx.slice(4).map(i=>placeOf(i)+'. '+esc(S.teams[i])+' ('+total(i)+')').join(' · ')}</p>`:''}</div>`;
-  const summary=`<div class="scene tvfin" data-from="${P.sumAt}" data-to="9e15">
-      <div style="font-size:min(7vmin,64px);line-height:1">🏆</div><div class="tvteam sm">${winTxt}</div>
+        <div class="pname ${rv(i)}">${esc(S.teams[i])}${mem(i)}</div>
+        <div class="pbar ${pl===1?'win ':''}${rv(i)}" ${shown(i)&&isNew(i)&&pl!==1?'data-snd="row"':''} style="height:${H[Math.min(pl,4)]}"><span class="pplace">${pl}.</span><span class="pscore">${total(i)} poeng</span></div></div>`}).join('')}</div>
+      ${idx.length>4&&st.k==='win'?`<p class="tvsub">${idx.slice(4).map(i=>placeOf(i)+'. '+esc(S.teams[i])+' ('+total(i)+')').join(' · ')}</p>`:''}`}
+  else body=`<div style="font-size:min(7vmin,64px);line-height:1">🏆</div><div class="tvteam sm">${winTxt}</div>
       <div class="tvboard">${idx.map(i=>`<div class="tvrow ${total(i)===best?'on':''}"><div><span class="place">${placeOf(i)}.</span> ${esc(S.teams[i])}${mem(i)}</div><span>${total(i)}</span></div>`).join('')}</div>
-      ${A.length?`<div class="tvaw">${awardHtml(A)}</div>`:''}</div>`;
-  return `<div class="tvstage">${intro}${slides}${podium}${summary}</div>
-  <div class="tvbtns"><button class="iconbtn" onclick="REVEAL_SKIP=true">Hopp til slutt</button><button class="iconbtn" onclick="openMenu()">Meny</button></div>`;
+      ${A.length?`<div class="tvaw">${awardHtml(A)}</div>`:''}`;
+  const last=n>=P.steps.length-1;
+  return `<div class="tv ${st.k==='sum'?'tvfin':''}">${body}</div>
+  <div class="tvbtns solid">${n>0?'<button class="iconbtn" onclick="revealMove(-1)">◂ Forrige</button>':''}${last?'':'<button class="iconbtn" style="opacity:1;background:var(--ink);color:var(--mustard)" onclick="revealMove(1)">Neste ▸</button>'}<button class="iconbtn" onclick="openMenu()">Meny</button></div>`;
 }
 
 /* ---------- AWARDS ---------- */
 function awards(){
   const H=S.history||[],fun=[],big=[],W=w=>'«'+esc(S.words[w])+'»';
   const fmt1=x=>(Math.round(x*10)/10).toString().replace('.',',');
-  [['🗣️','Beste forklarer'],['🕺','Beste mimer'],['📣','Beste lydmaker']].forEach(([ic,title],r)=>{
+  roundKeys().map(k=>RTYPES[k].award).forEach(([ic,title],r)=>{
     const ex={};H.forEach(h=>{if(!h.exp||h.round!==r)return;const e=ex[h.exp]||(ex[h.exp]={got:0,turns:0});e.got+=h.got.length;e.turns++});
     const best=Object.entries(ex).sort((a,c)=>(c[1].got/c[1].turns)-(a[1].got/a[1].turns)||c[1].got-a[1].got)[0];
     if(best&&best[1].got)big.push([ic,title,esc(best[0]),`${fmt1(best[1].got/best[1].turns)} lapper per tur (${best[1].got} totalt)`]);
@@ -1161,9 +1267,9 @@ function whoWrote(){
 
 /* ---------- AUDIENCE ---------- */
 function vAudience(){
-  const r=ROUNDS[S.round],team=esc(S.teams[S.teamIdx]);
+  const r=RT(),team=esc(S.teams[S.teamIdx]);
   const what=S.phase==='turn'?'Spiller nå':S.phase==='ready'?'Neste lag':'Ferdig';
-  return header(true)+`<span class="pill">Runde ${S.round+1} av 3 · ${r.name}</span>
+  return header(true)+`<span class="pill">Runde ${S.round+1} av ${NR()} · ${r.name}</span>
   <div class="card" style="text-align:center;padding:26px 18px"><p class="label" style="margin:0">${what}</p><h1 class="big-team">${team}</h1>
     ${S.phase==='turn'?'<div class="tbig tleft"></div>':''}<p class="small" style="margin:8px 0 0">${S.bowl.length} lapper igjen i bollen</p></div>
   ${standingsVisible()?`<div class="card"><p class="label">Stillingen etter runde ${S.phase==='ready'?S.round:S.round+1}</p>${scoreTable(false)}</div>`:'<p class="small" style="text-align:center;margin-top:14px">Stillingen vises mellom rundene.</p>'}`;
@@ -1171,7 +1277,18 @@ function vAudience(){
 
 /* ---------- FINAL ---------- */
 function vFinal(){
-  if(!revealDone()&&!REVEAL_SKIP){FINAL_SHOWN=false;return header(false)+`<div class="tv"><div class="trophy">🥁</div><h1 style="margin-top:14px">Resultatet avsløres på TV-en</h1>
+  if(!revealDone()&&!REVEAL_SKIP){
+    if(ROLE==='dommer'){const {P,n,st}=curStep();const nx=P.steps[n+1];
+      return header(false)+`<span class="pill">⚖️ Dommer · Finalen</span>
+      <h1 style="margin-top:12px">Du styrer finalen</h1>
+      <p class="lede">TV-en viser én ting om gangen. Trykk Neste når alle har sett det.</p>
+      <div class="card" style="text-align:center"><p class="label" style="margin:0">Steg ${n+1} av ${P.steps.length}</p><h2 style="margin-top:6px">${esc(st.label)}</h2></div>
+      <button class="btn primary xl" onclick="revealMove(1)">Neste: ${esc(nx?nx.label:'')} ▸</button>
+      ${n>0?'<button class="btn outline" onclick="revealMove(-1)">◂ Forrige</button>':''}
+      <div class="spacer"></div>
+      <button class="btn ghost" onclick="revealEnd()">Hopp til oppsummeringen</button>
+      ${undoBtn()}`}
+    FINAL_SHOWN=false;return header(false)+`<div class="tv"><div class="trophy">🥁</div><h1 style="margin-top:14px">Resultatet avsløres på <span style="white-space:nowrap">TV-en</span></h1>
     <p class="lede">Følg med på skjermen …</p><button class="btn ghost" onclick="REVEAL_SKIP=true;render()">Vis resultatet her nå</button></div>`}
   const idx=S.teams.map((_,i)=>i).sort((a,b)=>total(b)-total(a));
   const best=total(idx[0]);const win=idx.filter(i=>total(i)===best);
@@ -1182,8 +1299,10 @@ function vFinal(){
   ${(()=>{const A=awards();return A.length?`<div class="card"><p class="label">Kveldens priser</p><div class="awards">${awardHtml(A)}</div></div>`:''})()}
   ${whoWrote()}
   <div class="spacer"></div>
-  <button class="btn primary" onclick="restartSameTeams(false)">Nytt spill med nye lapper</button>
-  <button class="btn outline" onclick="act(beginGame)">Spill igjen med samme lapper</button>
+  ${canEdit()?`<button class="btn primary" onclick="rematch()">Revansj: nye lag og nye lapper</button>
+  <button class="btn outline" onclick="restartSameTeams(false)">Nytt spill, samme lag</button>
+  <button class="btn outline" onclick="act(beginGame)">Spill igjen med samme lapper</button>${undoBtn()}`
+    :'<p class="small" style="text-align:center">Dommeren starter neste spill.</p>'}
   <button class="btn ghost" onclick="leaveGame()">Avslutt</button>`;
 }
 
@@ -1203,8 +1322,59 @@ function openMenu(){
 }
 function closeSheet(id){$(id).classList.remove('open')}
 
+/* ---------- DRAWING ---------- */
+let PAD_STROKES=[],PAD_DIRTY=false,PAD_KEY=null;
+function encStrokes(st){return st.map(p=>p.map(([x,y])=>x+','+y).join(' '))}
+function decStrokes(arr){return (arr||[]).map(t=>t.split(' ').filter(Boolean).map(q=>q.split(',').map(Number)))}
+function paintStrokes(cv,strokes,ar,live){
+  const r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  if(!r.width||!r.height)return;
+  cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);
+  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,r.width,r.height);
+  let bw=r.width,bh=r.height,ox=0,oy=0;
+  if(!live&&ar){if(r.width/r.height>ar){bw=r.height*ar;ox=(r.width-bw)/2}else{bh=r.width/ar;oy=(r.height-bh)/2}}
+  g.fillStyle='#FFFFFF';
+  if(live)g.fillRect(ox,oy,bw,bh);
+  else{const lw=Math.max(2,Math.min(bw,bh)*0.01),rr=Math.min(bw,bh)*0.05;g.beginPath();
+    if(g.roundRect)g.roundRect(ox+lw/2,oy+lw/2,bw-lw,bh-lw,rr);else g.rect(ox+lw/2,oy+lw/2,bw-lw,bh-lw);
+    g.fill();g.strokeStyle='#2B1240';g.lineWidth=lw;g.stroke();g.save();g.clip()}
+  g.strokeStyle='#2B1240';g.lineCap='round';g.lineJoin='round';g.lineWidth=Math.max(3,bw*0.014);
+  strokes.forEach(p=>{if(!p.length)return;g.beginPath();g.moveTo(ox+p[0][0]/1000*bw,oy+p[0][1]/1000*bh);
+    if(p.length===1)g.lineTo(ox+p[0][0]/1000*bw+0.1,oy+p[0][1]/1000*bh);
+    p.slice(1).forEach(([x,y])=>g.lineTo(ox+x/1000*bw,oy+y/1000*bh));g.stroke()});
+  if(!live)g.restore();
+}
+function setupPad(){
+  const cv=$('pad');if(!cv)return;
+  const key=S.current+'|'+S.turnStart;
+  if(PAD_KEY!==key){PAD_KEY=key;PAD_STROKES=decStrokes(S.draw&&S.draw.w===S.current?S.draw.strokes:[])}
+  paintStrokes(cv,PAD_STROKES,null,true);
+  let cur=null;
+  const pt=e=>{const r=cv.getBoundingClientRect();return [Math.round((e.clientX-r.left)/r.width*1000),Math.round((e.clientY-r.top)/r.height*1000)]};
+  cv.onpointerdown=e=>{if(S.timer&&!S.timer.running)return;e.preventDefault();cv.setPointerCapture(e.pointerId);cur=[pt(e)];PAD_STROKES.push(cur);PAD_DIRTY=true;paintStrokes(cv,PAD_STROKES,null,true)};
+  cv.onpointermove=e=>{if(!cur)return;e.preventDefault();const q=pt(e),l=cur[cur.length-1];
+    if(Math.abs(q[0]-l[0])+Math.abs(q[1]-l[1])<8)return;cur.push(q);PAD_DIRTY=true;
+    const g=cv.getContext('2d'),r=cv.getBoundingClientRect();g.beginPath();g.moveTo(l[0]/1000*r.width,l[1]/1000*r.height);g.lineTo(q[0]/1000*r.width,q[1]/1000*r.height);g.stroke()};
+  cv.onpointerup=cv.onpointercancel=()=>{cur=null;sendPad()};
+}
+function sendPad(){
+  if(!PAD_DIRTY||S.phase!=='turn'||!myTurn()||RT().key!=='tegn')return;PAD_DIRTY=false;
+  const cv=$('pad');const r=cv?cv.getBoundingClientRect():{width:1,height:1};
+  const d={w:S.current,ar:+(r.width/r.height).toFixed(3),strokes:encStrokes(PAD_STROKES)};
+  actQuiet(s=>{if(s.phase==='turn'&&s.current===d.w)s.draw=d});
+}
+setInterval(sendPad,450);
+function clearPad(){PAD_STROKES=[];PAD_DIRTY=true;const cv=$('pad');if(cv)paintStrokes(cv,[],null,true);sendPad()}
+/* show the current drawing on any screen with a .drawview canvas */
+function paintViews(){
+  document.querySelectorAll('canvas.drawview').forEach(cv=>{const d=S&&S.draw;paintStrokes(cv,d?decStrokes(d.strokes):[],d&&d.ar||0.62,false)});
+}
+addEventListener('resize',()=>{if($('pad'))paintStrokes($('pad'),PAD_STROKES,null,true);paintViews()});
+
 /* ---------- KEYBOARD (scene on Mac / iPad with keyboard) ---------- */
 document.addEventListener('keydown',e=>{
+  if(S&&ROLE==='klokke'&&S.phase==='final'&&!e.metaKey&&!e.ctrlKey){
+    if(e.key===' '||e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault();revealMove(1)}else if(e.key==='ArrowLeft'){e.preventDefault();revealMove(-1)}return}
   if(!S||ROLE!=='scene'||e.metaKey||e.ctrlKey||e.altKey)return;
   const tag=(document.activeElement&&document.activeElement.tagName)||'';if(tag==='INPUT'||tag==='TEXTAREA')return;
   if($('menu').classList.contains('open')||$('wsheet').classList.contains('open'))return;
