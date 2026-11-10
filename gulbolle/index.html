@@ -212,6 +212,9 @@ td .mini{border:0;background:var(--field);border-radius:8px;width:26px;height:26
 .drawword{margin-top:10px;font-size:15px;font-weight:600;color:var(--muted)}
 .drawword b{font-family:Unbounded,sans-serif;font-size:22px;color:var(--ink);text-transform:uppercase;margin-left:4px}
 .padwrap{flex:1;position:relative;background:#fff;border-radius:22px;margin:10px 0 2px;min-height:300px;overflow:hidden;box-shadow:inset 0 0 0 3px var(--ink)}
+.padtools{position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:2}
+.padtools button{border:2px solid var(--ink);background:var(--cream);color:var(--ink);border-radius:999px;padding:7px 12px;font:700 13px 'Space Grotesk',sans-serif;cursor:pointer}
+.padtools button:active{background:var(--ink);color:var(--mustard)}
 .padwrap canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .pauseover{position:absolute;inset:0;display:grid;place-items:center;background:rgba(43,18,64,.55);color:var(--mustard);font-family:Unbounded,sans-serif;font-weight:800;font-size:40px;pointer-events:none}
 .pausebar{margin-top:10px;text-align:center;background:var(--ink);color:var(--mustard);border-radius:14px;padding:12px;font-weight:800;font-family:Unbounded,sans-serif;font-size:14px}
@@ -303,7 +306,7 @@ const SB='https://qcxxtvzarpxstlmyguqi.supabase.co/rest/v1/';
 const KEY='sb_publishable_5m5Hsz9YfHSPK1MZhsXiHA_GjlwYQrW';
 const H={apikey:KEY,'Content-Type':'application/json'};
 const LKEY='gulbolle_v2';
-const BUILD='20261110000210';
+const BUILD='20261110002807';
 const RTYPES={
   forklar:{key:'forklar',name:'Forklar',verb:'forklare',does:'forklarer',col:'Forkl.',rule:'Forklar med ord, men ikke si selve ordet.',award:['🗣️','Beste forklarer']},
   mime:{key:'mime',name:'Mime',verb:'mime',does:'mimer',col:'Mime',rule:'Ingen ord og ingen lyder. Bare miming.',award:['🕺','Beste mimer']},
@@ -1004,12 +1007,12 @@ function vScene(){
     if(r.key==='tegn')return `<div class="turn">
       <div class="turnhead"><span class="pill">${team} · Tegn</span><span class="tsm tleft"></span></div>
       <div class="drawword">Tegn: <b>${esc(S.words[S.current]??'')}</b></div>
-      <div class="padwrap" id="padwrap"><canvas id="pad"></canvas>${paused?'<div class="pauseover">PAUSE</div>':''}</div>
+      <div class="padwrap" id="padwrap"><canvas id="pad"></canvas><div class="padtools"><button onclick="undoStroke()">↶ Angre strek</button><button onclick="clearPad()">Visk ut alt</button></div>${paused?'<div class="pauseover">PAUSE</div>':''}</div>
       <div class="btnrow">
         <button class="btn outline skipbtn" style="flex-direction:column;gap:2px;padding:14px" ${S.current!=null&&!paused?'':'disabled'} onclick="skip()">Hopp over<small style="font-size:12px;font-weight:700;opacity:.7">−1 poeng</small></button>
         <button class="btn good" style="padding:14px;font-size:20px" ${paused?'disabled':''} onclick="correct()">Riktig ✓</button>
       </div>
-      <div class="links"><button onclick="clearPad()">Visk ut</button>${(S.turnLog||[]).length?'<button onclick="undoLast()">Angre siste</button>':''}</div>
+      ${(S.turnLog||[]).length?'<div class="links"><button onclick="undoLast()">Angre siste lapp</button></div>':''}
     </div>`;
     return `<div class="turn">
       <div class="turnhead"><span class="pill">${team} · ${r.name}</span><span class="tsm tleft"></span></div>
@@ -1365,6 +1368,7 @@ function sendPad(){
   actQuiet(s=>{if(s.phase==='turn'&&s.current===d.w)s.draw=d});
 }
 setInterval(sendPad,450);
+function undoStroke(){if(!PAD_STROKES.length)return;PAD_STROKES.pop();PAD_DIRTY=true;const cv=$('pad');if(cv)paintStrokes(cv,PAD_STROKES,null,true);sendPad()}
 function clearPad(){PAD_STROKES=[];PAD_DIRTY=true;const cv=$('pad');if(cv)paintStrokes(cv,[],null,true);sendPad()}
 /* show the current drawing on any screen with a .drawview canvas */
 function paintViews(){
