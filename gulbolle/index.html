@@ -207,6 +207,7 @@ td .mini{border:0;background:var(--field);border-radius:8px;width:26px;height:26
 .progbar i{position:absolute;top:0;bottom:0;width:2px;background:var(--mustard)}
 .seg{display:flex;gap:6px;flex-wrap:wrap}
 .seg button{flex:1;min-width:90px;border:2px solid var(--ink);background:transparent;color:var(--ink);border-radius:14px;padding:11px 8px;font-weight:700;font-size:14px;cursor:pointer}
+.seg2 button{flex:1 1 40%}
 .seg button.on{background:var(--ink);color:var(--mustard)}
 .drawword{margin-top:10px;font-size:15px;font-weight:600;color:var(--muted)}
 .drawword b{font-family:Unbounded,sans-serif;font-size:22px;color:var(--ink);text-transform:uppercase;margin-left:4px}
@@ -302,7 +303,7 @@ const SB='https://qcxxtvzarpxstlmyguqi.supabase.co/rest/v1/';
 const KEY='sb_publishable_5m5Hsz9YfHSPK1MZhsXiHA_GjlwYQrW';
 const H={apikey:KEY,'Content-Type':'application/json'};
 const LKEY='gulbolle_v2';
-const BUILD='20261109233707';
+const BUILD='20261110000210';
 const RTYPES={
   forklar:{key:'forklar',name:'Forklar',verb:'forklare',does:'forklarer',col:'Forkl.',rule:'Forklar med ord, men ikke si selve ordet.',award:['🗣️','Beste forklarer']},
   mime:{key:'mime',name:'Mime',verb:'mime',does:'mimer',col:'Mime',rule:'Ingen ord og ingen lyder. Bare miming.',award:['🕺','Beste mimer']},
@@ -313,7 +314,7 @@ function roundKeys(s){s=s||S;return (s&&s.rounds&&s.rounds.length)?s.rounds:['fo
 function NR(s){return roundKeys(s).length}
 function RT(i,s){s=s||S;if(i==null)i=s.round||0;return RTYPES[roundKeys(s)[i]]||RTYPES.forklar}
 function isLastRound(s){s=s||S;return (s.round||0)>=NR(s)-1}
-const DRAWMODES={av:['forklar','mime','lyd'],ekstra:['forklar','mime','lyd','tegn'],erstatt:['forklar','mime','tegn']};
+const DRAWMODES={av:['forklar','mime','lyd'],erstatt:['forklar','mime','tegn'],ekstra:['forklar','mime','lyd','tegn'],ekstra2:['forklar','mime','tegn','lyd']};
 const BOWL_SVG='<svg class="bowl" viewBox="0 0 32 32" aria-hidden="true"><ellipse cx="16" cy="13" rx="13" ry="3.4" fill="#FF4F8B"/><path d="M3 13c0 7.5 5.8 13 13 13s13-5.5 13-13" fill="#2B1240"/><ellipse cx="16" cy="13" rx="10.5" ry="2.2" fill="#000000" opacity=".45"/><path d="M11 12.4l3-3.6M17 12.6l1.5-4.6M21 12.2l-.8-3.4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
 /* ===== Helpers ===== */
@@ -613,8 +614,8 @@ function setupCards(){
     <input type="range" class="len" id="lenr" data-keep="0" min="3" max="6" step="1" value="${S.perPerson}" oninput="$('lenlbl').textContent=lenLabel(+this.value)" onchange="setPerTo(+this.value)">
     <div class="lenticks"><span>Kort</span><span>Middels</span><span>Langt</span></div>
   </div>
-  <div class="card"><p class="label">Tegnerunde</p>
-    <div class="seg">${[['av','Ingen'],['ekstra','4. runde'],['erstatt','I stedet for lyd']].map(([k,l])=>`<button class="${(S.drawMode||'av')===k?'on':''}" onclick="setDrawMode('${k}')">${l}</button>`).join('')}</div>
+  <div class="card"><p class="label">Siste runde(r) etter forklar og mime</p>
+    <div class="seg seg2">${[['av','Lyd'],['erstatt','Tegning'],['ekstra','Lyd, så tegning'],['ekstra2','Tegning, så lyd']].map(([k,l])=>`<button class="${(S.drawMode||'av')===k?'on':''}" onclick="setDrawMode('${k}')">${l}</button>`).join('')}</div>
     <p class="small" style="margin:10px 0 0">Rundene: ${roundKeys().map(k=>RTYPES[k].name).join(' → ')}. I tegnerunden tegner performeren på mobilen, og tegningen vises live på TV-en.</p></div>`;
 }
 function setDrawMode(m){if(!canEdit()&&!HOSTSETUP&&!(isHost()&&!slipCount()))return;if(!DRAWMODES[m])return;act(s=>{if(s.phase!=='words'&&s.phase!=='setup')return;s.drawMode=m;s.rounds=DRAWMODES[m].slice()})}
